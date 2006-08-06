@@ -287,24 +287,32 @@ VIRTUAL(FileTranscoder, Object)
   VMETHOD(Finish) = FileTranscoder_Finish;
 END_VIRTUAL
 
+static int mp3fs_readlink(const char *path, char *buf, size_t size) {
+  int res;
+  
+  res = readlink(path, buf, size - 1);
+  if(res == -1)
+    return -errno;
+  
+  buf[res] = '\0';
+  return 0;
+}
+
 static int mp3fs_getattr(const char *path, struct stat *stbuf) {
   int res;
   FileTranscoder f;
   
-  // regular file
-  if(strcmp(path+(strlen(path)-4), ".mp3") != 0) { 
-    res = lstat(path, stbuf);
-  } else {  
-    f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)path);
-    
-    res = lstat(f->orig_name, stbuf);
-    stbuf->st_size = f->totalsize;
-    f->Finish(f);
-    talloc_free(f);
-  }
+  // pass-through for regular files
+  if(lstat(path, stbuf) == 0)
+    return 0;
   
-  if(res == -1)
+  f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)path);
+  if(lstat(f->orig_name, stbuf) == -1)
     return -errno;
+  
+  stbuf->st_size = f->totalsize;
+  f->Finish(f);
+  talloc_free(f);
   
   DEBUG(log, "%s: getattr\n", path);
   return 0;
@@ -323,20 +331,14 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   DEBUG(log, "%s: readdir\n", path);
 
   while((de = readdir(dp)) != NULL) {
-    ptr = strstr(de->d_name, ".flac");
-    if((de->d_type == DT_REG) && ptr == 0)
-      continue;
+    struct stat st;
     
-    
-    // convert name to mp3
     strncpy(name, de->d_name, 256);
-    {
-      char *ptr = strstr(name, ".flac");
-      if(ptr)
-	strcpy(ptr, ".mp3");
+    ptr = strstr(name, ".flac");
+    if(ptr) {
+      strcpy(ptr, ".mp3");
     }
     
-    struct stat st;
     memset(&st, 0, sizeof(st));
     st.st_ino = de->d_ino;
     st.st_mode = de->d_type << 12;
@@ -349,12 +351,17 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 }
 
 static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
-  int res;
+  int fd;
   FileTranscoder f;
   
+  // If this is a real file, do nothing
+  fd = open(path, fi->flags);
+  if(fd != -1) {
+    close(fd);
+    return 0;
+  }
+  
   f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)path);
-  if(f==NULL)
-    return -errno;
   
   // add the file to the list
   list_add(&(f->list), &(filelist.list));
@@ -365,7 +372,20 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
 
 static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
 		      struct fuse_file_info *fi) {
+  int fd, res;
+  struct stat st;
   FileTranscoder f=NULL;
+  
+  // If this is a real file, allow pass-through
+  fd = open(path, O_RDONLY);
+  if(fd != -1) {
+    res = pread(fd, buf, size, offset);
+    if(res == -1)
+      res = -errno;
+    
+    close(fd);
+    return res;
+  }
   
   list_for_each_entry(f, &(filelist.list), list) {
     if(strcmp(f->name, path) == 0)
@@ -393,6 +413,11 @@ static int mp3fs_statfs(const char *path, struct statfs *stbuf) {
 
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   FileTranscoder f=NULL;
+  struct stat st;
+  
+  // pass-through
+  if(lstat(path, &st) == 0)
+    return 0;
   
   list_for_each_entry(f, &(filelist.list), list) {
     if(strcmp(f->name, path) == 0)
@@ -410,6 +435,7 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
 
 static struct fuse_operations mp3fs_ops = {
   .getattr = mp3fs_getattr,
+  .readlink= mp3fs_readlink,
   .readdir = mp3fs_readdir,
   .open	   = mp3fs_open,
   .read	   = mp3fs_read,
