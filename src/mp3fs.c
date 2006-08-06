@@ -1,39 +1,8 @@
 /*
   MP3FS: A read-only FUSE filesystem which transcodes audio formats
-  (currently FLAC) to MP3 on the fly when opened and read. This was
-  written to enable me to use my FLAC collection with software and/or
-  hardware which only understands MP3. e.g. gmediaserver to a netgear
-  MP101 mp3 player.
+  (currently FLAC) to MP3 on the fly when opened and read. See README
+  for more details.
   
-  When a file is opened, the decoder and encoder are initialised and
-  the file metadata is read. At this time the final filesize can be
-  determined as we only support constant bitrate mp3s.
-  
-  As the file is read, it is transcoded into an internal per-file
-  buffer. This buffer continues to grow while the file is being read
-  until the whole file is transcoded in memory. The memory is freed
-  only when the file is closed. This simplifies the implementation.
-
-  Seeking within a file will cause the file to be transcoded up to the
-  seek point (if not already done). This is not usually a problem
-  since most programs will read a file from start to finish. 
-
-  A special exception to this is when an application tries to read the
-  very last block first. Many applications do this to look for an
-  id3v1 tag (stored in the last 128 bytes of the file). When this is
-  detected, the filesystem simply return zeros (I dont support id3v1
-  tags). This *dramatically* speeds up applications, however it could
-  potentially lead to corrupt mp3 files if the zeros are still in
-  kernel cache when the application comes back to read the actual
-  audio sequentially. In my experimentation this has not happened, I
-  always see another read for the final block.
-
-  ID3v2 tags are created when the file is first opened. They are
-  located at the start of the file. As such, an application scanning a
-  directory to read tags should not cause too much of a performance
-  hit as the actual encoder does not need to be invoked (depending on
-  how much data the read asks for).
-
   Copyright (C) David Collett (daveco@users.sourceforge.net)
   
   This program can be distributed under the terms of the GNU GPL.
@@ -44,6 +13,7 @@
 
 #include <fuse.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -239,10 +209,24 @@ static struct fuse_operations mp3fs_ops = {
   .release = mp3fs_release,
 };
 
+void usage(char *name) {
+  printf("\nUSAGE: %s flacdir bitrate mountpoint [-o fuseopts]\n", name);
+  printf("  acceptable bitrates are 96, 112, 128, 160, 192, 224, 256, 320\n");
+  printf("  for a list of fuse options use -h after mountpoint\n\n");
+}
+
 int main(int argc, char *argv[]) {
   
   FileTranscoder f;
-
+  
+  if(argc<3) {
+    usage(argv[0]);
+    return 0;
+  }
+  
+  basepath = argv[1];
+  bitrate = atoi(argv[2]);
+  
   // open the logfile
 #ifdef __DEBUG__
   logfd = fopen("/tmp/mp3fs.log", "w");
@@ -252,8 +236,7 @@ int main(int argc, char *argv[]) {
   INIT_LIST_HEAD(&(filelist.list));
   
   // start FUSE
-  basepath = argv[1];
-  fuse_main(argc-1, argv+1, &mp3fs_ops);
+  fuse_main(argc-2, argv+2, &mp3fs_ops);
   
 #ifdef __DEBUG__
   fclose(logfd);

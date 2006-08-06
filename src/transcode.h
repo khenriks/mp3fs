@@ -13,7 +13,6 @@
 #include "class.h"
 #include "stringio.h"
 
-#define MP3_BITRATE 320
 #define MP3_QUALITY 5
 #define FLAC_BLOCKSIZE 4608
 #define BUFSIZE 2 * FLAC_BLOCKSIZE
@@ -22,6 +21,7 @@
 struct FileTranscoder filelist;
 FILE *logfd;
 const char *basepath;
+int bitrate;
 
 /** This is used for debugging. */
 #ifndef __DEBUG__

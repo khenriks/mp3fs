@@ -44,7 +44,7 @@ int calcsize(int framesize, int numframes, int samplerate) {
   
   // initialize
   slot_lag = 0;
-  frac_SpF = (144*MP3_BITRATE*1000) % samplerate;
+  frac_SpF = (144*bitrate*1000) % samplerate;
   
   // calculate
   for(i=0; i<=numframes; i++) {
@@ -168,7 +168,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   // create encoder
   self->encoder = lame_init();
   lame_set_quality(self->encoder, MP3_QUALITY);
-  lame_set_brate(self->encoder, MP3_BITRATE);
+  lame_set_brate(self->encoder, bitrate);
   lame_set_bWriteVbrTag(self->encoder, 0);
   lame_set_errorf(self->encoder, &lame_error);
   lame_set_debugf(self->encoder, &lame_error);
@@ -176,7 +176,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   lame_set_num_samples(self->encoder, self->info.total_samples);
   lame_set_in_samplerate(self->encoder, self->info.sample_rate);
   lame_set_num_channels(self->encoder, self->info.channels);
-  self->framesize = 144*MP3_BITRATE*1000/self->info.sample_rate;
+  self->framesize = 144*bitrate*1000/self->info.sample_rate;
   self->numframes = (int)((self->info.total_samples + 575.5)/1152.0);//+1;
   
   // Now process the rest of the metadata. This will fill in the

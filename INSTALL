@@ -1,0 +1,14 @@
+mp3fs - A transcoding FUSE filesystem
+
+Installation
+============
+
+mp3fs uses the GNU build system:
+
+./configure
+make
+make install
+
+Usage
+=====
+
