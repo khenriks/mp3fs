@@ -1,0 +1,7 @@
+CFLAGS = -D_FILE_OFFSET_BITS=64
+
+mp3fs:	mp3fs.c mp3fs.h
+	gcc $(CFLAGS) -o $@ mp3fs.c talloc.c class.c stringio.c -lfuse -lFLAC -lmp3lame
+
+clean:
+	rm mp3fs
