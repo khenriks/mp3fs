@@ -266,43 +266,26 @@ int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
     return len;
   }
   
+  // transcode up to what we need
   while(self->buffer->size < offset + len) {
-    self->Encode(self);
+    if(FLAC__file_decoder_get_state(self->decoder)==0) {
+      FLAC__file_decoder_process_single(self->decoder);
+    } else {
+      self->Finish(self);
+      break;
+    }
   }
   
   memcpy(buff, self->buffer->data+offset, len);
   return len;
 }
 
-int FileTranscoder_Encode(FileTranscoder self) {
-  // call flac to decode a single block this will call the write
-  // callback which will call lame to encode the block
-  if(FLAC__file_decoder_get_state(self->decoder)==0) {
-    FLAC__file_decoder_process_single(self->decoder);
-    return 1;
-  }
-  self->Finish(self);
-  return 0;
-}
-
 VIRTUAL(FileTranscoder, Object)
   VATTR(readptr) = 0;
   VMETHOD(Con) = FileTranscoder_Con;
   VMETHOD(Read) = FileTranscoder_Read;
-  VMETHOD(Encode) = FileTranscoder_Encode;
   VMETHOD(Finish) = FileTranscoder_Finish;
 END_VIRTUAL
-
-// list helper: find a transcoder in the given list
-FileTranscoder lookup(struct FileTranscoder list, const char *filename) {
-  FileTranscoder i;
-  
-  list_for_each_entry(i, &(list.list), list) {
-    if(strcmp(i->name, filename) == 0)
-      return i;
-  }
-  return NULL;
-}
 
 static int mp3fs_getattr(const char *path, struct stat *stbuf) {
   int res;
@@ -344,9 +327,9 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     if((de->d_type == DT_REG) && ptr == 0)
       continue;
     
-    strncpy(name, de->d_name, 256);
     
     // convert name to mp3
+    strncpy(name, de->d_name, 256);
     {
       char *ptr = strstr(name, ".flac");
       if(ptr)
@@ -382,9 +365,14 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
 
 static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
 		      struct fuse_file_info *fi) {
-  FileTranscoder f;
+  FileTranscoder f=NULL;
   
-  f = lookup(filelist, path);
+  list_for_each_entry(f, &(filelist.list), list) {
+    if(strcmp(f->name, path) == 0)
+      break;
+    f=NULL;
+  }
+  
   if(f==NULL) {
     DEBUG(log, "Tried to read from unopen file: %s\n", path);
     return -errno;
@@ -404,12 +392,16 @@ static int mp3fs_statfs(const char *path, struct statfs *stbuf) {
 }
 
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
-  FileTranscoder f;
+  FileTranscoder f=NULL;
   
-  f = lookup(filelist, path);
-  if(f) {
+  list_for_each_entry(f, &(filelist.list), list) {
+    if(strcmp(f->name, path) == 0)
+      break;
+    f=NULL;
+  }
+  
+  if(f!=NULL) {
     list_del(&(f->list));
-    //f->Finish(f);
     talloc_free(f);
     DEBUG(log, "%s: release\n", path);
   }

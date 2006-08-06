@@ -78,7 +78,6 @@ CLASS(FileTranscoder, Object)
 
   FileTranscoder METHOD(FileTranscoder, Con, char *filename);
   int METHOD(FileTranscoder, Read, char *buff, int offset, int len);
-  int METHOD(FileTranscoder, Encode);
   int METHOD(FileTranscoder, Finish);
 
   // allow this object to be part of a list
