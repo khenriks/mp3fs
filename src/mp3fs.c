@@ -62,6 +62,7 @@
 // a list of currently opened files
 static struct FileTranscoder filelist;
 static FILE *log;
+static const char *basepath;
 
 /*******************************************************************
  CALLBACKS and HELPERS for LAME and FLAC
@@ -153,9 +154,10 @@ void meta_cb(const FLAC__FileDecoder *decoder,
   switch(metadata->type) {
   case FLAC__METADATA_TYPE_STREAMINFO:
     memcpy(&trans->info, &metadata->data, sizeof(FLAC__StreamMetadata_StreamInfo));
-    //    printf("sample_rate: %u\nchannels: %u\nbits/sample: %u\ntotal_samples: %u\n",
-    //	   trans->info.sample_rate, trans->info.channels, 
-    //	   trans->info.bits_per_sample, trans->info.total_samples);
+    DEBUG(log, "%s: sample_rate: %u\nchannels: %u\nbits/sample: %u\ntotal_samples: %u\n",
+	  trans->name,
+	  trans->info.sample_rate, trans->info.channels, 
+	  trans->info.bits_per_sample, trans->info.total_samples);
     break;
   case FLAC__METADATA_TYPE_VORBIS_COMMENT:
     id3tag_init(trans->encoder);
@@ -193,12 +195,13 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   FLAC__file_decoder_set_write_callback(self->decoder, &write_cb);
   FLAC__file_decoder_set_metadata_callback(self->decoder, &meta_cb);
   FLAC__file_decoder_set_error_callback(self->decoder, &error_cb);
-  FLAC__file_decoder_set_metadata_respond(self->decoder, FLAC__METADATA_TYPE_VORBIS_COMMENT);
+  FLAC__file_decoder_set_metadata_respond(self->decoder, 
+					  FLAC__METADATA_TYPE_VORBIS_COMMENT);
   FLAC__file_decoder_init(self->decoder);
   
-  // process a single block, the first block is always STREAMINFO (I
-  // hope). This will fill in the info structure which is required to
-  // initialise the encoder
+  // process a single block, the first block is always
+  // STREAMINFO. This will fill in the info structure which is
+  // required to initialise the encoder
   FLAC__file_decoder_process_single(self->decoder);
   
   // create encoder
@@ -289,32 +292,16 @@ END_VIRTUAL
 
 static int mp3fs_readlink(const char *path, char *buf, size_t size) {
   int res;
+  char name[256];
   
-  res = readlink(path, buf, size - 1);
+  strncpy(name, basepath, sizeof(name));
+  strncat(name, path, sizeof(name) - strlen(name));
+
+  res = readlink(name, buf, size - 1);
   if(res == -1)
     return -errno;
   
   buf[res] = '\0';
-  return 0;
-}
-
-static int mp3fs_getattr(const char *path, struct stat *stbuf) {
-  int res;
-  FileTranscoder f;
-  
-  // pass-through for regular files
-  if(lstat(path, stbuf) == 0)
-    return 0;
-  
-  f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)path);
-  if(lstat(f->orig_name, stbuf) == -1)
-    return -errno;
-  
-  stbuf->st_size = f->totalsize;
-  f->Finish(f);
-  talloc_free(f);
-  
-  DEBUG(log, "%s: getattr\n", path);
   return 0;
 }
 
@@ -323,12 +310,15 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   DIR *dp;
   struct dirent *de;
   char name[256], *ptr;
-
-  dp = opendir(path);
+  
+  strncpy(name, basepath, sizeof(name));
+  strncat(name, path, sizeof(name) - strlen(name));
+  
+  dp = opendir(name);
   if(dp == NULL)
     return -errno;
   
-  DEBUG(log, "%s: readdir\n", path);
+  DEBUG(log, "%s: readdir\n", name);
 
   while((de = readdir(dp)) != NULL) {
     struct stat st;
@@ -350,23 +340,51 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   return 0;
 }
 
+static int mp3fs_getattr(const char *path, struct stat *stbuf) {
+  int res;
+  FileTranscoder f;
+  char name[256];
+  
+  strncpy(name, basepath, sizeof(name));
+  strncat(name, path, sizeof(name) - strlen(name));
+  
+  // pass-through for regular files
+  if(lstat(name, stbuf) == 0)
+    return 0;
+  
+  f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)name);
+  if(lstat(f->orig_name, stbuf) == -1)
+    return -errno;
+  
+  stbuf->st_size = f->totalsize;
+  f->Finish(f);
+  talloc_free(f);
+  
+  DEBUG(log, "%s: getattr\n", name);
+  return 0;
+}
+
 static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
   int fd;
   FileTranscoder f;
-  
+  char name[256];
+
+  strncpy(name, basepath, sizeof(name));
+  strncat(name, path, sizeof(name) - strlen(name));
+
   // If this is a real file, do nothing
-  fd = open(path, fi->flags);
+  fd = open(name, fi->flags);
   if(fd != -1) {
     close(fd);
     return 0;
   }
   
-  f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)path);
+  f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)name);
   
   // add the file to the list
   list_add(&(f->list), &(filelist.list));
   
-  DEBUG(log, "%s: open\n", f->orig_name);
+  DEBUG(log, "%s: open\n", f->name);
   return 0;
 }
 
@@ -375,9 +393,13 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
   int fd, res;
   struct stat st;
   FileTranscoder f=NULL;
+  char name[256];
+
+  strncpy(name, basepath, sizeof(name));
+  strncat(name, path, sizeof(name) - strlen(name));
   
   // If this is a real file, allow pass-through
-  fd = open(path, O_RDONLY);
+  fd = open(name, O_RDONLY);
   if(fd != -1) {
     res = pread(fd, buf, size, offset);
     if(res == -1)
@@ -388,23 +410,27 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
   }
   
   list_for_each_entry(f, &(filelist.list), list) {
-    if(strcmp(f->name, path) == 0)
+    if(strcmp(f->name, name) == 0)
       break;
     f=NULL;
   }
   
   if(f==NULL) {
-    DEBUG(log, "Tried to read from unopen file: %s\n", path);
+    DEBUG(log, "Tried to read from unopen file: %s\n", name);
     return -errno;
   }
-  DEBUG(log, "%s: reading %d from %d\n", path, size, offset);
+  DEBUG(log, "%s: reading %d from %d\n", name, size, offset);
   return f->Read(f, buf, offset, size);
 }
 
 static int mp3fs_statfs(const char *path, struct statfs *stbuf) {
   int res;
-  
-  res = statfs(path, stbuf);
+  char name[256];
+
+  strncpy(name, basepath, sizeof(name));
+  strncat(name, path, sizeof(name) - strlen(name));
+
+  res = statfs(name, stbuf);
   if(res == -1)
     return -errno;
   
@@ -414,13 +440,17 @@ static int mp3fs_statfs(const char *path, struct statfs *stbuf) {
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   FileTranscoder f=NULL;
   struct stat st;
-  
+  char name[256];
+
+  strncpy(name, basepath, sizeof(name));
+  strncat(name, path, sizeof(name) - strlen(name));
+
   // pass-through
-  if(lstat(path, &st) == 0)
+  if(lstat(name, &st) == 0)
     return 0;
   
   list_for_each_entry(f, &(filelist.list), list) {
-    if(strcmp(f->name, path) == 0)
+    if(strcmp(f->name, name) == 0)
       break;
     f=NULL;
   }
@@ -428,7 +458,7 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   if(f!=NULL) {
     list_del(&(f->list));
     talloc_free(f);
-    DEBUG(log, "%s: release\n", path);
+    DEBUG(log, "%s: release\n", name);
   }
   return 0;
 }
@@ -456,7 +486,8 @@ int main(int argc, char *argv[]) {
   INIT_LIST_HEAD(&(filelist.list));
   
   // start FUSE
-  fuse_main(argc, argv, &mp3fs_ops);
+  basepath = argv[1];
+  fuse_main(argc-1, argv+1, &mp3fs_ops);
   
 #ifdef __DEBUG__
   fclose(log);
