@@ -124,10 +124,10 @@ void meta_cb(const FLAC__FileDecoder *decoder,
   switch(metadata->type) {
   case FLAC__METADATA_TYPE_STREAMINFO:
     memcpy(&trans->info, &metadata->data, sizeof(FLAC__StreamMetadata_StreamInfo));
-    DEBUG(logfd, "%s: sample_rate: %u\nchannels: %u\nbits/sample: %u\ntotal_samples: %u\n",
-	  trans->name,
-	  trans->info.sample_rate, trans->info.channels, 
-	  trans->info.bits_per_sample, trans->info.total_samples);
+/*     DEBUG(logfd, "%s: sample_rate: %u\nchannels: %u\nbits/sample: %u\ntotal_samples: %u\n", */
+/* 	  trans->name, */
+/* 	  trans->info.sample_rate, trans->info.channels,  */
+/* 	  trans->info.bits_per_sample, trans->info.total_samples); */
     break;
   case FLAC__METADATA_TYPE_VORBIS_COMMENT:
     id3tag_init(trans->encoder);

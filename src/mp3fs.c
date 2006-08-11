@@ -41,6 +41,8 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
   int res;
   char name[256];
   
+  DEBUG(logfd, "%s: readlink\n", path);
+
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
 
@@ -58,6 +60,8 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   struct dirent *de;
   char name[256], *ptr;
   
+  DEBUG(logfd, "%s: readdir\n", path);
+
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
   
@@ -65,7 +69,6 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
   if(dp == NULL)
     return -errno;
   
-  DEBUG(logfd, "%s: readdir\n", name);
 
   while((de = readdir(dp)) != NULL) {
     struct stat st;
@@ -92,6 +95,8 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
   FileTranscoder f;
   char name[256];
   
+  DEBUG(logfd, "%s: getattr\n", path);
+
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
   
@@ -107,7 +112,6 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
   f->Finish(f);
   talloc_free(f);
   
-  DEBUG(logfd, "%s: getattr\n", name);
   return 0;
 }
 
@@ -115,6 +119,8 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
   int fd;
   FileTranscoder f;
   char name[256];
+
+  DEBUG(logfd, "%s: open\n", path);
 
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
@@ -131,7 +137,6 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
   // add the file to the list
   list_add(&(f->list), &(filelist.list));
   
-  DEBUG(logfd, "%s: open\n", f->name);
   return 0;
 }
 
@@ -141,6 +146,8 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
   struct stat st;
   FileTranscoder f=NULL;
   char name[256];
+
+  DEBUG(logfd, "%s: reading %d from %d\n", path, size, offset);
 
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
@@ -166,13 +173,14 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     DEBUG(logfd, "Tried to read from unopen file: %s\n", name);
     return -errno;
   }
-  DEBUG(logfd, "%s: reading %d from %d\n", name, size, offset);
   return f->Read(f, buf, offset, size);
 }
 
 static int mp3fs_statfs(const char *path, struct statfs *stbuf) {
   int res;
   char name[256];
+
+  DEBUG(logfd, "%s: statfs\n", path);
 
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
@@ -189,6 +197,8 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   struct stat st;
   char name[256];
 
+  DEBUG(logfd, "%s: release\n", name);
+  
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
 
@@ -205,7 +215,6 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   if(f!=NULL) {
     list_del(&(f->list));
     talloc_free(f);
-    DEBUG(logfd, "%s: release\n", name);
   }
   return 0;
 }

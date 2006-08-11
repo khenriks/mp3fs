@@ -1,0 +1,27 @@
+Release 0.01 - Initial Release
+This is an initial beta quality release
+
+
+Sun Aug  6 18:33:05 EST 2006  david.collett@gmail.com
+  * add basic usage info
+
+Sun Aug  6 18:14:59 EST 2006  david.collett@gmail.com
+  * add licence to all files
+
+Sun Aug  6 17:39:56 EST 2006  david.collett@gmail.com
+  * autoconf build system
+
+Sun Aug  6 15:40:00 EST 2006  david.collett@gmail.com
+  * rearrange some code
+
+Sun Aug  6 15:17:23 EST 2006  david.collett@gmail.com
+  * mount base dir rather than /
+
+Sun Aug  6 14:47:41 EST 2006  david.collett@gmail.com
+  * better support for passthrough of real files
+
+Sun Aug  6 14:07:13 EST 2006  david.collett@gmail.com
+  * small cleanups
+
+Sun Aug  6 13:13:17 EST 2006  david.collett@gmail.com
+  * initial checkin
