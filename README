@@ -1,7 +1,11 @@
 MP3FS
 =====
 
-:Author: David Collett <daveco@users.sourceforge.net>
+:Author: David Collett
+:Contact: daveco@users.sourceforge.net
+:Web site: http://mp3fs.sourceforge.net/
+
+.. contents::
 
 Introduction
 ------------
@@ -124,6 +128,23 @@ And now you can use the (virtual) mp3 files from the MP3FS mountpoint::
   
   dave@bender:~/mp3fs$ xmms /mnt/mp3/Smashing\ Pumpkins/Pisces\ Iscariot/* &
 
+
+Download
+--------
+
+Releases are made through the sourceforge files page:
+
+  http://sourceforge.net/project/showfiles.php?group_id=174365
+
+Development
+-----------
+
+MP3FS uses darcs for revision control. You can obtain the full repository here::
+
+  darcs get mp3fs.sourceforge.net/mp3fs
+
+Licence
+-------
 
 This program can be distributed under the terms of the GNU GPL.
 See the file COPYING.
