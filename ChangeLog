@@ -1,6 +1,13 @@
 Release 0.01 - Initial Release
 This is an initial beta quality release
+Fri Aug 11 23:28:02 EST 2006  david.collett@gmail.com
+  * small doco updates
 
+Fri Aug 11 23:18:51 EST 2006  david.collett@gmail.com
+  * fix memory leak and update documentation
+
+Fri Aug 11 21:39:50 EST 2006  david.collett@gmail.com
+  * cleanup debug code
 
 Sun Aug  6 18:33:05 EST 2006  david.collett@gmail.com
   * add basic usage info
