@@ -124,10 +124,10 @@ void meta_cb(const FLAC__FileDecoder *decoder,
   switch(metadata->type) {
   case FLAC__METADATA_TYPE_STREAMINFO:
     memcpy(&trans->info, &metadata->data, sizeof(FLAC__StreamMetadata_StreamInfo));
-/*     DEBUG(logfd, "%s: sample_rate: %u\nchannels: %u\nbits/sample: %u\ntotal_samples: %u\n", */
-/* 	  trans->name, */
-/* 	  trans->info.sample_rate, trans->info.channels,  */
-/* 	  trans->info.bits_per_sample, trans->info.total_samples); */
+    DEBUG(logfd, "%s: sample_rate: %u\nchannels: %u\nbits/sample: %u\ntotal_samples: %u\n",
+	  trans->name,
+	  trans->info.sample_rate, trans->info.channels, 
+	  trans->info.bits_per_sample, trans->info.total_samples);
     break;
   case FLAC__METADATA_TYPE_VORBIS_COMMENT:
     id3tag_init(trans->encoder);
@@ -189,6 +189,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   lame_set_num_samples(self->encoder, self->info.total_samples);
   lame_set_in_samplerate(self->encoder, self->info.sample_rate);
   lame_set_num_channels(self->encoder, self->info.channels);
+  DEBUG(logfd, "Sample Rate: %d\n", self->info.sample_rate);
   self->framesize = 144*bitrate*1000/self->info.sample_rate;
   self->numframes = (int)((self->info.total_samples + 575.5)/1152.0);//+1;
   
@@ -210,17 +211,23 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
 }
 
 int FileTranscoder_Finish(FileTranscoder self) {
-  int len;
+  int len=0;
+
   // flac cleanup
-  FLAC__file_decoder_finish(self->decoder);  
-  FLAC__file_decoder_delete(self->decoder);
+  if(self->decoder != NULL) {
+    FLAC__file_decoder_finish(self->decoder);  
+    FLAC__file_decoder_delete(self->decoder);
+    self->decoder = NULL;
+  }
   
   // lame cleanup
-  len = lame_encode_flush(self->encoder, self->mp3buf, BUFSIZE);
-  if(len>0)
-    CALL(self->buffer, write, (char *)self->mp3buf, len);
-  
-  lame_close(self->encoder);
+  if(self->encoder != NULL) {
+    len = lame_encode_flush(self->encoder, self->mp3buf, BUFSIZE);
+    if(len>0)
+      CALL(self->buffer, write, (char *)self->mp3buf, len);
+    lame_close(self->encoder);
+    self->encoder = NULL;
+  }
   
   return len;
 }

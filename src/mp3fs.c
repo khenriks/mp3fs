@@ -197,7 +197,7 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   struct stat st;
   char name[256];
 
-  DEBUG(logfd, "%s: release\n", name);
+  DEBUG(logfd, "%s: release\n", path);
   
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
@@ -214,6 +214,7 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   
   if(f!=NULL) {
     list_del(&(f->list));
+    f->Finish(f);
     talloc_free(f);
   }
   return 0;
