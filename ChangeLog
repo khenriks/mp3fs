@@ -1,5 +1,15 @@
-Release 0.01 - Initial Release
-This is an initial beta quality release
+Sun Aug 20 11:56:18 EST 2006  david.collett@gmail.com
+  * add --enable-debug to configure, debug is now off by default
+
+Sun Aug 20 11:43:47 EST 2006  david.collett@gmail.com
+  * increase error checking
+
+Sun Aug 20 11:43:10 EST 2006  david.collett@gmail.com
+  * small README update
+
+Fri Aug 11 23:31:22 EST 2006  david.collett@gmail.com
+  * update ChangeLog. This is version 0.01
+
 Fri Aug 11 23:28:02 EST 2006  david.collett@gmail.com
   * small doco updates
 

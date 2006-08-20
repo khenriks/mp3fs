@@ -1,7 +1,7 @@
 # basics
 AC_INIT(src/mp3fs.c)
 AC_CONFIG_AUX_DIR(config)
-AM_INIT_AUTOMAKE(mp3fs, 0.01)
+AM_INIT_AUTOMAKE(mp3fs, 0.02)
 
 # check standard stuff
 AC_PROG_LIBTOOL
