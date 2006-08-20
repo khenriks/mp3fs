@@ -141,7 +141,21 @@ Development
 
 MP3FS uses darcs for revision control. You can obtain the full repository here::
 
-  darcs get mp3fs.sourceforge.net/mp3fs
+  darcs get http://mp3fs.sourceforge.net/mp3fs
+
+MP3FS is written in C and requires the following libraries:
+
+- fuse (libfuse-dev)
+- flac (libflac-dev)
+- lame (liblame-dev)
+
+
+Additionally, MP3FS includes GPL'd code from a number of other projects:
+
+- A linked list implementation from the linux kernel (list.h)
+- Talloc, A heirachical memory allocator from samba4.
+- A class implementation in C from pyflag (pyflag.sourceforge.net)
+
 
 Licence
 -------
