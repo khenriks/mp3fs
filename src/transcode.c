@@ -164,6 +164,11 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   
   // create and initialise decoder
   self->decoder = FLAC__file_decoder_new();
+  if(self->decoder == NULL) {
+      talloc_free(self);
+      return NULL;
+  }
+
   FLAC__file_decoder_set_filename(self->decoder, self->orig_name);
   FLAC__file_decoder_set_client_data(self->decoder, (void *)self);
   FLAC__file_decoder_set_write_callback(self->decoder, &write_cb);
@@ -171,7 +176,11 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   FLAC__file_decoder_set_error_callback(self->decoder, &error_cb);
   FLAC__file_decoder_set_metadata_respond(self->decoder, 
 					  FLAC__METADATA_TYPE_VORBIS_COMMENT);
-  FLAC__file_decoder_init(self->decoder);
+
+  if(FLAC__file_decoder_init(self->decoder) != FLAC__FILE_DECODER_OK) {
+      talloc_free(self);
+      return NULL;
+  }
   
   // process a single block, the first block is always
   // STREAMINFO. This will fill in the info structure which is
@@ -180,6 +189,10 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   
   // create encoder
   self->encoder = lame_init();
+  if(self->encoder == NULL) {
+      talloc_free(self);
+      return NULL;
+  }
   lame_set_quality(self->encoder, MP3_QUALITY);
   lame_set_brate(self->encoder, bitrate);
   lame_set_bWriteVbrTag(self->encoder, 0);
@@ -198,7 +211,10 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   FLAC__file_decoder_process_until_end_of_metadata(self->decoder);
   
   // now we can initialise the encoder
-  lame_init_params(self->encoder);
+  if(lame_init_params(self->encoder) == -1) {
+      talloc_free(self);
+      return NULL;
+  }
   
   // Once the encoder is initialised, we can query it about how much
   // data it has in its buffer, this is exactly the size of our ID3v2
@@ -206,7 +222,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   // determine the final filesize with 100% accuracy (I think)
   self->totalsize = calcsize(self->framesize, self->numframes, self->info.sample_rate)
     + lame_get_size_mp3buffer(self->encoder);
-  
+
   return self;
 }
 

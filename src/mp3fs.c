@@ -105,6 +105,9 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     return 0;
   
   f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)name);
+  if(f == NULL)
+      return -1;
+
   if(lstat(f->orig_name, stbuf) == -1)
     return -errno;
   
@@ -127,12 +130,20 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
 
   // If this is a real file, do nothing
   fd = open(name, fi->flags);
+
+  // file does exist, but cant be opened, pass the error up
+  if(fd == -1 && errno != ENOENT)
+      return -errno;
+
+  // file is real and can be opened, return success
   if(fd != -1) {
     close(fd);
     return 0;
   }
   
   f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)name);
+  if(f==NULL)
+      return -1;
   
   // add the file to the list
   list_add(&(f->list), &(filelist.list));
@@ -162,6 +173,10 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     close(fd);
     return res;
   }
+
+  // file does exist, but cant be opened, pass the error up
+  if(fd == -1 && errno != ENOENT)
+      return -errno;
   
   list_for_each_entry(f, &(filelist.list), list) {
     if(strcmp(f->name, name) == 0)
@@ -202,10 +217,6 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
 
-  // pass-through
-  if(lstat(name, &st) == 0)
-    return 0;
-  
   list_for_each_entry(f, &(filelist.list), list) {
     if(strcmp(f->name, name) == 0)
       break;
