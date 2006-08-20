@@ -15,7 +15,7 @@ AC_CHECK_HEADER(FLAC/file_decoder.h,,AC_MSG_ERROR([You Must install libflac-dev 
 PKG_CHECK_MODULES(fuse, fuse)
 
 # defines and output
-AC_DEFINE([__DEBUG__])
+AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug], [Enable debug output]), AC_DEFINE([__DEBUG__], [], [Debugging enabled]))
 
 # Large file support
 AC_SYS_LARGEFILE
