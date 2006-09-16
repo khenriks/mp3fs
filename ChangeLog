@@ -1,3 +1,12 @@
+Sat Sep 16 18:09:54 EST 2006  david.collett@gmail.com
+  * fix bug in last patch
+
+Sat Sep 16 17:48:07 EST 2006  david.collett@gmail.com
+  * fix crash on closing real files
+
+Sun Aug 20 20:42:43 EST 2006  david.collett@gmail.com
+  * update changelog, tag 0.02
+
 Sun Aug 20 11:56:18 EST 2006  david.collett@gmail.com
   * add --enable-debug to configure, debug is now off by default
 
