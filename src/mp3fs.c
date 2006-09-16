@@ -222,6 +222,7 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
       list_del(&(f->list));
       f->Finish(f);
       talloc_free(f);
+      break;
     }
   }
   
