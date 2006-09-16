@@ -208,7 +208,7 @@ static int mp3fs_statfs(const char *path, struct statfs *stbuf) {
 }
 
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
-  FileTranscoder f=NULL;
+  FileTranscoder f,t;
   struct stat st;
   char name[256];
 
@@ -217,17 +217,14 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
 
-  list_for_each_entry(f, &(filelist.list), list) {
-    if(strcmp(f->name, name) == 0)
-      break;
-    f=NULL;
+  list_for_each_entry_safe(f, t, &(filelist.list), list) {
+    if(strcmp(f->name, name) == 0) {
+      list_del(&(f->list));
+      f->Finish(f);
+      talloc_free(f);
+    }
   }
   
-  if(f!=NULL) {
-    list_del(&(f->list));
-    f->Finish(f);
-    talloc_free(f);
-  }
   return 0;
 }
 
