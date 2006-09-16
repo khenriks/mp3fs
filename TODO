@@ -1,4 +1,0 @@
-- add licence info to all files
-- support mount options (path, bitrate)
-- make release
-- change logfile to log.txt in fs pointing to an internal buffer
