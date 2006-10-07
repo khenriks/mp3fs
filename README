@@ -67,7 +67,7 @@ mount your filesystem like this:
 
 e.g.::
 
-  mp3fs /mnt/music 256 /mnt/mp3 -o allow_other,ro
+  mp3fs /mnt/music 128 /mnt/mp3 -o allow_other,ro
 
 Here are the original files::
 
