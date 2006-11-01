@@ -9,7 +9,8 @@ AC_PROG_CC
 
 # check headers
 AC_CHECK_HEADER(lame/lame.h,,AC_MSG_ERROR([You Must install liblame-dev to build mp3fs]))
-AC_CHECK_HEADER(FLAC/file_decoder.h,,AC_MSG_ERROR([You Must install libflac-dev to build mp3fs]))
+AC_CHECK_HEADER(FLAC/stream_decoder.h,,AC_MSG_ERROR([You Must install libflac-dev to build mp3fs]))
+AC_CHECK_HEADER(ogg/ogg.h,,AC_MSG_ERROR([You Must install libogg-dev to build mp3fs]))
 
 # check packages which use pkg-config
 PKG_CHECK_MODULES(fuse, fuse)

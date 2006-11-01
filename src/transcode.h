@@ -18,8 +18,19 @@
   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+#include <FLAC/export.h>
+#if !defined(FLAC_API_VERSION_CURRENT) || FLAC_API_VERSION_CURRENT < 8
+#define LEGACY_FLAC
+#else
+#undef LEGACY_FLAC
+#endif
+
 #include <FLAC/metadata.h>
+#ifdef LEGACY_FLAC
 #include <FLAC/file_decoder.h>
+#else
+#include <FLAC/stream_decoder.h>
+#endif
 #include <lame/lame.h>
 
 #include "list.h"
@@ -57,7 +68,11 @@ CLASS(FileTranscoder, Object)
   char *orig_name;
 
   lame_global_flags *encoder;
+#ifdef LEGACY_FLAC
   FLAC__FileDecoder *decoder;
+#else
+  FLAC__StreamDecoder *decoder;
+#endif
   FLAC__StreamMetadata_StreamInfo info;
   short int lbuf[FLAC_BLOCKSIZE];
   short int rbuf[FLAC_BLOCKSIZE];

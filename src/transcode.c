@@ -27,7 +27,11 @@
 #include <sys/statfs.h>
 
 #include <FLAC/metadata.h>
+#ifdef LEGACY_FLAC
 #include <FLAC/file_decoder.h>
+#else
+#include <FLAC/stream_decoder.h>
+#endif
 #include <lame/lame.h>
 
 #include "transcode.h"
@@ -80,18 +84,33 @@ void lame_error(const char *fmt, va_list list) {
 }
 
 // flac callback for errors
-void error_cb(const FLAC__FileDecoder *decoder,
+#ifdef LEGACY_FLAC
+static void error_cb(const FLAC__FileDecoder *decoder,
 	      FLAC__StreamDecoderErrorStatus status,
-	      void *client_data) {
+	      void *client_data)
+#else
+static void error_cb(const FLAC__StreamDecoder *decoder,
+	      FLAC__StreamDecoderErrorStatus status,
+	      void *client_data)
+#endif
+{
   DEBUG(logfd, "FLAC error: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
   return;
 }
 
 // callbacks for the decoder
-FLAC__StreamDecoderWriteStatus write_cb(const FLAC__FileDecoder *decoder, 
+#ifdef LEGACY_FLAC
+static FLAC__StreamDecoderWriteStatus write_cb(const FLAC__FileDecoder *decoder, 
 					const FLAC__Frame *frame,
 					const FLAC__int32 *const buffer[],
-					void *client_data) {
+					void *client_data)
+#else
+static FLAC__StreamDecoderWriteStatus write_cb(const FLAC__StreamDecoder *decoder, 
+					const FLAC__Frame *frame,
+					const FLAC__int32 *const buffer[],
+					void *client_data)
+#endif
+{
   int len, i, count;
   FileTranscoder trans = (FileTranscoder)client_data;
   
@@ -115,9 +134,16 @@ FLAC__StreamDecoderWriteStatus write_cb(const FLAC__FileDecoder *decoder,
   return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;    
 }
 
-void meta_cb(const FLAC__FileDecoder *decoder,
+#ifdef LEGACY_FLAC
+static void meta_cb(const FLAC__FileDecoder *decoder,
 	     const FLAC__StreamMetadata *metadata,
-	     void *client_data) {
+	     void *client_data)
+#else
+static void meta_cb(const FLAC__StreamDecoder *decoder,
+	     const FLAC__StreamMetadata *metadata,
+	     void *client_data)
+#endif
+{
   
   FileTranscoder trans = (FileTranscoder)client_data;
   
@@ -163,12 +189,17 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   }
   
   // create and initialise decoder
+#ifdef LEGACY_FLAC
   self->decoder = FLAC__file_decoder_new();
+#else
+  self->decoder = FLAC__stream_decoder_new();
+#endif
   if(self->decoder == NULL) {
       talloc_free(self);
       return NULL;
   }
 
+#ifdef LEGACY_FLAC
   FLAC__file_decoder_set_filename(self->decoder, self->orig_name);
   FLAC__file_decoder_set_client_data(self->decoder, (void *)self);
   FLAC__file_decoder_set_write_callback(self->decoder, &write_cb);
@@ -181,11 +212,24 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
       talloc_free(self);
       return NULL;
   }
+#else
+  FLAC__stream_decoder_set_metadata_respond(self->decoder, 
+					    FLAC__METADATA_TYPE_VORBIS_COMMENT);
+
+  if(FLAC__stream_decoder_init_file(self->decoder, self->orig_name, &write_cb, &meta_cb, &error_cb, (void *)self) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
+      talloc_free(self);
+      return NULL;
+  }
+#endif
   
   // process a single block, the first block is always
   // STREAMINFO. This will fill in the info structure which is
   // required to initialise the encoder
+#ifdef LEGACY_FLAC
   FLAC__file_decoder_process_single(self->decoder);
+#else
+  FLAC__stream_decoder_process_single(self->decoder);
+#endif
   
   // create encoder
   self->encoder = lame_init();
@@ -208,7 +252,11 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   
   // Now process the rest of the metadata. This will fill in the
   // id3tags in the lame encoder.
+#ifdef LEGACY_FLAC
   FLAC__file_decoder_process_until_end_of_metadata(self->decoder);
+#else
+  FLAC__stream_decoder_process_until_end_of_metadata(self->decoder);
+#endif
   
   // now we can initialise the encoder
   if(lame_init_params(self->encoder) == -1) {
@@ -231,8 +279,13 @@ int FileTranscoder_Finish(FileTranscoder self) {
 
   // flac cleanup
   if(self->decoder != NULL) {
+#ifdef LEGACY_FLAC
     FLAC__file_decoder_finish(self->decoder);  
     FLAC__file_decoder_delete(self->decoder);
+#else
+    FLAC__stream_decoder_finish(self->decoder);  
+    FLAC__stream_decoder_delete(self->decoder);
+#endif
     self->decoder = NULL;
   }
   
@@ -268,9 +321,16 @@ int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
   
   // transcode up to what we need
   while(self->buffer->size < offset + len) {
+#ifdef LEGACY_FLAC
     if(FLAC__file_decoder_get_state(self->decoder)==0) {
       FLAC__file_decoder_process_single(self->decoder);
-    } else {
+    }
+#else
+    if(FLAC__stream_decoder_get_state(self->decoder) < FLAC__STREAM_DECODER_END_OF_STREAM) {
+      FLAC__stream_decoder_process_single(self->decoder);
+    }
+#endif
+    else {
       self->Finish(self);
       break;
     }
