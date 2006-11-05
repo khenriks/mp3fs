@@ -162,6 +162,8 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
     id3tag_set_title(trans->encoder, talloc_strdup(trans, get_tag(metadata, "title")));
     id3tag_set_album(trans->encoder, talloc_strdup(trans, get_tag(metadata, "album")));
     id3tag_set_artist(trans->encoder, talloc_strdup(trans, get_tag(metadata, "artist")));
+    id3tag_set_genre(trans->encoder, talloc_strdup(trans, get_tag(metadata, "genre")));
+    id3tag_set_year(trans->encoder, talloc_strdup(trans, get_tag(metadata, "date")));
     id3tag_set_track(trans->encoder, talloc_strdup(trans, get_tag(metadata, "tracknumber")));
     break;
   default:
