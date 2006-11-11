@@ -33,6 +33,7 @@
 #include <FLAC/stream_decoder.h>
 #endif
 #include <lame/lame.h>
+#include <id3tag.h>
 
 #include "transcode.h"
 #include "talloc.h"
@@ -41,6 +42,24 @@
 /*******************************************************************
  CALLBACKS and HELPERS for LAME and FLAC
 *******************************************************************/
+
+/* build an id3 frame */
+struct id3_frame *make_frame(const char *name, const char *data) {
+  struct id3_frame *frame;
+  id3_latin1_t     *latin1;
+  id3_ucs4_t       *ucs4;
+
+  frame = id3_frame_new(name);
+
+  latin1 = (id3_latin1_t *)data;
+  ucs4 = malloc((id3_latin1_length(latin1) + 1) * sizeof(*ucs4));
+  if (ucs4) {
+    id3_latin1_decode(latin1, ucs4);
+    id3_field_setstrings(&frame->fields[1], 1, &ucs4);
+    free(ucs4);
+  }
+  return frame;
+}
 
 /* return a vorbis comment tag */
 const char *get_tag(const FLAC__StreamMetadata *metadata, char *name) {
@@ -51,6 +70,13 @@ const char *get_tag(const FLAC__StreamMetadata *metadata, char *name) {
   if(idx<0) return NULL;
   
   return (const char *) (comment->comments[idx].entry + strlen(name) + 1) ;
+}
+
+void set_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3tag, 
+             const char *id3name, const char *vcname) {
+  char *str = get_tag(metadata, vcname);
+  if(str)
+    id3_tag_attachframe(id3tag, make_frame(id3name, str));
 }
 
 /* calculate the size of the mp3 data */
@@ -144,27 +170,50 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
 	     void *client_data)
 #endif
 {
-  
+  char *tmpstr;
   FileTranscoder trans = (FileTranscoder)client_data;
   
   switch(metadata->type) {
   case FLAC__METADATA_TYPE_STREAMINFO:
     memcpy(&trans->info, &metadata->data, sizeof(FLAC__StreamMetadata_StreamInfo));
-    DEBUG(logfd, "%s: sample_rate: %u\nchannels: %u\nbits/sample: %u\ntotal_samples: %u\n",
-	  trans->name,
-	  trans->info.sample_rate, trans->info.channels, 
-	  trans->info.bits_per_sample, trans->info.total_samples);
+
+    /* set the length in the id3tag */
+    tmpstr = talloc_asprintf(trans, "%d", trans->info.total_samples/trans->info.sample_rate*1000);
+    id3_tag_attachframe(trans->id3tag, make_frame("TLEN", tmpstr));
+    talloc_free(tmpstr);
+
+//    DEBUG(logfd, "%s: sample_rate: %u\nchannels: %u\nbits/sample: %u\ntotal_samples: %u\n",
+//	  trans->name,
+//	  trans->info.sample_rate, trans->info.channels, 
+//	  trans->info.bits_per_sample, trans->info.total_samples);
+
     break;
   case FLAC__METADATA_TYPE_VORBIS_COMMENT:
-    id3tag_init(trans->encoder);
-    id3tag_add_v2(trans->encoder);
-    id3tag_v2_only(trans->encoder);
-    id3tag_set_title(trans->encoder, talloc_strdup(trans, get_tag(metadata, "title")));
-    id3tag_set_album(trans->encoder, talloc_strdup(trans, get_tag(metadata, "album")));
-    id3tag_set_artist(trans->encoder, talloc_strdup(trans, get_tag(metadata, "artist")));
-    id3tag_set_genre(trans->encoder, talloc_strdup(trans, get_tag(metadata, "genre")));
-    id3tag_set_year(trans->encoder, talloc_strdup(trans, get_tag(metadata, "date")));
-    id3tag_set_track(trans->encoder, talloc_strdup(trans, get_tag(metadata, "tracknumber")));
+
+    /* set the common stuff */
+    set_tag(metadata, trans->id3tag, ID3_FRAME_TITLE, "TITLE");
+    set_tag(metadata, trans->id3tag, ID3_FRAME_ARTIST, "ARTIST");
+    set_tag(metadata, trans->id3tag, ID3_FRAME_ALBUM, "ALBUM");
+    set_tag(metadata, trans->id3tag, ID3_FRAME_GENRE, "GENRE");
+    set_tag(metadata, trans->id3tag, ID3_FRAME_YEAR, "DATE");
+
+    /* less common, but often present */
+    set_tag(metadata, trans->id3tag, "COMM", "DESCRIPTION");
+    set_tag(metadata, trans->id3tag, "TCOM", "COMPOSER");
+    set_tag(metadata, trans->id3tag, "TOPE", "PERFORMER");
+    set_tag(metadata, trans->id3tag, "TCOP", "COPYRIGHT");
+    set_tag(metadata, trans->id3tag, "WXXX", "LICENSE");
+    set_tag(metadata, trans->id3tag, "TENC", "ENCODED_BY");
+
+    /* set the track/total */
+    if(get_tag(metadata, "TRACKNUMBER")) {
+      tmpstr = talloc_asprintf(trans, "%s", get_tag(metadata, "TRACKNUMBER"));
+      if(get_tag(metadata, "TRACKTOTAL"))
+        tmpstr = talloc_asprintf_append(tmpstr, "/%s", get_tag(metadata, "TRACKTOTAL"));
+      id3_tag_attachframe(trans->id3tag, make_frame(ID3_FRAME_TRACK, tmpstr));
+      talloc_free(tmpstr);
+    }
+
     break;
   default:
     break;
@@ -178,6 +227,9 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
 FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   self->buffer = CONSTRUCT(StringIO, StringIO, Con, self);
   self->name = talloc_strdup(self, filename);
+
+  self->id3tag = id3_tag_new();
+  id3_tag_attachframe(self->id3tag, make_frame("TSSE", "MP3FS"));
 
   // set the original (flac) filename
   self->orig_name = talloc_size(self, strlen(self->name) + 2);
@@ -218,7 +270,9 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   FLAC__stream_decoder_set_metadata_respond(self->decoder, 
 					    FLAC__METADATA_TYPE_VORBIS_COMMENT);
 
-  if(FLAC__stream_decoder_init_file(self->decoder, self->orig_name, &write_cb, &meta_cb, &error_cb, (void *)self) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
+  if(FLAC__stream_decoder_init_file(self->decoder, self->orig_name, 
+                                    &write_cb, &meta_cb, &error_cb, 
+                                    (void *)self) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
       talloc_free(self);
       return NULL;
   }
@@ -248,12 +302,12 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   lame_set_num_samples(self->encoder, self->info.total_samples);
   lame_set_in_samplerate(self->encoder, self->info.sample_rate);
   lame_set_num_channels(self->encoder, self->info.channels);
-  DEBUG(logfd, "Sample Rate: %d\n", self->info.sample_rate);
+  //DEBUG(logfd, "Sample Rate: %d\n", self->info.sample_rate);
   self->framesize = 144*bitrate*1000/self->info.sample_rate;
   self->numframes = (int)((self->info.total_samples + 575.5)/1152.0);//+1;
   
   // Now process the rest of the metadata. This will fill in the
-  // id3tags in the lame encoder.
+  // id3tag.
 #ifdef LEGACY_FLAC
   FLAC__file_decoder_process_until_end_of_metadata(self->decoder);
 #else
@@ -266,19 +320,30 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
       return NULL;
   }
   
-  // Once the encoder is initialised, we can query it about how much
-  // data it has in its buffer, this is exactly the size of our ID3v2
-  // tag as we have not yet decoded any audio. We can use this size to
-  // determine the final filesize with 100% accuracy (I think)
-  self->totalsize = calcsize(self->framesize, self->numframes, self->info.sample_rate)
-    + lame_get_size_mp3buffer(self->encoder);
+  // Now we have to render our id3tag so that we know how big the total file
+  // is. We write the id3v3 tag directly into the front of the stringio. The
+  // id3v1 tag is written into a fixed 128 byte buffer (it is a fixed size)
+  
+  // grow buffer and write v2 tag
+  CALL(self->buffer, seek, id3_tag_render(self->id3tag, 0), SEEK_SET);
+  id3_tag_render(self->id3tag, (id3_byte_t *)self->buffer->data);
+
+  // store v1 tag
+  id3_tag_options(self->id3tag, ID3_TAG_OPTION_ID3V1, ~0);
+  id3_tag_render(self->id3tag, (id3_byte_t *)self->id3v1tag);
+
+  // id3v2 + lame stuff + mp3 data + id3v1
+  self->totalsize = self->buffer->size
+                    + lame_get_size_mp3buffer(self->encoder)
+                    + calcsize(self->framesize, self->numframes, self->info.sample_rate)
+                    + 128;
 
   return self;
 }
 
 int FileTranscoder_Finish(FileTranscoder self) {
   int len=0;
-
+  
   // flac cleanup
   if(self->decoder != NULL) {
 #ifdef LEGACY_FLAC
@@ -299,25 +364,37 @@ int FileTranscoder_Finish(FileTranscoder self) {
     lame_close(self->encoder);
     self->encoder = NULL;
   }
+
+  // write the id3v1 tag
+  CALL(self->buffer, write, self->id3v1tag, 128);
   
-  return len;
+  return len + 128;
 }
 
 int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
-  // is this the last block?
-  if(offset+len > self->totalsize) {
-    len = self->totalsize - offset;
-  }
+  // EDIT: dont bother with this check Just allow the app to keep reading till
+  // our encoder runs out in case our estimate was wrong or we are using VBR
+  // etc.
+  // EDIT2: that doesnt help anyway. apps only read till they hit totalsize!
+  // Even if I set totalsize way too big and return 0 when I hit the end, I
+  // keep getting called until totalsize is reached. It seems to just return
+  // nulls to the caller. This sucks!
+  // 
+  //if(offset+len > self->totalsize) {
+  //  len = self->totalsize - offset;
+  //}
   
+  if(self->decoder == NULL || self->encoder == NULL)
+    return 0;
+
   // this is an optimisation to speed up the case where applications
   // read the last block first looking for an id3v1 tag (last 128
-  // bytes). If we detect this case, just give back zeros. This hack
-  // could very well cause file corruption if the zeros remain in
-  // kernel cache when the app finally comes to read the audio
-  // data. In practice this doesn't seem to happen.
+  // bytes). If we detect this case, we give back the id3v1 tag prepended
+  // with zeros to fill the block
   if(offset > self->buffer->size &&
      offset + len > (self->totalsize - 128)) {
     memset(buff, 0, len);
+    memcpy((buff+len)-128, self->id3v1tag, 128);
     return len;
   }
   
@@ -338,12 +415,18 @@ int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
     }
   }
   
+  // truncate if we didnt actually get len
+  if(self->buffer->size < offset+len) {
+    len = self->buffer->size - offset;
+  }
+  
   memcpy(buff, self->buffer->data+offset, len);
   return len;
 }
 
 VIRTUAL(FileTranscoder, Object)
   VATTR(readptr) = 0;
+  VATTR(id3tag) = NULL;
   VMETHOD(Con) = FileTranscoder_Con;
   VMETHOD(Read) = FileTranscoder_Read;
   VMETHOD(Finish) = FileTranscoder_Finish;

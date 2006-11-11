@@ -32,6 +32,7 @@
 #include <FLAC/stream_decoder.h>
 #endif
 #include <lame/lame.h>
+#include <id3tag.h>
 
 #include "list.h"
 #include "class.h"
@@ -66,6 +67,8 @@ CLASS(FileTranscoder, Object)
   int totalsize;
   char *name;
   char *orig_name;
+  struct id3_tag *id3tag;
+  char id3v1tag[128];
 
   lame_global_flags *encoder;
 #ifdef LEGACY_FLAC

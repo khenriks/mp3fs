@@ -14,6 +14,7 @@ AC_CHECK_HEADER(ogg/ogg.h,,AC_MSG_ERROR([You Must install libogg-dev to build mp
 
 # check packages which use pkg-config
 PKG_CHECK_MODULES(fuse, fuse)
+PKG_CHECK_MODULES(id3tag, id3tag)
 
 # defines and output
 AC_ARG_ENABLE(debug, AC_HELP_STRING([--enable-debug], [Enable debug output]), AC_DEFINE([__DEBUG__], [], [Debugging enabled]))
