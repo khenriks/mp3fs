@@ -62,7 +62,7 @@ struct id3_frame *make_frame(const char *name, const char *data) {
 }
 
 /* return a vorbis comment tag */
-const char *get_tag(const FLAC__StreamMetadata *metadata, char *name) {
+const char *get_tag(const FLAC__StreamMetadata *metadata, const char *name) {
   int idx;
   FLAC__StreamMetadata_VorbisComment *comment;
   comment = (FLAC__StreamMetadata_VorbisComment *)&metadata->data;
@@ -74,7 +74,7 @@ const char *get_tag(const FLAC__StreamMetadata *metadata, char *name) {
 
 void set_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3tag, 
              const char *id3name, const char *vcname) {
-  char *str = get_tag(metadata, vcname);
+  const char *str = get_tag(metadata, vcname);
   if(str)
     id3_tag_attachframe(id3tag, make_frame(id3name, str));
 }
@@ -372,21 +372,14 @@ int FileTranscoder_Finish(FileTranscoder self) {
 }
 
 int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
-  // EDIT: dont bother with this check Just allow the app to keep reading till
-  // our encoder runs out in case our estimate was wrong or we are using VBR
-  // etc.
-  // EDIT2: that doesnt help anyway. apps only read till they hit totalsize!
-  // Even if I set totalsize way too big and return 0 when I hit the end, I
-  // keep getting called until totalsize is reached. It seems to just return
-  // nulls to the caller. This sucks!
-  // 
-  //if(offset+len > self->totalsize) {
-  //  len = self->totalsize - offset;
-  //}
-  
+
   if(self->decoder == NULL || self->encoder == NULL)
     return 0;
 
+  if(offset+len > self->totalsize) {
+    len = self->totalsize - offset;
+  }
+  
   // this is an optimisation to speed up the case where applications
   // read the last block first looking for an id3v1 tag (last 128
   // bytes). If we detect this case, we give back the id3v1 tag prepended
@@ -394,7 +387,7 @@ int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
   if(offset > self->buffer->size &&
      offset + len > (self->totalsize - 128)) {
     memset(buff, 0, len);
-    memcpy((buff+len)-128, self->id3v1tag, 128);
+    memcpy(buff+len-128, self->id3v1tag, 128);
     return len;
   }
   
