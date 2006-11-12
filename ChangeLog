@@ -1,3 +1,16 @@
+Sun Nov 12 11:22:18 EST 2006  david.collett@gmail.com
+  * update README
+
+Sun Nov 12 00:43:48 EST 2006  david.collett@gmail.com
+  * switch to libid3tag for tagging
+  Now supports v2.4 and v1.1 id3 tags but no longer supports v2.3 which may
+  cause some apps which dont understand 2.4 to use 1.1 instead.  Support
+  translation of maby more tags now.
+  
+
+Sun Nov  5 13:32:19 EST 2006  david.collett@gmail.com
+  * bump version, update ChangeLog
+
 Sun Nov  5 13:29:39 EST 2006  david.collett@gmail.com
   * add year and genre id3tags
 
