@@ -37,7 +37,6 @@
 
 #include "transcode.h"
 #include "talloc.h"
-#include "list.h"
 
 /*******************************************************************
  CALLBACKS and HELPERS for LAME and FLAC

@@ -34,7 +34,6 @@
 #include <lame/lame.h>
 #include <id3tag.h>
 
-#include "list.h"
 #include "class.h"
 #include "stringio.h"
 
@@ -43,7 +42,6 @@
 #define BUFSIZE 2 * FLAC_BLOCKSIZE
 
 // a list of currently opened files
-struct FileTranscoder filelist;
 FILE *logfd;
 const char *basepath;
 int bitrate;
@@ -85,6 +83,4 @@ CLASS(FileTranscoder, Object)
   int METHOD(FileTranscoder, Read, char *buff, int offset, int len);
   int METHOD(FileTranscoder, Finish);
 
-  // allow this object to be part of a list
-  struct list_head list;
 END_CLASS

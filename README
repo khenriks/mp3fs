@@ -146,7 +146,6 @@ MP3FS is written in C and requires the following libraries:
 
 Additionally, MP3FS includes GPL'd code from a number of other projects:
 
-- A linked list implementation from the linux kernel (list.h)
 - Talloc, A heirachical memory allocator from samba4.
 - A class implementation in C from pyflag (pyflag.sourceforge.net)
 

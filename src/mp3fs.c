@@ -145,8 +145,8 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
   if(f==NULL)
       return -1;
   
-  // add the file to the list
-  list_add(&(f->list), &(filelist.list));
+  // store ourselves in the fuse_file_info structure
+  fi->fh = (unsigned long) f;
   
   return 0;
 }
@@ -178,13 +178,10 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
   if(fd == -1 && errno != ENOENT)
       return -errno;
   
-  list_for_each_entry(f, &(filelist.list), list) {
-    if(strcmp(f->name, name) == 0)
-      break;
-    f=NULL;
-  }
-  
-  if(f==NULL) {
+  // retrieve transcoder
+  f = (FileTranscoder) fi->fh;
+
+  if(f == NULL) {
     DEBUG(logfd, "Tried to read from unopen file: %s\n", name);
     return -errno;
   }
@@ -208,7 +205,7 @@ static int mp3fs_statfs(const char *path, struct statfs *stbuf) {
 }
 
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
-  FileTranscoder f,t;
+  FileTranscoder f;
   struct stat st;
   char name[256];
 
@@ -217,14 +214,9 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
 
-  list_for_each_entry_safe(f, t, &(filelist.list), list) {
-    if(strcmp(f->name, name) == 0) {
-      list_del(&(f->list));
-      f->Finish(f);
-      talloc_free(f);
-      break;
-    }
-  }
+  f = (FileTranscoder) fi->fh;
+  f->Finish(f);
+  talloc_free(f);
   
   return 0;
 }
@@ -261,9 +253,6 @@ int main(int argc, char *argv[]) {
 #ifdef __DEBUG__
   logfd = fopen("/tmp/mp3fs.log", "w");
 #endif
-  
-  // initialise the open list
-  INIT_LIST_HEAD(&(filelist.list));
   
   // start FUSE
   fuse_main(argc-2, argv+2, &mp3fs_ops);
