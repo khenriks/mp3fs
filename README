@@ -25,23 +25,7 @@ How it Works
 
 When a file is opened, the decoder and encoder are initialised and
 the file metadata is read. At this time the final filesize can be
-determined as we only support constant bitrate mp3s.
-
-ID3v2 tags are created from the vorbis comments in the flac file.
-They are located at the start of the file. As such, an application 
-scanning a directory to read tags should not cause too much of a 
-performance hit as the actual encoder does not need to be invoked 
-(depending on how much data the read asks for).
-
-  A special exception to this is when an application tries to read the
-  very last block first. Many applications do this to look for an
-  id3v1 tag (stored in the last 128 bytes of the file). When this is
-  detected, the filesystem simply return zeros (I dont support id3v1
-  tags). This *dramatically* speeds up applications, however it could
-  potentially lead to corrupt mp3 files if the zeros are still in
-  kernel cache when the application comes back to read the actual
-  audio sequentially. In my experimentation this has not happened, I
-  always get another read for the final block.
+determined as we only support constant bitrate (CBR) mp3.
 
 As the file is read, it is transcoded into an internal per-file
 buffer. This buffer continues to grow while the file is being read
@@ -53,6 +37,15 @@ seek point (if not already done). This is not usually a problem
 since most programs will read a file from start to finish. Future
 enhancements may provide true random seeking.
 
+ID3 version 2.4 and 1.1 tags are created from the vorbis comments in
+the flac file. They are located at the start and end of the file
+respectively.
+
+A special optimisation is made so that applicatins which scan for
+id3v1 tags do not have to wait for the whole file to be transcoded
+before reading the tag. This *dramatically* speeds up such
+applications.
+    
 For build instructions see INSTALL
 
 Usage
@@ -148,6 +141,7 @@ MP3FS is written in C and requires the following libraries:
 - fuse (libfuse-dev)
 - flac (libflac-dev)
 - lame (liblame-dev)
+- libid3tag (libid3tag0-dev)
 
 
 Additionally, MP3FS includes GPL'd code from a number of other projects:
