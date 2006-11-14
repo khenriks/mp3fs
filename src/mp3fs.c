@@ -34,8 +34,6 @@
 
 #include "transcode.h"
 #include "talloc.h"
-#include "list.h"
-
 
 static int mp3fs_readlink(const char *path, char *buf, size_t size) {
   int res;
