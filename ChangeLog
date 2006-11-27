@@ -1,3 +1,18 @@
+Mon Nov 27 17:53:08 EST 2006  david.collett@gmail.com
+  * fix a segfault accessing non-flac files
+
+Tue Nov 14 20:54:21 EST 2006  david.collett@gmail.com
+  * forgot a few things removing list.h
+
+Sun Nov 12 23:34:17 EST 2006  david.collett@gmail.com
+  * store transcoder in fuse_file_info, fix threading issue
+
+Sun Nov 12 18:42:33 EST 2006  david.collett@gmail.com
+  * small fix for reading last block
+
+Sun Nov 12 11:23:05 EST 2006  david.collett@gmail.com
+  * update version, bump changelog
+
 Sun Nov 12 11:22:18 EST 2006  david.collett@gmail.com
   * update README
 
