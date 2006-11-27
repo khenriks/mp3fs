@@ -136,6 +136,7 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
   // file is real and can be opened, return success
   if(fd != -1) {
     close(fd);
+    fi->fh = 0;
     return 0;
   }
   
@@ -213,8 +214,10 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   strncat(name, path, sizeof(name) - strlen(name));
 
   f = (FileTranscoder) fi->fh;
-  f->Finish(f);
-  talloc_free(f);
+  if(f) {
+    f->Finish(f);
+    talloc_free(f);
+  }
   
   return 0;
 }
