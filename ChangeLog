@@ -1,3 +1,12 @@
+Sun Apr  8 16:55:54 EST 2007  daveco@users.sourceforge.net
+  * fix segfault when scanning some id3 tags
+
+Sun Apr  8 16:30:43 EST 2007  david.collett@gmail.com
+  * fix two memory leaks
+
+Mon Nov 27 17:56:06 EST 2006  david.collett@gmail.com
+  * bump version to 0.06, update ChangeLog
+
 Mon Nov 27 17:53:08 EST 2006  david.collett@gmail.com
   * fix a segfault accessing non-flac files
 
