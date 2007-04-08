@@ -248,6 +248,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   self->decoder = FLAC__stream_decoder_new();
 #endif
   if(self->decoder == NULL) {
+      id3_tag_delete(self->id3tag);
       talloc_free(self);
       return NULL;
   }
@@ -262,6 +263,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
 					  FLAC__METADATA_TYPE_VORBIS_COMMENT);
 
   if(FLAC__file_decoder_init(self->decoder) != FLAC__FILE_DECODER_OK) {
+      id3_tag_delete(self->id3tag);
       talloc_free(self);
       return NULL;
   }
@@ -272,6 +274,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   if(FLAC__stream_decoder_init_file(self->decoder, self->orig_name, 
                                     &write_cb, &meta_cb, &error_cb, 
                                     (void *)self) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
+      id3_tag_delete(self->id3tag);
       talloc_free(self);
       return NULL;
   }
@@ -289,6 +292,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   // create encoder
   self->encoder = lame_init();
   if(self->encoder == NULL) {
+      id3_tag_delete(self->id3tag);
       talloc_free(self);
       return NULL;
   }
@@ -315,6 +319,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   
   // now we can initialise the encoder
   if(lame_init_params(self->encoder) == -1) {
+      id3_tag_delete(self->id3tag);
       talloc_free(self);
       return NULL;
   }
@@ -337,6 +342,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
                     + calcsize(self->framesize, self->numframes, self->info.sample_rate)
                     + 128;
 
+  id3_tag_delete(self->id3tag);
   return self;
 }
 

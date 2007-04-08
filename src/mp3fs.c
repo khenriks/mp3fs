@@ -106,8 +106,10 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
   if(f == NULL)
       return -1;
 
-  if(lstat(f->orig_name, stbuf) == -1)
+  if(lstat(f->orig_name, stbuf) == -1) {
+    talloc_free(f);
     return -errno;
+  }
   
   stbuf->st_size = f->totalsize;
   f->Finish(f);
@@ -205,14 +207,9 @@ static int mp3fs_statfs(const char *path, struct statfs *stbuf) {
 
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
   FileTranscoder f;
-  struct stat st;
-  char name[256];
 
   DEBUG(logfd, "%s: release\n", path);
   
-  strncpy(name, basepath, sizeof(name));
-  strncat(name, path, sizeof(name) - strlen(name));
-
   f = (FileTranscoder) fi->fh;
   if(f) {
     f->Finish(f);
@@ -239,8 +236,6 @@ void usage(char *name) {
 }
 
 int main(int argc, char *argv[]) {
-  
-  FileTranscoder f;
   
   if(argc<3) {
     usage(argv[0]);
