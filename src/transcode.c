@@ -389,10 +389,18 @@ int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
   // read the last block first looking for an id3v1 tag (last 128
   // bytes). If we detect this case, we give back the id3v1 tag prepended
   // with zeros to fill the block
-  if(offset > self->buffer->size &&
-     offset + len > (self->totalsize - 128)) {
+  if(offset > self->buffer->size && offset + len > (self->totalsize - 128)) {
+    int id3start = self->totalsize - 128;
+
+    // zero the buffer
     memset(buff, 0, len);
-    memcpy(buff+len-128, self->id3v1tag, 128);
+
+    if(id3start >= offset) {
+        memcpy(buff+(id3start-offset), self->id3v1tag, len-(id3start-offset));
+    } else {
+        memcpy(buff, self->id3v1tag+(128-len), len);
+    }
+
     return len;
   }
   
