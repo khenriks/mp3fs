@@ -107,6 +107,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
       return -1;
 
   if(lstat(f->orig_name, stbuf) == -1) {
+    f->Finish(f);
     talloc_free(f);
     return -errno;
   }

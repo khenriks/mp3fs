@@ -263,6 +263,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
 					  FLAC__METADATA_TYPE_VORBIS_COMMENT);
 
   if(FLAC__file_decoder_init(self->decoder) != FLAC__FILE_DECODER_OK) {
+      FLAC__file_decoder_delete(self->decoder);
       id3_tag_delete(self->id3tag);
       talloc_free(self);
       return NULL;
@@ -274,12 +275,13 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   if(FLAC__stream_decoder_init_file(self->decoder, self->orig_name, 
                                     &write_cb, &meta_cb, &error_cb, 
                                     (void *)self) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
+      FLAC__stream_decoder_delete(self->decoder);
       id3_tag_delete(self->id3tag);
       talloc_free(self);
       return NULL;
   }
 #endif
-  
+
   // process a single block, the first block is always
   // STREAMINFO. This will fill in the info structure which is
   // required to initialise the encoder
@@ -292,6 +294,11 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   // create encoder
   self->encoder = lame_init();
   if(self->encoder == NULL) {
+#ifdef LEGACY_FLAC
+      FLAC__file_decoder_delete(self->decoder);
+#else
+      FLAC__stream_decoder_delete(self->decoder);
+#endif
       id3_tag_delete(self->id3tag);
       talloc_free(self);
       return NULL;
@@ -319,6 +326,12 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   
   // now we can initialise the encoder
   if(lame_init_params(self->encoder) == -1) {
+      lame_close(self->encoder);
+#ifdef LEGACY_FLAC
+      FLAC__file_decoder_delete(self->decoder);
+#else
+      FLAC__stream_decoder_delete(self->decoder);
+#endif
       id3_tag_delete(self->id3tag);
       talloc_free(self);
       return NULL;
