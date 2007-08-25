@@ -231,20 +231,32 @@ static struct fuse_operations mp3fs_ops = {
 };
 
 void usage(char *name) {
-  printf("\nUSAGE: %s flacdir bitrate mountpoint [-o fuseopts]\n", name);
+  printf("\nUSAGE: %s flacdir,bitrate mountpoint [-o fuseopts]\n", name);
   printf("  acceptable bitrates are 96, 112, 128, 160, 192, 224, 256, 320\n");
   printf("  for a list of fuse options use -h after mountpoint\n\n");
 }
 
 int main(int argc, char *argv[]) {
+  char* rate;
   
-  if(argc<3) {
+  if(argc<2) {
     usage(argv[0]);
     return 0;
   }
   
   basepath = argv[1];
-  bitrate = atoi(argv[2]);
+  bitrate = 0;
+
+  rate = strchr(basepath, ',');
+  if(rate) {
+    rate[0] = '\0';
+    bitrate = atoi(rate + 1);
+  }
+
+  if(!bitrate || !rate) {
+    fprintf(stderr, "No bit rate specified\n");
+    return -1;
+  }
   
   // open the logfile
 #ifdef __DEBUG__
@@ -252,7 +264,7 @@ int main(int argc, char *argv[]) {
 #endif
   
   // start FUSE
-  fuse_main(argc-2, argv+2, &mp3fs_ops);
+  fuse_main(argc-1, argv+1, &mp3fs_ops);
   
 #ifdef __DEBUG__
   fclose(logfd);
