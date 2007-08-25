@@ -51,16 +51,21 @@ For build instructions see INSTALL
 Usage
 -----
 
+NOTE::
+
+    The command line format changed from version 0.07 to 0.08, note 
+    the comma.
+
 mount your filesystem like this:
 (you will probably have to be root)
 
 ::
 
-  mp3fs musicdir bitrate mountpoint [-o fuse_options]
+  mp3fs musicdir,bitrate mountpoint [-o fuse_options]
 
 e.g.::
 
-  mp3fs /mnt/music 128 /mnt/mp3 -o allow_other,ro
+  mp3fs /mnt/music,128 /mnt/mp3 -o allow_other,ro
 
 Here are the original files::
 
