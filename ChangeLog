@@ -1,3 +1,18 @@
+Sat Aug 25 18:32:16 EST 2007  daveco@users.sourceforge.net
+  * update README for new cmdline args
+
+Sat Aug 25 18:15:03 EST 2007  daveco@users.sourceforge.net
+  * mount options patch from Daniel Burr
+  mp3fs options are now separated by commas (rather than spaces) this makes
+  mounting from fstab easier. Thanks to Daniel for the patch, applied as-is.
+  
+
+Sun Apr 22 16:27:54 EST 2007  david.collett@gmail.com
+  * fix a further leak
+
+Sun Apr  8 16:58:35 EST 2007  david.collett@gmail.com
+  * update changelog, bump version to 0.07
+
 Sun Apr  8 16:55:54 EST 2007  daveco@users.sourceforge.net
   * fix segfault when scanning some id3 tags
 
