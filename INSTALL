@@ -15,7 +15,7 @@ Usage
 mount your filesystem like this:
 (you will probably have to be root)
 
-mp3fs musicdir bitrate mountpoint [-o fuse_options]
+mp3fs musicdir,bitrate mountpoint [-o fuse_options]
 
 e.g.:
-mp3fs /mnt/music 256 /mnt/mp3 -o allow_other,ro
+mp3fs /mnt/music,256 /mnt/mp3 -o allow_other,ro
