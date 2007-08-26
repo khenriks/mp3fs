@@ -1,3 +1,12 @@
+Sun Aug 26 18:13:42 EST 2007  david.collett@gmail.com
+  * update license to gplv3
+
+Sat Aug 25 19:02:01 EST 2007  david.collett@gmail.com
+  * forgot to update INSTALL
+
+Sat Aug 25 18:34:15 EST 2007  daveco@users.sourceforge.net
+  * bump to version 0.08, update ChangeLog
+
 Sat Aug 25 18:32:16 EST 2007  daveco@users.sourceforge.net
   * update README for new cmdline args
 

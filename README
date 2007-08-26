@@ -53,7 +53,7 @@ Usage
 
 NOTE::
 
-    The command line format changed from version 0.07 to 0.08, note 
+    The command line format changed from version 0.07 to 0.10, note 
     the comma.
 
 mount your filesystem like this:
