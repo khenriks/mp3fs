@@ -72,8 +72,9 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     struct stat st;
     
     strncpy(name, de->d_name, 256);
-    ptr = strstr(name, ".flac");
-    if(ptr) {
+    char *ptr = name + strlen(name) - 1;
+    while (ptr > name && *ptr != '.') --ptr;
+    if (strcmp(ptr, ".flac") == 0) {
       strcpy(ptr, ".mp3");
     }
     

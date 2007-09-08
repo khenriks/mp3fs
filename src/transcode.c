@@ -236,8 +236,9 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   
   // translate name back to original
   {
-    char *ptr = strstr(self->orig_name, ".mp3");
-    if(ptr)
+    char *ptr = self->orig_name + strlen(self->orig_name) - 1;
+    while (ptr > self->orig_name && *ptr != '.') --ptr;
+    if (strcmp(ptr, ".mp3") == 0)
       strcpy(ptr, ".flac");
   }
   
@@ -313,6 +314,12 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   lame_set_in_samplerate(self->encoder, self->info.sample_rate);
   lame_set_num_channels(self->encoder, self->info.channels);
   //DEBUG(logfd, "Sample Rate: %d\n", self->info.sample_rate);
+  //Maybe there's a better way to see if file isn't really FLAC,
+  //this is just to prevent division by zero
+  if (!self->info.sample_rate) {
+    talloc_free(self);
+    return NULL;
+  }
   self->framesize = 144*bitrate*1000/self->info.sample_rate;
   self->numframes = (int)((self->info.total_samples + 575.5)/1152.0);//+1;
   
