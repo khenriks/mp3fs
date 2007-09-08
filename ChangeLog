@@ -1,3 +1,13 @@
+Sat Sep  8 18:49:08 EST 2007  david.collett@gmail.com
+  * filename handling fixes from radek.czajka@gmail.com
+    * fix filename recognition (the "cieple.flaczki.txt" bug)
+    * fix transating name back to original (the "a.mp3.flac" bug)
+    * fix crash on bad (e.g. empty) FLAC file
+  
+
+Sun Aug 26 18:19:04 EST 2007  david.collett@gmail.com
+  * update version to 0.10 to reflect larger changes, and a stable release (0.08 was never actually released)
+
 Sun Aug 26 18:13:42 EST 2007  david.collett@gmail.com
   * update license to gplv3
 
