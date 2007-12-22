@@ -45,15 +45,16 @@
 /* build an id3 frame */
 struct id3_frame *make_frame(const char *name, const char *data) {
   struct id3_frame *frame;
-  id3_latin1_t     *latin1;
+  id3_utf8_t       *utf8;
   id3_ucs4_t       *ucs4;
 
   frame = id3_frame_new(name);
 
-  latin1 = (id3_latin1_t *)data;
-  ucs4 = malloc((id3_latin1_length(latin1) + 1) * sizeof(*ucs4));
+  utf8 = (id3_utf8_t *)data;
+  ucs4 = malloc((id3_utf8_length(utf8) + 1) * sizeof(*ucs4));
   if (ucs4) {
-    id3_latin1_decode(latin1, ucs4);
+    id3_utf8_decode(utf8, ucs4);
+    id3_field_settextencoding(&frame->fields[0], ID3_FIELD_TEXTENCODING_UTF_8);
     id3_field_setstrings(&frame->fields[1], 1, &ucs4);
     free(ucs4);
   }
