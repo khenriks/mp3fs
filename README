@@ -67,6 +67,13 @@ e.g.::
 
   mp3fs /mnt/music,128 /mnt/mp3 -o allow_other,ro
 
+Recent versions of FUSE and mp3fs can be mounted from /etc/fstab using the
+following syntax (you must have /sbin/mount.fuse from the fuse-utils package)
+
+::
+
+  mp3fs#/mnt/music,128 /mnt/mp3 fuse ro,allow_other 0  0
+
 Here are the original files::
 
   dave@bender:~/mp3fs$ ls -l /mnt/music/Smashing\ Pumpkins/Pisces\ Iscariot/
