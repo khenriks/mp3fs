@@ -147,7 +147,10 @@ static FLAC__StreamDecoderWriteStatus write_cb(const FLAC__StreamDecoder *decode
   // convert down to shorts
   for(i=0; i<frame->header.blocksize; i++) {
     trans->lbuf[i] = (short int)buffer[0][i];
-    trans->rbuf[i] = (short int)buffer[1][i];    
+    // ignore rbuf for mono sources
+    if(trans->info.channels > 1) {
+        trans->rbuf[i] = (short int)buffer[1][i];
+    }
   }
 
   len = lame_encode_buffer(trans->encoder,
