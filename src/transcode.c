@@ -232,6 +232,10 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   self->name = talloc_strdup(self, filename);
 
   self->id3tag = id3_tag_new();
+  if(self->id3tag == NULL) {
+  	goto id3_fail;
+  }
+
   id3_tag_attachframe(self->id3tag, make_frame("TSSE", "MP3FS"));
 
   // set the original (flac) filename
@@ -253,9 +257,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   self->decoder = FLAC__stream_decoder_new();
 #endif
   if(self->decoder == NULL) {
-      id3_tag_delete(self->id3tag);
-      talloc_free(self);
-      return NULL;
+  	  goto flac_fail;
   }
 
 #ifdef LEGACY_FLAC
@@ -268,10 +270,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
 					  FLAC__METADATA_TYPE_VORBIS_COMMENT);
 
   if(FLAC__file_decoder_init(self->decoder) != FLAC__FILE_DECODER_OK) {
-      FLAC__file_decoder_delete(self->decoder);
-      id3_tag_delete(self->id3tag);
-      talloc_free(self);
-      return NULL;
+  	  goto init_flac_fail;
   }
 #else
   FLAC__stream_decoder_set_metadata_respond(self->decoder, 
@@ -280,10 +279,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   if(FLAC__stream_decoder_init_file(self->decoder, self->orig_name, 
                                     &write_cb, &meta_cb, &error_cb, 
                                     (void *)self) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
-      FLAC__stream_decoder_delete(self->decoder);
-      id3_tag_delete(self->id3tag);
-      talloc_free(self);
-      return NULL;
+  	  goto init_flac_fail;
   }
 #endif
 
@@ -299,14 +295,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   // create encoder
   self->encoder = lame_init();
   if(self->encoder == NULL) {
-#ifdef LEGACY_FLAC
-      FLAC__file_decoder_delete(self->decoder);
-#else
-      FLAC__stream_decoder_delete(self->decoder);
-#endif
-      id3_tag_delete(self->id3tag);
-      talloc_free(self);
-      return NULL;
+  	goto encoder_fail;
   }
   lame_set_quality(self->encoder, MP3_QUALITY);
   lame_set_brate(self->encoder, bitrate);
@@ -321,8 +310,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   //Maybe there's a better way to see if file isn't really FLAC,
   //this is just to prevent division by zero
   if (!self->info.sample_rate) {
-    talloc_free(self);
-    return NULL;
+  	goto encoder_fail;
   }
   self->framesize = 144*bitrate*1000/self->info.sample_rate;
   self->numframes = (int)((self->info.total_samples + 575.5)/1152.0);//+1;
@@ -337,15 +325,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   
   // now we can initialise the encoder
   if(lame_init_params(self->encoder) == -1) {
-      lame_close(self->encoder);
-#ifdef LEGACY_FLAC
-      FLAC__file_decoder_delete(self->decoder);
-#else
-      FLAC__stream_decoder_delete(self->decoder);
-#endif
-      id3_tag_delete(self->id3tag);
-      talloc_free(self);
-      return NULL;
+  	  goto init_encoder_fail;
   }
   
   // Now we have to render our id3tag so that we know how big the total file
@@ -368,6 +348,24 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
 
   id3_tag_delete(self->id3tag);
   return self;
+
+init_encoder_fail:
+  lame_close(self->encoder);
+
+encoder_fail:
+init_flac_fail:
+#ifdef LEGACY_FLAC
+  FLAC__file_decoder_delete(self->decoder);
+#else
+  FLAC__stream_decoder_delete(self->decoder);
+#endif
+
+flac_fail:
+  id3_tag_delete(self->id3tag);
+
+id3_fail:
+  talloc_free(self);
+  return NULL;
 }
 
 int FileTranscoder_Finish(FileTranscoder self) {
