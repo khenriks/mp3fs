@@ -1,3 +1,18 @@
+Sat Mar  8 15:41:12 EST 2008  david.collett@gmail.com
+  * cleanup of Transcoder constructor, fix potential leaks on failures.
+
+Tue Mar  4 19:40:13 EST 2008  david.collett@gmail.com
+  * correctly handle mono files (fixes segfault). reported by John Westlund
+
+Thu Jan  3 21:46:35 EST 2008  david.collett@gmail.com
+  * add note about mounting from /etc/fstab
+
+Sat Dec 22 16:53:34 EST 2007  david.collett@gmail.com
+  * Unicode tag support from Kristofer Henriksson
+
+Sat Sep  8 18:54:55 EST 2007  david.collett@gmail.com
+  * bump version to 0.11, update changelog
+
 Sat Sep  8 18:49:08 EST 2007  david.collett@gmail.com
   * filename handling fixes from radek.czajka@gmail.com
     * fix filename recognition (the "cieple.flaczki.txt" bug)
