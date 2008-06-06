@@ -216,6 +216,15 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
       id3_tag_attachframe(trans->id3tag, make_frame(ID3_FRAME_TRACK, tmpstr));
       talloc_free(tmpstr);
     }
+    
+    /* set the disc/total, also less common */
+    if(get_tag(metadata, "DISCNUMBER")) {
+      tmpstr = talloc_asprintf(trans, "%s", get_tag(metadata, "DISCNUMBER"));
+      if(get_tag(metadata, "DISCTOTAL"))
+        tmpstr = talloc_asprintf_append(tmpstr, "/%s", get_tag(metadata, "DISCTOTAL"));
+      id3_tag_attachframe(trans->id3tag, make_frame("TPOS", tmpstr));
+      talloc_free(tmpstr);
+    }
 
     break;
   default:
