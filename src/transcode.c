@@ -45,15 +45,12 @@
 /* build an id3 frame */
 struct id3_frame *make_frame(const char *name, const char *data) {
   struct id3_frame *frame;
-  id3_utf8_t       *utf8;
   id3_ucs4_t       *ucs4;
 
   frame = id3_frame_new(name);
 
-  utf8 = (id3_utf8_t *)data;
-  ucs4 = malloc((id3_utf8_length(utf8) + 1) * sizeof(*ucs4));
+  ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *)data);
   if (ucs4) {
-    id3_utf8_decode(utf8, ucs4);
     id3_field_settextencoding(&frame->fields[0], ID3_FIELD_TEXTENCODING_UTF_8);
     id3_field_setstrings(&frame->fields[1], 1, &ucs4);
     free(ucs4);
@@ -77,6 +74,31 @@ void set_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3tag,
   const char *str = get_tag(metadata, vcname);
   if(str)
     id3_tag_attachframe(id3tag, make_frame(id3name, str));
+}
+
+/* set id3 picture tag from FLAC picture block */
+void set_picture_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3tag) {
+  FLAC__StreamMetadata_Picture *picture;
+  struct id3_frame *frame;
+  id3_ucs4_t       *ucs4;
+  
+  picture = (FLAC__StreamMetadata_Picture *)&metadata->data;
+  
+  /* There hardly seems a point in separating out these into a different function
+     since it would need access to picture anyway. */
+  
+  frame = id3_frame_new("APIC");
+  id3_tag_attachframe(id3tag, frame);
+  
+  ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *)picture->description);
+  if (ucs4) {
+    id3_field_settextencoding(&frame->fields[0], ID3_FIELD_TEXTENCODING_UTF_8);
+    id3_field_setlatin1(id3_frame_field(frame, 1), picture->mime_type);
+    id3_field_setint(id3_frame_field(frame, 2), picture->type);
+    id3_field_setstring(&frame->fields[3], ucs4);
+    id3_field_setbinarydata(id3_frame_field(frame, 4), picture->data, picture->data_length);
+    free(ucs4);
+  }
 }
 
 /* calculate the size of the mp3 data */
@@ -227,6 +249,12 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
     }
 
     break;
+  case FLAC__METADATA_TYPE_PICTURE:
+	
+	/* add a picture tag for each picture block */
+    set_picture_tag(metadata, trans->id3tag);
+	
+    break;
   default:
     break;
   }
@@ -277,6 +305,8 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   FLAC__file_decoder_set_error_callback(self->decoder, &error_cb);
   FLAC__file_decoder_set_metadata_respond(self->decoder, 
 					  FLAC__METADATA_TYPE_VORBIS_COMMENT);
+  FLAC__file_decoder_set_metadata_respond(self->decoder, 
+					  FLAC__METADATA_TYPE_PICTURE);
 
   if(FLAC__file_decoder_init(self->decoder) != FLAC__FILE_DECODER_OK) {
   	  goto init_flac_fail;
@@ -284,6 +314,8 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
 #else
   FLAC__stream_decoder_set_metadata_respond(self->decoder, 
 					    FLAC__METADATA_TYPE_VORBIS_COMMENT);
+  FLAC__stream_decoder_set_metadata_respond(self->decoder, 
+					    FLAC__METADATA_TYPE_PICTURE);
 
   if(FLAC__stream_decoder_init_file(self->decoder, self->orig_name, 
                                     &write_cb, &meta_cb, &error_cb, 
@@ -340,6 +372,10 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   // Now we have to render our id3tag so that we know how big the total file
   // is. We write the id3v3 tag directly into the front of the stringio. The
   // id3v1 tag is written into a fixed 128 byte buffer (it is a fixed size)
+  
+  // disable id3 compression because it hardly saves space and some players don't
+  // like it
+  id3_tag_options(self->id3tag, ID3_TAG_OPTION_COMPRESSION, 0);
   
   // grow buffer and write v2 tag
   CALL(self->buffer, seek, id3_tag_render(self->id3tag, 0), SEEK_SET);
