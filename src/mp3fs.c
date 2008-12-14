@@ -93,6 +93,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
   int res;
   FileTranscoder f;
   char name[256];
+  int hold_errno;
   
   DEBUG(logfd, "%s: getattr\n", path);
 
@@ -102,10 +103,13 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
   // pass-through for regular files
   if(lstat(name, stbuf) == 0)
     return 0;
+  hold_errno = errno;
   
   f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)name);
-  if(f == NULL)
-      return -1;
+  if(f == NULL) {
+    errno = hold_errno;
+    return -errno;
+  }
 
   if(lstat(f->orig_name, stbuf) == -1) {
     f->Finish(f);
@@ -146,7 +150,7 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
   
   f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL, (char *)name);
   if(f==NULL)
-      return -1;
+      return -errno;
   
   // store ourselves in the fuse_file_info structure
   fi->fh = (unsigned long) f;
