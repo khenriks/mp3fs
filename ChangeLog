@@ -1,3 +1,17 @@
+Sun Dec 14 16:31:04 EST 2008  david.collett@gmail.com
+  * Return correct errors from failed fs operations
+  Fixes a problem with Apache failing to index mp3fs directories (and perhaps
+  other subtle bugs). Reported by Sam Davies, fix found by Robert Lyon, thanks.
+
+Sat Nov 15 17:11:53 EST 2008  Kristofer Henriksson <kthenriksson@gmail.com>
+  * Added support for album art and improved string conversion
+
+Fri Jun  6 16:05:36 EST 2008  Kristofer Henriksson <kris@enkod.com>
+  * Added support for disc number tag
+
+Sun Mar  9 18:30:04 EST 2008  david.collett@gmail.com
+  * bump to 0.12, update Changelog
+
 Sat Mar  8 15:41:12 EST 2008  david.collett@gmail.com
   * cleanup of Transcoder constructor, fix potential leaks on failures.
 
