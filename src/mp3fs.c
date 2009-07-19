@@ -265,7 +265,7 @@ int main(int argc, char *argv[]) {
   basepath = argv[1];
   bitrate = 0;
 
-  rate = strchr(basepath, ',');
+  rate = strrchr(basepath, ',');
   if(rate) {
     rate[0] = '\0';
     bitrate = atoi(rate + 1);
