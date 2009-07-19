@@ -30,7 +30,11 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
+#ifdef __NetBSD__
+#include <sys/statvfs.h>
+#else
 #include <sys/statfs.h>
+#endif
 
 #include "transcode.h"
 #include "talloc.h"
@@ -195,7 +199,12 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
   return f->Read(f, buf, offset, size);
 }
 
-static int mp3fs_statfs(const char *path, struct statfs *stbuf) {
+#ifdef __NetBSD__
+static int mp3fs_statfs(const char *path, struct statvfs *stbuf)
+#else
+static int mp3fs_statfs(const char *path, struct statfs *stbuf)
+#endif
+{
   int res;
   char name[256];
 
@@ -204,7 +213,11 @@ static int mp3fs_statfs(const char *path, struct statfs *stbuf) {
   strncpy(name, basepath, sizeof(name));
   strncat(name, path, sizeof(name) - strlen(name));
 
+#ifdef __NetBSD__
+  res = statvfs(name, stbuf);
+#else
   res = statfs(name, stbuf);
+#endif
   if(res == -1)
     return -errno;
   

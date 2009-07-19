@@ -24,7 +24,6 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
-#include <sys/statfs.h>
 
 #include <FLAC/metadata.h>
 #ifdef LEGACY_FLAC
