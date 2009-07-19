@@ -6,6 +6,7 @@ AM_INIT_AUTOMAKE(mp3fs, 0.13)
 # check standard stuff
 AC_PROG_LIBTOOL
 AC_PROG_CC
+AM_PROG_CC_C_O
 
 # check headers
 AC_CHECK_HEADER(lame/lame.h,,AC_MSG_ERROR([You Must install liblame-dev to build mp3fs]))
