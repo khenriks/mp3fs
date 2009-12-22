@@ -100,25 +100,14 @@ void set_picture_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3ta
   }
 }
 
-/* calculate the size of the mp3 data */
-int calcsize(int framesize, int numframes, int samplerate) {
-  int slot_lag;
-  int frac_SpF;
-  int size=0, i;
+/* divide one integer by another and round off the result */
+int divideround(long long one, int another) {
+  int result;
   
-  // initialize
-  slot_lag = 0;
-  frac_SpF = (144*bitrate*1000) % samplerate;
+  result = one / another;
+  if (one % another >= another / 2) result++;
   
-  // calculate
-  for(i=0; i<=numframes; i++) {
-    size += framesize;
-    if ((slot_lag -= frac_SpF) < 0) {
-      slot_lag += samplerate;
-      size++;
-    }
-  }
-  return size;
+  return result;
 }
 
 // lame callback for error/debug/msg
@@ -352,8 +341,6 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   if (!self->info.sample_rate) {
   	goto encoder_fail;
   }
-  self->framesize = 144*bitrate*1000/self->info.sample_rate;
-  self->numframes = (int)((self->info.total_samples + 575.5)/1152.0);//+1;
   
   // Now process the rest of the metadata. This will fill in the
   // id3tag.
@@ -367,6 +354,9 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   if(lame_init_params(self->encoder) == -1) {
   	  goto init_encoder_fail;
   }
+  
+  self->framesize = 144*bitrate*1000/self->info.sample_rate; // 144=1152/8
+  self->numframes = divideround(self->info.total_samples, 1152) + 2;
   
   // Now we have to render our id3tag so that we know how big the total file
   // is. We write the id3v3 tag directly into the front of the stringio. The
@@ -386,8 +376,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
 
   // id3v2 + lame stuff + mp3 data + id3v1
   self->totalsize = self->buffer->size
-                    + lame_get_size_mp3buffer(self->encoder)
-                    + calcsize(self->framesize, self->numframes, self->info.sample_rate)
+                    + divideround((long long)self->numframes*144*bitrate*10, self->info.sample_rate/100)
                     + 128;
 
   id3_tag_delete(self->id3tag);
@@ -434,19 +423,20 @@ int FileTranscoder_Finish(FileTranscoder self) {
       CALL(self->buffer, write, (char *)self->mp3buf, len);
     lame_close(self->encoder);
     self->encoder = NULL;
+    
+    if (self->buffer->size + 128 != self->totalsize) {
+      // write the id3v1 tag, always 128 bytes from end
+      DEBUG(logfd, "Something went wrong with file size calculation: off by %d\n", self->buffer->size + 128 - self->totalsize);
+      CALL(self->buffer, seek, self->totalsize-128, SEEK_SET);
+    }
+    CALL(self->buffer, write, self->id3v1tag, 128);
+    len += 128;
   }
 
-  // write the id3v1 tag
-  CALL(self->buffer, write, self->id3v1tag, 128);
-  
-  return len + 128;
+  return len;
 }
 
 int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
-
-  if(self->decoder == NULL || self->encoder == NULL)
-    return 0;
-
   if(offset+len > self->totalsize) {
     len = self->totalsize - offset;
   }
@@ -470,26 +460,29 @@ int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
     return len;
   }
   
-  // transcode up to what we need
-  while(self->buffer->size < offset + len) {
+  if(self->decoder && self->encoder) {
+    // transcode up to what we need if possible
+    while(self->buffer->size < offset + len) {
 #ifdef LEGACY_FLAC
-    if(FLAC__file_decoder_get_state(self->decoder)==0) {
-      FLAC__file_decoder_process_single(self->decoder);
-    }
+      if(FLAC__file_decoder_get_state(self->decoder)==0) {
+        FLAC__file_decoder_process_single(self->decoder);
+      }
 #else
-    if(FLAC__stream_decoder_get_state(self->decoder) < FLAC__STREAM_DECODER_END_OF_STREAM) {
-      FLAC__stream_decoder_process_single(self->decoder);
-    }
+      if(FLAC__stream_decoder_get_state(self->decoder) < FLAC__STREAM_DECODER_END_OF_STREAM) {
+        FLAC__stream_decoder_process_single(self->decoder);
+      }
 #endif
-    else {
-      self->Finish(self);
-      break;
+      else {
+        self->Finish(self);
+        break;
+      }
     }
   }
   
   // truncate if we didnt actually get len
   if(self->buffer->size < offset+len) {
     len = self->buffer->size - offset;
+    if (len < 0) len = 0;
   }
   
   memcpy(buff, self->buffer->data+offset, len);
