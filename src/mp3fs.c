@@ -122,6 +122,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
   }
   
   stbuf->st_size = f->totalsize;
+  stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
   f->Finish(f);
   talloc_free(f);
   
