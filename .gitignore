@@ -1,0 +1,12 @@
+*.o
+/aclocal.m4
+/autom4te.cache
+/config
+/config.log
+/config.status
+/configure
+/libtool
+Makefile.in
+Makefile
+.deps/
+/src/mp3fs
