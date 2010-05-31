@@ -144,9 +144,9 @@ Releases are made through the sourceforge files page:
 Development
 -----------
 
-MP3FS uses darcs for revision control. You can obtain the full repository here::
+MP3FS uses git for revision control. You can obtain the full repository with::
 
-  darcs get http://mp3fs.sourceforge.net/mp3fs
+  git clone git://mp3fs.git.sourceforge.net/gitroot/mp3fs/mp3fs
 
 MP3FS is written in C and requires the following libraries:
 
