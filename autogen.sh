@@ -1,6 +1,5 @@
 #! /bin/sh
 
-libtoolize --force
-aclocal -I config
-automake --add-missing --copy
-autoconf
+# We can just let autoreconf do what is needed
+echo 'Running autoreconf --install'
+autoreconf --install
