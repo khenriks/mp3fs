@@ -5,6 +5,7 @@ AC_INIT([MP3FS], [0.14])
 AC_CONFIG_SRCDIR([src/mp3fs.c])
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign])
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # Checks for programs.
 AC_PROG_CC
@@ -21,7 +22,6 @@ AC_CHECK_HEADER([FLAC/stream_decoder.h],, [AC_MSG_ERROR([You must have libflac-d
 PKG_CHECK_MODULES([fuse], [fuse >= 2.6.0])
 PKG_CHECK_MODULES([id3tag], [id3tag])
 #PKG_CHECK_MODULES([flac], [flac >= 1.1.3]) # To be enabled later
-
 
 # Debug option
 AC_ARG_ENABLE([debug], [AS_HELP_STRING([--enable-debug], [Enable debug output])], [AC_DEFINE([__DEBUG__])])
