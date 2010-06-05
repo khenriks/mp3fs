@@ -92,7 +92,7 @@ void set_picture_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3ta
   ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *)picture->description);
   if (ucs4) {
     id3_field_settextencoding(&frame->fields[0], ID3_FIELD_TEXTENCODING_UTF_8);
-    id3_field_setlatin1(id3_frame_field(frame, 1), picture->mime_type);
+    id3_field_setlatin1(id3_frame_field(frame, 1), (id3_latin1_t*)picture->mime_type);
     id3_field_setint(id3_frame_field(frame, 2), picture->type);
     id3_field_setstring(&frame->fields[3], ucs4);
     id3_field_setbinarydata(id3_frame_field(frame, 4), picture->data, picture->data_length);
@@ -147,7 +147,7 @@ static FLAC__StreamDecoderWriteStatus write_cb(const FLAC__StreamDecoder *decode
 					void *client_data)
 #endif
 {
-  int len, i, count;
+  int len, i;
   FileTranscoder trans = (FileTranscoder)client_data;
   
   if(frame->header.blocksize < 1152) {
@@ -191,7 +191,7 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
     memcpy(&trans->info, &metadata->data, sizeof(FLAC__StreamMetadata_StreamInfo));
 
     /* set the length in the id3tag */
-    tmpstr = talloc_asprintf(trans, PRIu64, trans->info.total_samples/trans->info.sample_rate*1000);
+    tmpstr = talloc_asprintf(trans, "%llu", trans->info.total_samples/trans->info.sample_rate*1000);
     id3_tag_attachframe(trans->id3tag, make_frame("TLEN", tmpstr));
     talloc_free(tmpstr);
 

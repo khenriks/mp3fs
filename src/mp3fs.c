@@ -72,7 +72,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     struct stat st;
     
     strncpy(name, de->d_name, 256);
-    char *ptr = name + strlen(name) - 1;
+    ptr = name + strlen(name) - 1;
     while (ptr > name && *ptr != '.') --ptr;
     if (strcmp(ptr, ".flac") == 0) {
       strcpy(ptr, ".mp3");
@@ -90,7 +90,6 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 }
 
 static int mp3fs_getattr(const char *path, struct stat *stbuf) {
-  int res;
   FileTranscoder f;
   char name[256];
   int hold_errno;
@@ -162,7 +161,6 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
 static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
 		      struct fuse_file_info *fi) {
   int fd, res;
-  struct stat st;
   FileTranscoder f=NULL;
   char name[256];
 
