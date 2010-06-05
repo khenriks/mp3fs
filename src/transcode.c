@@ -76,6 +76,7 @@ void set_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3tag,
 }
 
 /* set id3 picture tag from FLAC picture block */
+#ifndef LEGACY_FLAC
 void set_picture_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3tag) {
   FLAC__StreamMetadata_Picture *picture;
   struct id3_frame *frame;
@@ -99,6 +100,7 @@ void set_picture_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3ta
     free(ucs4);
   }
 }
+#endif
 
 /* divide one integer by another and round off the result */
 int divideround(long long one, int another) {
@@ -237,12 +239,14 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
     }
 
     break;
+#ifndef LEGACY_FLAC
   case FLAC__METADATA_TYPE_PICTURE:
 	
 	/* add a picture tag for each picture block */
     set_picture_tag(metadata, trans->id3tag);
 	
     break;
+#endif
   default:
     break;
   }
@@ -293,8 +297,6 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
   FLAC__file_decoder_set_error_callback(self->decoder, &error_cb);
   FLAC__file_decoder_set_metadata_respond(self->decoder, 
 					  FLAC__METADATA_TYPE_VORBIS_COMMENT);
-  FLAC__file_decoder_set_metadata_respond(self->decoder, 
-					  FLAC__METADATA_TYPE_PICTURE);
 
   if(FLAC__file_decoder_init(self->decoder) != FLAC__FILE_DECODER_OK) {
   	  goto init_flac_fail;
