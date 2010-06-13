@@ -10,3 +10,4 @@ Makefile.in
 Makefile
 .deps/
 /src/mp3fs
+/web/index.html
