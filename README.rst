@@ -2,7 +2,7 @@ MP3FS
 =====
 
 :Maintainer: Kristofer Henriksson (kthenry@users.sourceforge.net)
-:Original Author: David Collett (daveco@users.sourceforge.net)
+:Author: David Collett (daveco@users.sourceforge.net)
 :Web site: http://mp3fs.sourceforge.net/
 
 .. contents::
@@ -10,22 +10,22 @@ MP3FS
 Introduction
 ------------
 
-MP3FS is A read-only FUSE filesystem which transcodes audio formats
+MP3FS is a read-only FUSE filesystem which transcodes audio formats
 (currently FLAC) to MP3 on the fly when opened and read. This was
 written to enable me to use my FLAC collection with software and/or
-hardware which only understands MP3. e.g. gmediaserver to a netgear
-MP101 mp3 player.
+hardware which only understands the MP3 format e.g. gmediaserver to a
+Netgear MP101 MP3 player.
 
-It is also a novel alternative to traditional mp3 encoder
-applications. Just use your favorite file browser to select the files
-you want encoded and copy them somewhere!
+It is also a novel alternative to traditional MP3 encoders. Just use your
+favorite file browser to select the files you want encoded and copy them
+somewhere!
 
 How it Works
 ------------
 
 When a file is opened, the decoder and encoder are initialised and
 the file metadata is read. At this time the final filesize can be
-determined as we only support constant bitrate (CBR) mp3.
+determined as we only support constant bitrate (CBR) MP3 files.
 
 As the file is read, it is transcoded into an internal per-file
 buffer. This buffer continues to grow while the file is being read
@@ -38,28 +38,23 @@ since most programs will read a file from start to finish. Future
 enhancements may provide true random seeking.
 
 ID3 version 2.4 and 1.1 tags are created from the vorbis comments in
-the flac file. They are located at the start and end of the file
+the FLAC file. They are located at the start and end of the file
 respectively.
 
 A special optimisation is made so that applicatins which scan for
 id3v1 tags do not have to wait for the whole file to be transcoded
 before reading the tag. This *dramatically* speeds up such
 applications.
-    
-For build instructions see INSTALL
+
+For build instructions see the bundled INSTALL file.
 
 Usage
 -----
 
-NOTE::
+**NOTE:** The command line format changed starting with version 0.10,
+adding a comma.
 
-    The command line format changed from version 0.07 to 0.10, note 
-    the comma.
-
-mount your filesystem like this:
-(you will probably have to be root)
-
-::
+Mount your filesystem like this::
 
   mp3fs musicdir,bitrate mountpoint [-o fuse_options]
 
@@ -67,14 +62,15 @@ e.g.::
 
   mp3fs /mnt/music,128 /mnt/mp3 -o allow_other,ro
 
-Recent versions of FUSE and mp3fs can be mounted from /etc/fstab using the
-following syntax (you must have /sbin/mount.fuse from the fuse-utils package)
+In recent versions of FUSE and MP3FS, the same can be achieved with the
+following entry in ``/etc/fstab``::
 
-::
+  mp3fs#/mnt/music,128 /mnt/mp3 fuse allow_other,ro 0 0
 
-  mp3fs#/mnt/music,128 /mnt/mp3 fuse ro,allow_other 0  0
+Note that this requires /sbin/mount.fuse from the fuse-utils package.
 
-Here are the original files::
+At this point the filesystem is ready to be used. Here are the original
+files::
 
   dave@bender:~/mp3fs$ ls -l /mnt/music/Smashing\ Pumpkins/Pisces\ Iscariot/
   total 345732
@@ -93,7 +89,7 @@ Here are the original files::
   -rw-r--r-- 1 mythtv mythtv 28060023 2005-06-19 18:36 13 - La Dolly Vita.flac
   -rw-r--r-- 1 mythtv mythtv 11432008 2005-06-19 18:36 14 - Spaced.flac
 
-And now you can use the (virtual) mp3 files from the MP3FS mountpoint::
+And now you can use the (virtual) MP3 files from the MP3FS mountpoint::
 
   dave@bender:~/mp3fs$ ls -l /mnt/mp3/Smashing\ Pumpkins/Pisces\ Iscariot/
   total 345732
@@ -139,31 +135,33 @@ Download
 
 Releases are made through the sourceforge files page:
 
-  http://sourceforge.net/project/showfiles.php?group_id=174365
+  https://sourceforge.net/projects/mp3fs/files/
 
 Development
 -----------
 
-MP3FS uses git for revision control. You can obtain the full repository with::
+MP3FS uses Git for revision control. You can obtain the full repository
+with::
 
   git clone git://mp3fs.git.sourceforge.net/gitroot/mp3fs/mp3fs
 
 MP3FS is written in C and requires the following libraries:
 
-- fuse (libfuse-dev)
-- flac (libflac-dev)
-- lame (liblame-dev)
-- libid3tag (libid3tag0-dev)
-
+- fuse (>= 2.6.0)
+- flac (>= 1.1.4 unless using MP3FS 0.1x)
+- lame
+- libid3tag
 
 Additionally, MP3FS includes GPL'd code from a number of other projects:
 
-- Talloc, A heirachical memory allocator from samba4.
-- A class implementation in C from pyflag (pyflag.sourceforge.net)
+- `Talloc <http://talloc.samba.org/>`_, a heirachical memory allocator
+  from Samba
+- A class implementation in C from `PyFlag <http://www.pyflag.net/>`_
 
-
-Licence
+License
 -------
 
-This program can be distributed under the terms of the GNU GPL.
-See the file COPYING.
+This program can be distributed under the terms of the GNU GPL version 3
+or later. You can find it `online
+<http://www.gnu.org/licenses/gpl-3.0.html>`_ or in the MP3FS distribution
+in the COPYING file.
