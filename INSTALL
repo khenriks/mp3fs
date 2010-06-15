@@ -36,13 +36,3 @@ mp3fs uses the GNU build system. To build and install, run:
 ./configure
 make
 make install
-
-Usage
-=====
-
-mount your filesystem like this:
-
-mp3fs musicdir,bitrate mountpoint [-o fuse_options]
-
-e.g.:
-mp3fs /mnt/music,256 /mnt/mp3 -o allow_other,ro
