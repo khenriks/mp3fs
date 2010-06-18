@@ -83,7 +83,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: Helvetica, Arial, sans-serif;
   border: thin solid black;
   /* This makes the borders rounded on Mozilla, which pleases me */
-  -moz-border-radius: 8px;
+  border-radius: 8px;
   padding: 4px;
 }
 
@@ -118,7 +118,7 @@ h1.title {
   background-color: #444499;
   color: #eeeeee;
   border: thick solid black;
-  -moz-border-radius: 20px;
+  border-radius: 20px;
 }
 
 table.footnote {
