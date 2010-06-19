@@ -139,6 +139,22 @@ Releases are made through the sourceforge files page:
 
   https://sourceforge.net/projects/mp3fs/files/
 
+There are now two different branches of MP3FS development:
+
+- Active development will occur on the main branch, which has version
+  numbers 0.20 or higher. FLAC version 1.1.4 or higher is
+  required.
+- Only bug fixes will happen on the legacy branch, which has version
+  numbers less than 0.20. Any version of FLAC is supported.
+
+The reason for two branches is to maintain compatibility with old versions
+of FLAC. This is necessary because a major Linux vendor provides only an
+ancient version of FLAC in several of their releases.
+
+The bottom line is that if you have a suitable version of FLAC, you should
+use the very latest version of MP3FS. If not, you can use a version from
+the legacy branch.
+
 Development
 -----------
 
