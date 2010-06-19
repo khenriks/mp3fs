@@ -6,7 +6,7 @@ Prerequisites
 mp3fs requires the following libraries
 
 fuse (>= 2.6.0)
-flac (>= 1.1.4)
+flac
 lame
 libid3tag
 
@@ -23,10 +23,6 @@ On a rpm based system, if a repository that includes lame has been set up,
 you can install by running:
 
 yum install fuse-devel flac-devel lame-devel libid3tag-devel
-
-Unfortunately, many rpm systems (CentOS for example) have very old
-versions of flac that do not meet the requirements above. These versions
-are only supported on the legacy (0.1x) versions of mp3fs.
 
 Installation
 ============

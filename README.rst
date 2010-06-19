@@ -150,7 +150,7 @@ with::
 MP3FS is written in C and uses the following libraries:
 
 - fuse (>= 2.6.0)
-- flac (>= 1.1.4 unless using MP3FS 0.1x)
+- flac
 - lame
 - libid3tag
 
