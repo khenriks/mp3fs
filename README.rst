@@ -58,7 +58,9 @@ Mount your filesystem like this::
 
   mp3fs musicdir,bitrate mountpoint [-o fuse_options]
 
-e.g.::
+For example,
+
+::
 
   mp3fs /mnt/music,128 /mnt/mp3 -o allow_other,ro
 
@@ -145,7 +147,7 @@ with::
 
   git clone git://mp3fs.git.sourceforge.net/gitroot/mp3fs/mp3fs
 
-MP3FS is written in C and requires the following libraries:
+MP3FS is written in C and uses the following libraries:
 
 - fuse (>= 2.6.0)
 - flac (>= 1.1.4 unless using MP3FS 0.1x)
