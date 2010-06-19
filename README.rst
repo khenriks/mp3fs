@@ -73,7 +73,7 @@ At this point the filesystem is ready to be used. Here are the original
 files::
 
   dave@bender:~/mp3fs$ ls -l /mnt/music/Smashing\ Pumpkins/Pisces\ Iscariot/
-  total 345732
+  total 345316
   -rw-r--r-- 1 mythtv mythtv 10267876 2005-06-19 18:36 01 - Soothe.flac
   -rw-r--r-- 1 mythtv mythtv 23512276 2005-06-19 18:36 02 - Frail And Bedazzled.flac
   -rw-r--r-- 1 mythtv mythtv 23332187 2005-06-19 18:36 03 - Plum.flac
@@ -92,7 +92,7 @@ files::
 And now you can use the (virtual) MP3 files from the MP3FS mountpoint::
 
   dave@bender:~/mp3fs$ ls -l /mnt/mp3/Smashing\ Pumpkins/Pisces\ Iscariot/
-  total 345732
+  total 53896
   -rw-r--r-- 1 mythtv mythtv  2446849 2005-06-19 18:36 01 - Soothe.mp3
   -rw-r--r-- 1 mythtv mythtv  3197934 2005-06-19 18:36 02 - Frail And Bedazzled.mp3
   -rw-r--r-- 1 mythtv mythtv  3467503 2005-06-19 18:36 03 - Plum.mp3
