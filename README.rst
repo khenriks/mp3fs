@@ -165,14 +165,14 @@ with::
 
 MP3FS is written in C and uses the following libraries:
 
-- fuse (>= 2.6.0)
-- flac (>= 1.1.4 unless using MP3FS 0.1x)
-- lame
-- libid3tag
+- `FUSE <http://fuse.sourceforge.net/>`_ (>= 2.6.0)
+- `FLAC <http://flac.sourceforge.net/>`_ (>= 1.1.4 unless using MP3FS 0.1x)
+- `LAME <http://lame.sourceforge.net/>`_
+- `libid3tag <http://www.underbit.com/products/mad/>`_
 
 Additionally, MP3FS includes GPL'd code from a number of other projects:
 
-- `Talloc <http://talloc.samba.org/>`_, a heirachical memory allocator
+- `talloc <http://talloc.samba.org/>`_, a heirachical memory allocator
   from Samba
 - A class implementation in C from `PyFlag <http://www.pyflag.net/>`_
 
