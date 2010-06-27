@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
+#include <math.h>
 
 #include <FLAC/metadata.h>
 #include <FLAC/stream_decoder.h>
@@ -161,6 +162,7 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
 	     void *client_data)
 {
   char *tmpstr;
+  float dbgain;
   FileTranscoder trans = (FileTranscoder)client_data;
   
   switch(metadata->type) {
@@ -211,6 +213,20 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
         tmpstr = talloc_asprintf_append(tmpstr, "/%s", get_tag(metadata, "DISCTOTAL"));
       id3_tag_attachframe(trans->id3tag, make_frame("TPOS", tmpstr));
       talloc_free(tmpstr);
+    }
+    
+    /*
+     * Use the Replay Gain tag to set volume scaling. First check for album
+     * gain, then try track gain.
+     */
+    if (get_tag(metadata, "REPLAYGAIN_ALBUM_GAIN")) {
+      dbgain = atof(get_tag(metadata, "REPLAYGAIN_ALBUM_GAIN"));
+      if (dbgain)
+        lame_set_scale(trans->encoder, powf(10, dbgain/20));
+    } else if (get_tag(metadata, "REPLAYGAIN_TRACK_GAIN")) {
+      dbgain = atof(get_tag(metadata, "REPLAYGAIN_TRACK_GAIN"));
+      if (dbgain)
+        lame_set_scale(trans->encoder, powf(10, dbgain/20));
     }
 
     break;
