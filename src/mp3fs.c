@@ -224,6 +224,14 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
     return 0;
 }
 
+/* We need synchronous reads. */
+static void *mp3fs_init(struct fuse_conn_info *conn) {
+    conn->async_read = 0;
+
+    return NULL;
+}
+
+
 static struct fuse_operations mp3fs_ops = {
     .getattr  = mp3fs_getattr,
     .readlink = mp3fs_readlink,
@@ -232,6 +240,7 @@ static struct fuse_operations mp3fs_ops = {
     .read     = mp3fs_read,
     .statfs   = mp3fs_statfs,
     .release  = mp3fs_release,
+    .init     = mp3fs_init,
 };
 
 void usage(char *name) {
