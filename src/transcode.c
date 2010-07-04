@@ -173,8 +173,8 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
                    sizeof(FLAC__StreamMetadata_StreamInfo));
 
             /* set the length in the id3tag */
-            tmpstr = talloc_asprintf(trans, "%llu",
-                trans->info.total_samples/trans->info.sample_rate*1000);
+            tmpstr = talloc_asprintf(trans, "%" PRIu64,
+                trans->info.total_samples*1000/trans->info.sample_rate);
             id3_tag_attachframe(trans->id3tag, make_frame("TLEN", tmpstr));
             talloc_free(tmpstr);
 
