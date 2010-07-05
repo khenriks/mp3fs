@@ -31,14 +31,22 @@
 #include <fcntl.h>
 #include <dirent.h>
 #include <errno.h>
+#include <limits.h>
 #include <sys/statvfs.h>
 
 #include "transcode.h"
 #include "talloc.h"
 
+// determine the system's max path length
+#ifdef PATH_MAX
+    const int pathmax = PATH_MAX;
+#else
+    const int pathmax = 1024;
+#endif
+
 static int mp3fs_readlink(const char *path, char *buf, size_t size) {
     int res;
-    char name[256];
+    char name[pathmax];
 
     DEBUG(logfd, "%s: readlink\n", path);
 
@@ -57,7 +65,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                          off_t offset, struct fuse_file_info *fi) {
     DIR *dp;
     struct dirent *de;
-    char name[256], *ptr;
+    char name[pathmax], *ptr;
 
     DEBUG(logfd, "%s: readdir\n", path);
 
@@ -71,7 +79,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     while((de = readdir(dp)) != NULL) {
         struct stat st;
 
-        strncpy(name, de->d_name, 256);
+        strncpy(name, de->d_name, pathmax);
         ptr = name + strlen(name) - 1;
         while (ptr > name && *ptr != '.') --ptr;
         if (strcmp(ptr, ".flac") == 0) {
@@ -91,7 +99,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
 static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     FileTranscoder f;
-    char name[256];
+    char name[pathmax];
     int hold_errno;
 
     DEBUG(logfd, "%s: getattr\n", path);
@@ -127,7 +135,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
 static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     int fd;
     FileTranscoder f;
-    char name[256];
+    char name[pathmax];
 
     DEBUG(logfd, "%s: open\n", path);
 
@@ -162,7 +170,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi) {
     int fd, res;
     FileTranscoder f=NULL;
-    char name[256];
+    char name[pathmax];
 
     DEBUG(logfd, "%s: reading %d from %d\n", path, size, offset);
 
@@ -196,7 +204,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
 
 static int mp3fs_statfs(const char *path, struct statvfs *stbuf) {
     int res;
-    char name[256];
+    char name[pathmax];
 
     DEBUG(logfd, "%s: statfs\n", path);
 
