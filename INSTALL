@@ -15,6 +15,11 @@ can install these with:
 
 aptitude install libfuse-dev libflac-dev libmp3lame-dev libid3tag0-dev
 
+Likewise if you use Ubuntu intrepid or later and have the multiverse
+repository enabled, you can run:
+
+apt-get install libfuse-dev libflac-dev libmp3lame-dev libid3tag0-dev
+
 If you are using a Mac and have installed MacPorts you can install with:
 
 port install macfuse flac lame libid3tag
