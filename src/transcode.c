@@ -200,6 +200,15 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
             set_tag(metadata, trans->id3tag, "TCOP", "COPYRIGHT");
             set_tag(metadata, trans->id3tag, "WXXX", "LICENSE");
             set_tag(metadata, trans->id3tag, "TENC", "ENCODED_BY");
+            set_tag(metadata, trans->id3tag, "TPUB", "ORGANIZATION");
+            set_tag(metadata, trans->id3tag, "TPE3", "CONDUCTOR");
+
+            /* album artist can be stored in different fields */
+            if (get_tag(metadata, "ALBUMARTIST")) {
+                set_tag(metadata, trans->id3tag, "TPE2", "ALBUMARTIST");
+            } else if (get_tag(metadata, "ALBUM ARTIST")) {
+                set_tag(metadata, trans->id3tag, "TPE2", "ALBUM ARTIST");
+            }
 
             /* set the track/total */
             if (get_tag(metadata, "TRACKNUMBER")) {
