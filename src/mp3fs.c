@@ -44,6 +44,19 @@
     const int pathmax = 1024;
 #endif
 
+enum {
+    KEY_HELP,
+    KEY_VERSION,
+};
+
+static struct fuse_opt mp3fs_opts[] = {
+    FUSE_OPT_KEY("-h",            KEY_HELP),
+    FUSE_OPT_KEY("--help",        KEY_HELP),
+    FUSE_OPT_KEY("-V",            KEY_VERSION),
+    FUSE_OPT_KEY("--version",     KEY_VERSION),
+    FUSE_OPT_END
+};
+
 static int mp3fs_readlink(const char *path, char *buf, size_t size) {
     int res;
     char name[pathmax];
@@ -258,26 +271,54 @@ void usage(char *name) {
     printf("  for a list of fuse options use -h after mountpoint\n\n");
 }
 
+static int mp3fs_opt_proc(void *data, const char *arg, int key,
+                          struct fuse_args *outargs) {
+    switch(key) {
+        case FUSE_OPT_KEY_NONOPT:
+            // check for flacdir and bitrate parameters
+            if (!bitrate && !basepath) {
+                char *rate;
+                rate = strrchr(arg, ',');
+                if (rate) {
+                    rate[0] = '\0';
+                    basepath = arg;
+                    bitrate = atoi(rate + 1);
+                    return 0;
+                }
+            }
+            break;
+
+        case KEY_HELP:
+            usage(outargs->argv[0]);
+            fuse_opt_add_arg(outargs, "-ho");
+            fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
+            exit(1);
+
+        case KEY_VERSION:
+            printf("MP3FS version %s\n", PACKAGE_VERSION);
+            fuse_opt_add_arg(outargs, "--version");
+            fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
+            exit(0);
+    }
+
+    return 1;
+}
+
 int main(int argc, char *argv[]) {
-    char* rate;
+    int ret;
 
-    if (argc<2) {
+    struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+
+    if (fuse_opt_parse(&args, NULL, mp3fs_opts, mp3fs_opt_proc)) {
+        fprintf(stderr, "Error parsing options.\n");
         usage(argv[0]);
-        return 0;
+        return 1;
     }
 
-    basepath = argv[1];
-    bitrate = 0;
-
-    rate = strrchr(basepath, ',');
-    if (rate) {
-        rate[0] = '\0';
-        bitrate = atoi(rate + 1);
-    }
-
-    if (!bitrate || !rate) {
-        fprintf(stderr, "No bit rate specified\n");
-        return -1;
+    if (!bitrate || !basepath) {
+        fprintf(stderr, "No valid bitrate or basepath specified.\n");
+        usage(argv[0]);
+        return 1;
     }
 
     // open the logfile
@@ -285,12 +326,20 @@ int main(int argc, char *argv[]) {
     logfd = fopen("/tmp/mp3fs.log", "w");
 #endif
 
+    DEBUG(logfd, "MP3FS options:\n"
+                 "basepath:  %s\n"
+                 "bitrate:   %d\n"
+                 "\n",
+                 basepath, bitrate);
+
     // start FUSE
-    fuse_main(argc-1, argv+1, &mp3fs_ops, NULL);
+    ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);
 
 #ifdef __DEBUG__
     fclose(logfd);
 #endif
 
-  return 0;
+    fuse_opt_free_args(&args);
+
+    return ret;
 }
