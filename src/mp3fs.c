@@ -185,7 +185,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     FileTranscoder f=NULL;
     char name[pathmax];
 
-    DEBUG(logfd, "%s: reading %d from %d\n", path, size, offset);
+    DEBUG(logfd, "%s: reading %zu from %jd\n", path, size, offset);
 
     strncpy(name, basepath, sizeof(name));
     strncat(name, path, sizeof(name) - strlen(name));
