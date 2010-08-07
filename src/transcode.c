@@ -316,7 +316,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
     if (self->encoder == NULL) {
         goto encoder_fail;
     }
-    lame_set_quality(self->encoder, MP3_QUALITY);
+    lame_set_quality(self->encoder, params.quality);
     lame_set_brate(self->encoder, params.bitrate);
     lame_set_bWriteVbrTag(self->encoder, 0);
     lame_set_errorf(self->encoder, &lame_error);

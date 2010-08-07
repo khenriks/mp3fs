@@ -26,7 +26,6 @@
 #include "class.h"
 #include "stringio.h"
 
-#define MP3_QUALITY 5
 #define FLAC_BLOCKSIZE 4608
 #define BUFSIZE 2 * FLAC_BLOCKSIZE
 
@@ -34,6 +33,7 @@
 struct mp3fs_params {
     const char      *basepath;
     int             bitrate;
+    int             quality;
 };
 
 // a list of currently opened files

@@ -46,7 +46,8 @@
 
 struct mp3fs_params params = {
     .basepath           = NULL,
-    .bitrate            = 0
+    .bitrate            = 0,
+    .quality            = 5
 };
 
 enum {
@@ -54,7 +55,11 @@ enum {
     KEY_VERSION,
 };
 
+#define MP3FS_OPT(t, p, v) { t, offsetof(struct mp3fs_params, p), v }
+
 static struct fuse_opt mp3fs_opts[] = {
+    MP3FS_OPT("--quality=%d",     quality, 0),
+
     FUSE_OPT_KEY("-h",            KEY_HELP),
     FUSE_OPT_KEY("--help",        KEY_HELP),
     FUSE_OPT_KEY("-V",            KEY_VERSION),
@@ -280,6 +285,10 @@ void usage(char *name) {
         "    -o opt,[opt...]        mount options\n"
         "    -h   --help            print help\n"
         "    -V   --version         print version\n"
+        "\n"
+        "MP3FS options:\n"
+        "    --quality=<0..9>       encoding quality:\n"
+        "                           0=high/slow .. 9=poor/fast, 5=default\n"
         "\n", name);
 }
 
@@ -321,7 +330,7 @@ int main(int argc, char *argv[]) {
 
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-    if (fuse_opt_parse(&args, NULL, mp3fs_opts, mp3fs_opt_proc)) {
+    if (fuse_opt_parse(&args, &params, mp3fs_opts, mp3fs_opt_proc)) {
         fprintf(stderr, "Error parsing options.\n\n");
         usage(argv[0]);
         return 1;
@@ -329,6 +338,13 @@ int main(int argc, char *argv[]) {
 
     if (!params.bitrate || !params.basepath) {
         fprintf(stderr, "No valid bitrate or basepath specified.\n\n");
+        usage(argv[0]);
+        return 1;
+    }
+
+    if (params.quality < 0 || params.quality > 9) {
+        fprintf(stderr, "Invalid encoding quality value: %d\n\n",
+                params.quality);
         usage(argv[0]);
         return 1;
     }
@@ -341,8 +357,10 @@ int main(int argc, char *argv[]) {
     DEBUG(logfd, "MP3FS options:\n"
                  "basepath:  %s\n"
                  "bitrate:   %d\n"
+                 "quality:   %d%s\n"
                  "\n",
-                 params.basepath, params.bitrate);
+                 params.basepath, params.bitrate,
+                 params.quality, params.quality == 5 ? " (default)" : "");
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);
