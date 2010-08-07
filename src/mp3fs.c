@@ -32,6 +32,7 @@
 #include <dirent.h>
 #include <errno.h>
 #include <limits.h>
+#include <sys/stat.h>
 #include <sys/statvfs.h>
 
 #include "transcode.h"
@@ -337,7 +338,21 @@ int main(int argc, char *argv[]) {
     }
 
     if (!params.bitrate || !params.basepath) {
-        fprintf(stderr, "No valid bitrate or basepath specified.\n\n");
+        fprintf(stderr, "No valid flacdir or bitrate specified.\n\n");
+        usage(argv[0]);
+        return 1;
+    }
+
+    if (params.basepath[0] != '/') {
+        fprintf(stderr, "flacdir must be an absolute path.\n\n");
+        usage(argv[0]);
+        return 1;
+    }
+
+    struct stat st;
+    if (stat(params.basepath, &st) != 0 || !S_ISDIR(st.st_mode)) {
+        fprintf(stderr, "flacdir is not a valid directory: %s\n\n",
+                params.basepath);
         usage(argv[0]);
         return 1;
     }
