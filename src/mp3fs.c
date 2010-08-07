@@ -270,10 +270,17 @@ static struct fuse_operations mp3fs_ops = {
 };
 
 void usage(char *name) {
-    printf("\nUSAGE: %s flacdir,bitrate mountpoint [-o fuseopts]\n", name);
-    printf("  acceptable bitrates are "
-           "96, 112, 128, 160, 192, 224, 256, 320\n");
-    printf("  for a list of fuse options use -h after mountpoint\n\n");
+    printf(""
+        "Usage: %s flacdir,bitrate mountpoint [options]\n"
+        "\n"
+        "    Acceptable bitrates are 96, 112, 128, 160, 192, 224, 256, 320.\n"
+        "    For a list of fuse options use -h after mountpoint.\n"
+        "\n"
+        "General options:\n"
+        "    -o opt,[opt...]        mount options\n"
+        "    -h   --help            print help\n"
+        "    -V   --version         print version\n"
+        "\n", name);
 }
 
 static int mp3fs_opt_proc(void *data, const char *arg, int key,
@@ -315,13 +322,13 @@ int main(int argc, char *argv[]) {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
     if (fuse_opt_parse(&args, NULL, mp3fs_opts, mp3fs_opt_proc)) {
-        fprintf(stderr, "Error parsing options.\n");
+        fprintf(stderr, "Error parsing options.\n\n");
         usage(argv[0]);
         return 1;
     }
 
     if (!params.bitrate || !params.basepath) {
-        fprintf(stderr, "No valid bitrate or basepath specified.\n");
+        fprintf(stderr, "No valid bitrate or basepath specified.\n\n");
         usage(argv[0]);
         return 1;
     }
