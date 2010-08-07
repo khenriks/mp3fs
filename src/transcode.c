@@ -34,6 +34,8 @@
 #include "transcode.h"
 #include "talloc.h"
 
+extern struct mp3fs_params params;
+
 /*******************************************************************
  CALLBACKS and HELPERS for LAME and FLAC
 *******************************************************************/
@@ -315,7 +317,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
         goto encoder_fail;
     }
     lame_set_quality(self->encoder, MP3_QUALITY);
-    lame_set_brate(self->encoder, bitrate);
+    lame_set_brate(self->encoder, params.bitrate);
     lame_set_bWriteVbrTag(self->encoder, 0);
     lame_set_errorf(self->encoder, &lame_error);
     lame_set_debugf(self->encoder, &lame_error);
@@ -339,7 +341,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
         goto init_encoder_fail;
     }
 
-    self->framesize = 144*bitrate*1000/self->info.sample_rate; // 144=1152/8
+    self->framesize = 144*params.bitrate*1000/self->info.sample_rate; // 144=1152/8
     self->numframes = divideround(self->info.total_samples, 1152) + 2;
 
     /* Now we have to render our id3tag so that we know how big the total
@@ -364,7 +366,7 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
 
     // id3v2 + lame stuff + mp3 data + id3v1
     self->totalsize = self->buffer->size
-        + divideround((long long)self->numframes*144*bitrate*10,
+        + divideround((long long)self->numframes*144*params.bitrate*10,
                       self->info.sample_rate/100) + 128;
 
     id3_tag_delete(self->id3tag);

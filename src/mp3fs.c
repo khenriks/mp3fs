@@ -44,6 +44,11 @@
     const int pathmax = 1024;
 #endif
 
+struct mp3fs_params params = {
+    .basepath           = NULL,
+    .bitrate            = 0
+};
+
 enum {
     KEY_HELP,
     KEY_VERSION,
@@ -63,7 +68,7 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
 
     DEBUG(logfd, "%s: readlink\n", path);
 
-    strncpy(name, basepath, sizeof(name));
+    strncpy(name, params.basepath, sizeof(name));
     strncat(name, path, sizeof(name) - strlen(name));
 
     res = readlink(name, buf, size - 1);
@@ -82,7 +87,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
     DEBUG(logfd, "%s: readdir\n", path);
 
-    strncpy(name, basepath, sizeof(name));
+    strncpy(name, params.basepath, sizeof(name));
     strncat(name, path, sizeof(name) - strlen(name));
 
     dp = opendir(name);
@@ -117,7 +122,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
 
     DEBUG(logfd, "%s: getattr\n", path);
 
-    strncpy(name, basepath, sizeof(name));
+    strncpy(name, params.basepath, sizeof(name));
     strncat(name, path, sizeof(name) - strlen(name));
 
     // pass-through for regular files
@@ -152,7 +157,7 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
 
     DEBUG(logfd, "%s: open\n", path);
 
-    strncpy(name, basepath, sizeof(name));
+    strncpy(name, params.basepath, sizeof(name));
     strncat(name, path, sizeof(name) - strlen(name));
 
     // If this is a real file, do nothing
@@ -187,7 +192,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
 
     DEBUG(logfd, "%s: reading %zu from %jd\n", path, size, offset);
 
-    strncpy(name, basepath, sizeof(name));
+    strncpy(name, params.basepath, sizeof(name));
     strncat(name, path, sizeof(name) - strlen(name));
 
     // If this is a real file, allow pass-through
@@ -221,7 +226,7 @@ static int mp3fs_statfs(const char *path, struct statvfs *stbuf) {
 
     DEBUG(logfd, "%s: statfs\n", path);
 
-    strncpy(name, basepath, sizeof(name));
+    strncpy(name, params.basepath, sizeof(name));
     strncat(name, path, sizeof(name) - strlen(name));
 
     res = statvfs(name, stbuf);
@@ -276,13 +281,13 @@ static int mp3fs_opt_proc(void *data, const char *arg, int key,
     switch(key) {
         case FUSE_OPT_KEY_NONOPT:
             // check for flacdir and bitrate parameters
-            if (!bitrate && !basepath) {
+            if (!params.bitrate && !params.basepath) {
                 char *rate;
                 rate = strrchr(arg, ',');
                 if (rate) {
                     rate[0] = '\0';
-                    basepath = arg;
-                    bitrate = atoi(rate + 1);
+                    params.basepath = arg;
+                    params.bitrate = atoi(rate + 1);
                     return 0;
                 }
             }
@@ -315,7 +320,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (!bitrate || !basepath) {
+    if (!params.bitrate || !params.basepath) {
         fprintf(stderr, "No valid bitrate or basepath specified.\n");
         usage(argv[0]);
         return 1;
@@ -330,7 +335,7 @@ int main(int argc, char *argv[]) {
                  "basepath:  %s\n"
                  "bitrate:   %d\n"
                  "\n",
-                 basepath, bitrate);
+                 params.basepath, params.bitrate);
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);

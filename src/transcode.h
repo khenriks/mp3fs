@@ -30,10 +30,14 @@
 #define FLAC_BLOCKSIZE 4608
 #define BUFSIZE 2 * FLAC_BLOCKSIZE
 
+/** Global program parameters */
+struct mp3fs_params {
+    const char      *basepath;
+    int             bitrate;
+};
+
 // a list of currently opened files
 FILE *logfd;
-const char *basepath;
-int bitrate;
 
 /** This is used for debugging. */
 #ifndef __DEBUG__
