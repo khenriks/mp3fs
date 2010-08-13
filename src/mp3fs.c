@@ -99,7 +99,7 @@ void convert_path(char* path, int toflac) {
 
 static int mp3fs_readlink(const char *path, char *buf, size_t size) {
     char* origpath;
-    int res;
+    ssize_t len;
 
     DEBUG(logfd, "%s: readlink\n", path);
 
@@ -110,12 +110,12 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
         goto translate_fail;
     }
 
-    res = readlink(origpath, buf, size - 1);
-    if (res == -1) {
+    len = readlink(origpath, buf, size - 1);
+    if (len == -1) {
         goto readlink_fail;
     }
 
-    buf[res] = '\0';
+    buf[len] = '\0';
 
 readlink_fail:
     free(origpath);
