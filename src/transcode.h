@@ -22,6 +22,7 @@
 #include <FLAC/stream_decoder.h>
 #include <lame/lame.h>
 #include <id3tag.h>
+#include <syslog.h>
 
 #include "class.h"
 #include "stringio.h"
@@ -29,26 +30,17 @@
 #define FLAC_BLOCKSIZE 4608
 #define BUFSIZE 2 * FLAC_BLOCKSIZE
 
-/** Global program parameters */
+/* Global program parameters */
 struct mp3fs_params {
     const char      *basepath;
     int             bitrate;
     int             quality;
+    int             debug;
 };
 
-// a list of currently opened files
-FILE *logfd;
-
-/** This is used for debugging. */
-#ifndef __DEBUG__
-#define DEBUG(f, x, ...)
-#else
-#define DEBUG(f, x, ...) do { \
-    fprintf(f, "%s:%u ",__FUNCTION__,__LINE__); \
-    fprintf(f, x, ## __VA_ARGS__); \
-    fflush(f); \
-  } while(0)
-#endif
+#define mp3fs_debug(f, ...) syslog(LOG_DEBUG, f, ## __VA_ARGS__)
+#define mp3fs_info(f, ...) syslog(LOG_INFO, f, ## __VA_ARGS__)
+#define mp3fs_error(f, ...) syslog(LOG_ERR, f, ## __VA_ARGS__)
 
 CLASS(FileTranscoder, Object)
     StringIO buffer;

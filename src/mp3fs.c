@@ -41,23 +41,29 @@
 struct mp3fs_params params = {
     .basepath           = NULL,
     .bitrate            = 0,
-    .quality            = 5
+    .quality            = 5,
+    .debug              = 0
 };
 
 enum {
     KEY_HELP,
     KEY_VERSION,
+    KEY_KEEP_OPT
 };
 
 #define MP3FS_OPT(t, p, v) { t, offsetof(struct mp3fs_params, p), v }
 
 static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("--quality=%d",     quality, 0),
+    MP3FS_OPT("-d",               debug, 1),
+    MP3FS_OPT("debug",            debug, 1),
 
     FUSE_OPT_KEY("-h",            KEY_HELP),
     FUSE_OPT_KEY("--help",        KEY_HELP),
     FUSE_OPT_KEY("-V",            KEY_VERSION),
     FUSE_OPT_KEY("--version",     KEY_VERSION),
+    FUSE_OPT_KEY("-d",            KEY_KEEP_OPT),
+    FUSE_OPT_KEY("debug",         KEY_KEEP_OPT),
     FUSE_OPT_END
 };
 
@@ -101,7 +107,7 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
     char* origpath;
     ssize_t len;
 
-    DEBUG(logfd, "%s: readlink\n", path);
+    mp3fs_debug("%s: readlink", path);
 
     errno = 0;
 
@@ -129,7 +135,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     DIR *dp;
     struct dirent *de;
 
-    DEBUG(logfd, "%s: readdir\n", path);
+    mp3fs_debug("%s: readdir", path);
 
     errno = 0;
 
@@ -166,7 +172,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     char* origpath;
     FileTranscoder f;
 
-    DEBUG(logfd, "%s: getattr\n", path);
+    mp3fs_debug("%s: getattr", path);
 
     errno = 0;
 
@@ -213,7 +219,7 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     int fd;
     FileTranscoder f;
 
-    DEBUG(logfd, "%s: open\n", path);
+    mp3fs_debug("%s: open", path);
 
     errno = 0;
 
@@ -264,7 +270,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     int fd;
     int read = 0;
 
-    DEBUG(logfd, "%s: reading %zu from %jd\n", path, size, offset);
+    mp3fs_debug("%s: reading %zu from %jd", path, size, offset);
 
     errno = 0;
 
@@ -290,7 +296,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     f = (FileTranscoder) fi->fh;
 
     if (!f) {
-        DEBUG(logfd, "Tried to read from unopen file: %s\n", origpath);
+        mp3fs_debug("Tried to read from unopen file: %s", origpath);
         goto transcoder_fail;
     }
     read = f->Read(f, buf, offset, size);
@@ -310,7 +316,7 @@ translate_fail:
 static int mp3fs_statfs(const char *path, struct statvfs *stbuf) {
     char* origpath;
 
-    DEBUG(logfd, "%s: statfs\n", path);
+    mp3fs_debug("%s: statfs", path);
 
     errno = 0;
 
@@ -329,7 +335,7 @@ translate_fail:
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
     FileTranscoder f;
 
-    DEBUG(logfd, "%s: release\n", path);
+    mp3fs_debug("%s: release", path);
 
     f = (FileTranscoder) fi->fh;
     if (f) {
@@ -448,25 +454,19 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    // open the logfile
-#ifdef __DEBUG__
-    logfd = fopen("/tmp/mp3fs.log", "w");
-#endif
+    /* Log to the screen if debug is enabled. */
+    openlog("mp3fs", params.debug ? LOG_PERROR : 0, LOG_USER);
 
-    DEBUG(logfd, "MP3FS options:\n"
-                 "basepath:  %s\n"
-                 "bitrate:   %d\n"
-                 "quality:   %d%s\n"
-                 "\n",
-                 params.basepath, params.bitrate,
-                 params.quality, params.quality == 5 ? " (default)" : "");
+    mp3fs_debug("MP3FS options:\n"
+                "basepath:  %s\n"
+                "bitrate:   %d\n"
+                "quality:   %d%s\n"
+                "\n",
+                params.basepath, params.bitrate,
+                params.quality, params.quality == 5 ? " (default)" : "");
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);
-
-#ifdef __DEBUG__
-    fclose(logfd);
-#endif
 
     fuse_opt_free_args(&args);
 

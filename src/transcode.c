@@ -18,6 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -117,22 +119,34 @@ int divideround(long long one, int another) {
     return result;
 }
 
-// lame callback for error/debug/msg
-void lame_error(const char *fmt, va_list list) {
-    DEBUG(logfd, "LAME error: ");
-#ifdef __DEBUG__
-    vfprintf(logfd, fmt, list);
-#endif
-    return;
+/*
+ * Print messages from lame. We cannot easily prepend a string to indicate
+ * that the message comes from lame, so we need to render it ourselves.
+ */
+static void lame_print(int priority, const char *fmt, va_list list) {
+    char* msg;
+    vasprintf(&msg, fmt, list);
+    syslog(priority, "LAME: %s", msg);
+    free(msg);
 }
 
-// flac callback for errors
+/* Callback functions for each type of lame message callback */
+static void lame_error(const char *fmt, va_list list) {
+    lame_print(LOG_ERR, fmt, list);
+}
+static void lame_msg(const char *fmt, va_list list) {
+    lame_print(LOG_INFO, fmt, list);
+}
+static void lame_debug(const char *fmt, va_list list) {
+    lame_print(LOG_DEBUG, fmt, list);
+}
+
+/* Callback for FLAC errors */
 static void error_cb(const FLAC__StreamDecoder *decoder,
                      FLAC__StreamDecoderErrorStatus status,
                      void *client_data) {
-    DEBUG(logfd, "FLAC error: %s\n",
-          FLAC__StreamDecoderErrorStatusString[status]);
-    return;
+    mp3fs_error("FLAC error: %s",
+                FLAC__StreamDecoderErrorStatusString[status]);
 }
 
 // callbacks for the decoder
@@ -320,8 +334,8 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
     lame_set_brate(self->encoder, params.bitrate);
     lame_set_bWriteVbrTag(self->encoder, 0);
     lame_set_errorf(self->encoder, &lame_error);
-    lame_set_debugf(self->encoder, &lame_error);
-    lame_set_msgf(self->encoder, &lame_error);
+    lame_set_msgf(self->encoder, &lame_msg);
+    lame_set_debugf(self->encoder, &lame_debug);
     lame_set_num_samples(self->encoder, self->info.total_samples);
     lame_set_in_samplerate(self->encoder, self->info.sample_rate);
     lame_set_num_channels(self->encoder, self->info.channels);
@@ -407,7 +421,7 @@ int FileTranscoder_Finish(FileTranscoder self) {
 
         if (self->buffer->size + 128 != self->totalsize) {
             // write the id3v1 tag, always 128 bytes from end
-            DEBUG(logfd, "Something went wrong with file size calculation: "
+            mp3fs_debug("Something went wrong with file size calculation: "
                   "off by %d\n", self->buffer->size + 128 - self->totalsize);
             CALL(self->buffer, seek, self->totalsize-128, SEEK_SET);
         }
