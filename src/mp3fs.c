@@ -107,7 +107,7 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
     char* origpath;
     ssize_t len;
 
-    mp3fs_debug("%s: readlink", path);
+    mp3fs_debug("readlink %s", path);
 
     errno = 0;
 
@@ -135,7 +135,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     DIR *dp;
     struct dirent *de;
 
-    mp3fs_debug("%s: readdir", path);
+    mp3fs_debug("readdir %s", path);
 
     errno = 0;
 
@@ -172,7 +172,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     char* origpath;
     FileTranscoder f;
 
-    mp3fs_debug("%s: getattr", path);
+    mp3fs_debug("getattr %s", path);
 
     errno = 0;
 
@@ -219,7 +219,7 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     int fd;
     FileTranscoder f;
 
-    mp3fs_debug("%s: open", path);
+    mp3fs_debug("open %s", path);
 
     errno = 0;
 
@@ -270,7 +270,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     int fd;
     int read = 0;
 
-    mp3fs_debug("%s: reading %zu from %jd", path, size, offset);
+    mp3fs_debug("read %s: %zu bytes from %jd", path, size, offset);
 
     errno = 0;
 
@@ -296,7 +296,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     f = (FileTranscoder) fi->fh;
 
     if (!f) {
-        mp3fs_debug("Tried to read from unopen file: %s", origpath);
+        mp3fs_error("Tried to read from unopen file: %s", origpath);
         goto transcoder_fail;
     }
     read = f->Read(f, buf, offset, size);
@@ -316,7 +316,7 @@ translate_fail:
 static int mp3fs_statfs(const char *path, struct statvfs *stbuf) {
     char* origpath;
 
-    mp3fs_debug("%s: statfs", path);
+    mp3fs_debug("statfs %s", path);
 
     errno = 0;
 
@@ -335,7 +335,7 @@ translate_fail:
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
     FileTranscoder f;
 
-    mp3fs_debug("%s: release", path);
+    mp3fs_debug("release %s", path);
 
     f = (FileTranscoder) fi->fh;
     if (f) {
