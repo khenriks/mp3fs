@@ -205,6 +205,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
 
     f->Finish(f);
+    free(f->buffer.data);
     talloc_free(f);
 transcoder_fail:
 stat_fail:
@@ -340,6 +341,7 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
     f = (FileTranscoder) fi->fh;
     if (f) {
         f->Finish(f);
+        free(f->buffer.data);
         talloc_free(f);
     }
 

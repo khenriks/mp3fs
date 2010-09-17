@@ -25,7 +25,6 @@
 #include <syslog.h>
 
 #include "class.h"
-#include "stringio.h"
 
 #define FLAC_BLOCKSIZE 4608
 #define BUFSIZE 2 * FLAC_BLOCKSIZE
@@ -42,8 +41,15 @@ struct mp3fs_params {
 #define mp3fs_info(f, ...) syslog(LOG_INFO, f, ## __VA_ARGS__)
 #define mp3fs_error(f, ...) syslog(LOG_ERR, f, ## __VA_ARGS__)
 
+/* Internal buffer used for output file */
+struct mp3_buffer {
+    uint8_t* data;
+    int pos;
+    int size;
+};
+
 CLASS(FileTranscoder, Object)
-    StringIO buffer;
+    struct mp3_buffer buffer;
     int readptr;
     int framesize;
     int numframes;

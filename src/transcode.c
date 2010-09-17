@@ -38,6 +38,43 @@
 
 extern struct mp3fs_params params;
 
+/* Functions for dealing with the buffer */
+
+/*
+ * Prepare the buffer to accept data and return a pointer to a location
+ * where data may be written.
+ */
+uint8_t* buffer_write_prepare(struct mp3_buffer* buffer, int len) {
+    uint8_t* newdata;
+    if (buffer->size < buffer->pos + len) {
+        newdata = realloc(buffer->data, buffer->pos + len);
+        if (!newdata) {
+            return NULL;
+        }
+
+        buffer->data = newdata;
+        buffer->size = buffer->pos + len;
+    }
+
+    return buffer->data + buffer->pos;
+}
+
+/*
+ * Write data to the buffer. This makes use of the buffer_write_prepare
+ * function.
+ */
+int buffer_write(struct mp3_buffer* buffer, uint8_t* data, int len) {
+    uint8_t* write_ptr;
+    write_ptr = buffer_write_prepare(buffer, len);
+    if (!write_ptr) {
+        return 0;
+    }
+    memcpy(write_ptr, data, len);
+    buffer->pos += len;
+
+    return len;
+}
+
 /*******************************************************************
  CALLBACKS and HELPERS for LAME and FLAC
 *******************************************************************/
@@ -155,6 +192,7 @@ write_cb(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,
          const FLAC__int32 *const buffer[], void *client_data) {
     int len, i;
     FileTranscoder trans = (FileTranscoder)client_data;
+    uint8_t* write_ptr;
 
     if (frame->header.blocksize < 1152) {
         //printf("ERROR: got less than a frame: %d\n", frame->header.blocksize);
@@ -169,10 +207,18 @@ write_cb(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,
         }
     }
 
-    len = lame_encode_buffer(trans->encoder, trans->lbuf, trans->rbuf,
-                             frame->header.blocksize, trans->mp3buf, BUFSIZE);
+    write_ptr = buffer_write_prepare(&trans->buffer, BUFSIZE);
+    if (!write_ptr) {
+        return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+    }
 
-    CALL(trans->buffer, write, (char *)trans->mp3buf, len);
+    len = lame_encode_buffer(trans->encoder, trans->lbuf, trans->rbuf,
+                             frame->header.blocksize, write_ptr, BUFSIZE);
+    if (len < 0) {
+        return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
+    }
+
+    trans->buffer.pos += len;
 
     return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
@@ -280,7 +326,11 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
 *******************************************************************/
 
 FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
-    self->buffer = CONSTRUCT(StringIO, StringIO, Con, self);
+    uint8_t* write_ptr;
+
+    /* Initialize buffer. */
+    memset(&self->buffer, 0, sizeof(struct mp3_buffer));
+
     self->name = talloc_strdup(self, filename);
 
     self->id3tag = id3_tag_new();
@@ -359,8 +409,8 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
     self->numframes = divideround(self->info.total_samples, 1152) + 2;
 
     /* Now we have to render our id3tag so that we know how big the total
-     * file is. We write the id3v3 tag directly into the front of the
-     * stringio. The id3v1 tag is written into a fixed 128 byte buffer (it
+     * file is. We write the id3v2 tag directly into the front of the
+     * buffer. The id3v1 tag is written into a fixed 128 byte buffer (it
      * is a fixed size)
      */
 
@@ -371,21 +421,26 @@ FileTranscoder FileTranscoder_Con(FileTranscoder self, char *filename) {
     id3_tag_options(self->id3tag, ID3_TAG_OPTION_COMPRESSION, 0);
 
     // grow buffer and write v2 tag
-    CALL(self->buffer, seek, id3_tag_render(self->id3tag, 0), SEEK_SET);
-    id3_tag_render(self->id3tag, (id3_byte_t *)self->buffer->data);
+    write_ptr = buffer_write_prepare(&self->buffer,
+                                     id3_tag_render(self->id3tag, 0));
+    if (!write_ptr) {
+        goto write_tag_fail;
+    }
+    self->buffer.pos += id3_tag_render(self->id3tag, self->buffer.data);
 
     // store v1 tag
     id3_tag_options(self->id3tag, ID3_TAG_OPTION_ID3V1, ~0);
     id3_tag_render(self->id3tag, (id3_byte_t *)self->id3v1tag);
 
     // id3v2 + lame stuff + mp3 data + id3v1
-    self->totalsize = self->buffer->size
+    self->totalsize = self->buffer.pos
         + divideround((long long)self->numframes*144*params.bitrate*10,
                       self->info.sample_rate/100) + 128;
 
     id3_tag_delete(self->id3tag);
     return self;
 
+write_tag_fail:
 init_encoder_fail:
     lame_close(self->encoder);
 
@@ -403,6 +458,7 @@ id3_fail:
 
 int FileTranscoder_Finish(FileTranscoder self) {
     int len=0;
+    uint8_t* write_ptr;
 
     // flac cleanup
     if (self->decoder != NULL) {
@@ -413,19 +469,23 @@ int FileTranscoder_Finish(FileTranscoder self) {
 
     // lame cleanup
     if (self->encoder != NULL) {
-        len = lame_encode_flush(self->encoder, self->mp3buf, BUFSIZE);
-        if (len>0)
-            CALL(self->buffer, write, (char *)self->mp3buf, len);
+        write_ptr = buffer_write_prepare(&self->buffer, BUFSIZE);
+        if (write_ptr) {
+            len = lame_encode_flush(self->encoder, write_ptr, BUFSIZE);
+            if (len >= 0) {
+                self->buffer.pos += len;
+            }
+        }
         lame_close(self->encoder);
         self->encoder = NULL;
 
-        if (self->buffer->size + 128 != self->totalsize) {
+        if (self->buffer.pos + 128 != self->totalsize) {
             // write the id3v1 tag, always 128 bytes from end
             mp3fs_debug("Something went wrong with file size calculation: "
-                  "off by %d\n", self->buffer->size + 128 - self->totalsize);
-            CALL(self->buffer, seek, self->totalsize-128, SEEK_SET);
+                  "off by %d\n", self->buffer.pos + 128 - self->totalsize);
+            self->buffer.pos = self->totalsize - 128;
         }
-        CALL(self->buffer, write, self->id3v1tag, 128);
+        buffer_write(&self->buffer, (uint8_t*)self->id3v1tag, 128);
         len += 128;
     }
 
@@ -443,7 +503,7 @@ int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
      * bytes). If we detect this case, we give back the id3v1 tag
      * prepended with zeros to fill the block
      */
-    if (offset > self->buffer->size
+    if (offset > self->buffer.pos
         && offset + len > (self->totalsize - 128)) {
         int id3start = self->totalsize - 128;
 
@@ -462,7 +522,7 @@ int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
 
     if (self->decoder && self->encoder) {
         // transcode up to what we need if possible
-        while (self->buffer->size < offset + len) {
+        while (self->buffer.pos < offset + len) {
             if (FLAC__stream_decoder_get_state(self->decoder)
                 < FLAC__STREAM_DECODER_END_OF_STREAM) {
                 FLAC__stream_decoder_process_single(self->decoder);
@@ -474,12 +534,12 @@ int FileTranscoder_Read(FileTranscoder self, char *buff, int offset, int len) {
     }
 
     // truncate if we didnt actually get len
-    if (self->buffer->size < offset + len) {
-        len = self->buffer->size - offset;
+    if (self->buffer.pos < offset + len) {
+        len = self->buffer.pos - offset;
         if (len < 0) len = 0;
     }
 
-    memcpy(buff, self->buffer->data+offset, len);
+    memcpy(buff, self->buffer.data + offset, len);
     return len;
 }
 
