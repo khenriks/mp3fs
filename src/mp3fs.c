@@ -36,7 +36,6 @@
 #include <sys/statvfs.h>
 
 #include "transcode.h"
-#include "talloc.h"
 
 struct mp3fs_params params = {
     .basepath           = NULL,
@@ -170,7 +169,7 @@ translate_fail:
 
 static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     char* origpath;
-    FileTranscoder f;
+    struct transcoder* trans;
 
     mp3fs_debug("getattr %s", path);
 
@@ -195,18 +194,16 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
         goto stat_fail;
     }
 
-    f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL,
-                  (char *)origpath);
-    if (!f) {
+    trans = transcoder_new(origpath);
+    if (!trans) {
         goto transcoder_fail;
     }
 
-    stbuf->st_size = f->totalsize;
+    stbuf->st_size = trans->totalsize;
     stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
 
-    f->Finish(f);
-    free(f->buffer.data);
-    talloc_free(f);
+    transcoder_finish(trans);
+    transcoder_delete(trans);
 transcoder_fail:
 stat_fail:
 passthrough:
@@ -217,8 +214,8 @@ translate_fail:
 
 static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     char* origpath;
+    struct transcoder* trans;
     int fd;
-    FileTranscoder f;
 
     mp3fs_debug("open %s", path);
 
@@ -247,14 +244,13 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
 
     convert_path(origpath, 1);
 
-    f = CONSTRUCT(FileTranscoder, FileTranscoder, Con, NULL,
-                  (char *)origpath);
-    if (!f) {
+    trans = transcoder_new(origpath);
+    if (!trans) {
         goto transcoder_fail;
     }
 
-    // store ourselves in the fuse_file_info structure
-    fi->fh = (unsigned long) f;
+    /* Store transcoder in the fuse_file_info structure. */
+    fi->fh = (uint64_t)trans;
 
 transcoder_fail:
 passthrough:
@@ -267,9 +263,9 @@ translate_fail:
 static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi) {
     char* origpath;
-    FileTranscoder f=NULL;
     int fd;
     int read = 0;
+    struct transcoder* trans;
 
     mp3fs_debug("read %s: %zu bytes from %jd", path, size, offset);
 
@@ -293,14 +289,14 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
         goto open_fail;
     }
 
-    // retrieve transcoder
-    f = (FileTranscoder) fi->fh;
+    trans = (struct transcoder*)fi->fh;
 
-    if (!f) {
+    if (!trans) {
         mp3fs_error("Tried to read from unopen file: %s", origpath);
         goto transcoder_fail;
     }
-    read = f->Read(f, buf, offset, size);
+
+    read = transcoder_read(trans, buf, offset, size);
 
 transcoder_fail:
 passthrough:
@@ -334,15 +330,14 @@ translate_fail:
 }
 
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
-    FileTranscoder f;
+    struct transcoder* trans;
 
     mp3fs_debug("release %s", path);
 
-    f = (FileTranscoder) fi->fh;
-    if (f) {
-        f->Finish(f);
-        free(f->buffer.data);
-        talloc_free(f);
+    trans = (struct transcoder*)fi->fh;
+    if (trans) {
+        transcoder_finish(trans);
+        transcoder_delete(trans);
     }
 
     return 0;

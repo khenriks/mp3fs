@@ -24,8 +24,6 @@
 #include <id3tag.h>
 #include <syslog.h>
 
-#include "class.h"
-
 #define FLAC_BLOCKSIZE 4608
 #define BUFSIZE 2 * FLAC_BLOCKSIZE
 
@@ -48,26 +46,24 @@ struct mp3_buffer {
     int size;
 };
 
-CLASS(FileTranscoder, Object)
+/* Transcoder parameters for open mp3 */
+struct transcoder {
     struct mp3_buffer buffer;
-    int readptr;
-    int framesize;
-    int numframes;
-    int totalsize;
-    char *name;
-    char *orig_name;
+    unsigned long totalsize;
+
     struct id3_tag *id3tag;
     char id3v1tag[128];
 
-    lame_global_flags *encoder;
     FLAC__StreamDecoder *decoder;
+    lame_global_flags *encoder;
+
     FLAC__StreamMetadata_StreamInfo info;
-    short int lbuf[FLAC_BLOCKSIZE];
-    short int rbuf[FLAC_BLOCKSIZE];
+
     unsigned char mp3buf[BUFSIZE];
+};
 
-    FileTranscoder METHOD(FileTranscoder, Con, char *filename);
-    int METHOD(FileTranscoder, Read, char *buff, int offset, int len);
-    int METHOD(FileTranscoder, Finish);
-
-END_CLASS
+struct transcoder* transcoder_new(char *flacname);
+int transcoder_read(struct transcoder* trans, char* buff, int offset,
+                    int len);
+int transcoder_finish(struct transcoder* trans);
+void transcoder_delete(struct transcoder* trans);
