@@ -170,12 +170,6 @@ MP3FS is written in C and uses the following libraries:
 - `LAME <http://lame.sourceforge.net/>`_
 - `libid3tag <http://www.underbit.com/products/mad/>`_
 
-Additionally, MP3FS includes GPL'd code from a number of other projects:
-
-- `talloc <http://talloc.samba.org/>`_, a heirachical memory allocator
-  from Samba
-- A class implementation in C from `PyFlag <http://www.pyflag.net/>`_
-
 License
 -------
 
