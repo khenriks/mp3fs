@@ -116,12 +116,16 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
         goto translate_fail;
     }
 
-    len = readlink(origpath, buf, size - 1);
+    convert_path(origpath, 1);
+
+    len = readlink(origpath, buf, size - 2);
     if (len == -1) {
         goto readlink_fail;
     }
 
     buf[len] = '\0';
+
+    convert_path(buf, 0);
 
 readlink_fail:
     free(origpath);
@@ -151,14 +155,17 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
     while ((de = readdir(dp))) {
         struct stat st;
-
-        convert_path(de->d_name, 0);
-
         memset(&st, 0, sizeof(st));
+
         st.st_ino = de->d_ino;
         st.st_mode = de->d_type << 12;
-        if (filler(buf, de->d_name, &st, 0))
-            break;
+
+        /* Only convert regular files or symbolic links. */
+        if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
+            convert_path(de->d_name, 0);
+        }
+
+        if (filler(buf, de->d_name, &st, 0)) break;
     }
 
     closedir(dp);
@@ -195,16 +202,22 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
         goto stat_fail;
     }
 
-    trans = transcoder_new(origpath);
-    if (!trans) {
-        goto transcoder_fail;
+    /*
+     * Get size for resulting mp3 from regular file, otherwise it's a
+     * symbolic link. */
+    if (S_ISREG(stbuf->st_mode)) {
+        trans = transcoder_new(origpath);
+        if (!trans) {
+            goto transcoder_fail;
+        }
+
+        stbuf->st_size = trans->totalsize;
+        stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
+
+        transcoder_finish(trans);
+        transcoder_delete(trans);
     }
 
-    stbuf->st_size = trans->totalsize;
-    stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
-
-    transcoder_finish(trans);
-    transcoder_delete(trans);
 transcoder_fail:
 stat_fail:
 passthrough:
