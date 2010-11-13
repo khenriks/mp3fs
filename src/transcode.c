@@ -246,6 +246,11 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
             id3_tag_attachframe(trans->id3tag, make_frame("TLEN", tmpstr));
             free(tmpstr);
 
+            /* Use the data in STREAMINFO to set lame parameters. */
+            lame_set_num_samples(trans->encoder, trans->info.total_samples);
+            lame_set_in_samplerate(trans->encoder, trans->info.sample_rate);
+            lame_set_num_channels(trans->encoder, trans->info.channels);
+
             break;
         case FLAC__METADATA_TYPE_VORBIS_COMMENT:
 
@@ -342,12 +347,8 @@ struct transcoder* transcoder_new(char *flacname) {
         goto trans_fail;
     }
 
-    mp3fs_debug("Ready to make buffer.");
-
-    /* Initialize buffer */
-    memset(&trans->buffer, 0, sizeof(struct mp3_buffer));
-
-    mp3fs_debug("Buffer ready.");
+    /* Initialize to zero */
+    memset(trans, 0, sizeof(struct transcoder));
 
     /* Initialize ID3 tag */
     trans->id3tag = id3_tag_new();
@@ -379,13 +380,6 @@ struct transcoder* transcoder_new(char *flacname) {
 
     mp3fs_debug("FLAC initialized successfully.");
 
-    /*
-     * Process a single block; the first block is always STREAMINFO. This
-     * will fill in the info structure which is required to initialise the
-     * encoder.
-     */
-    mp3fs_debug("Got result: %d", FLAC__stream_decoder_process_single(trans->decoder));
-
     mp3fs_debug("LAME ready to initialize.");
 
     /* Create encoder */
@@ -393,28 +387,26 @@ struct transcoder* transcoder_new(char *flacname) {
     if (trans->encoder == NULL) {
         goto lame_fail;
     }
+
     lame_set_quality(trans->encoder, params.quality);
     lame_set_brate(trans->encoder, params.bitrate);
     lame_set_bWriteVbrTag(trans->encoder, 0);
     lame_set_errorf(trans->encoder, &lame_error);
     lame_set_msgf(trans->encoder, &lame_msg);
     lame_set_debugf(trans->encoder, &lame_debug);
-    lame_set_num_samples(trans->encoder, trans->info.total_samples);
-    lame_set_in_samplerate(trans->encoder, trans->info.sample_rate);
-    lame_set_num_channels(trans->encoder, trans->info.channels);
-  //DEBUG(logfd, "Sample Rate: %d\n", self->info.sample_rate);
-  //Maybe there's a better way to see if file isn't really FLAC,
-  //this is just to prevent division by zero
+
+    /*
+     * Process metadata. This will fill in the id3tag and the remaining
+     * lame parameters.
+     */
+    FLAC__stream_decoder_process_until_end_of_metadata(trans->decoder);
+
+    /* If sample rate hasn't been set yet, the FLAC is invalid. */
     if (!trans->info.sample_rate) {
         goto lame_fail;
     }
 
     mp3fs_debug("LAME partially initialized.");
-
-    /* Now process the rest of the metadata. This will fill in the id3tag. */
-    FLAC__stream_decoder_process_until_end_of_metadata(trans->decoder);
-
-    mp3fs_debug("LAME mostly initialized.");
 
     /* Initialise encoder */
     if (lame_init_params(trans->encoder) == -1) {
