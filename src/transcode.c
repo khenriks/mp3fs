@@ -443,7 +443,7 @@ struct transcoder* transcoder_new(char *flacname) {
     if (!write_ptr) {
         goto write_tag_fail;
     }
-    trans->buffer.pos += id3_tag_render(trans->id3tag, trans->buffer.data);
+    trans->buffer.pos += id3_tag_render(trans->id3tag, write_ptr);
 
     // store v1 tag
     id3_tag_options(trans->id3tag, ID3_TAG_OPTION_ID3V1, ~0);
