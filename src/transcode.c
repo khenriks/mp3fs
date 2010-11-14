@@ -48,6 +48,14 @@ uint8_t* buffer_write_prepare(struct mp3_buffer* buffer, int len) {
     uint8_t* newdata;
     if (buffer->size < buffer->pos + len) {
         newdata = realloc(buffer->data, buffer->pos + len);
+        /*
+         * For some reason, errno is set to ENOMEM when the data is moved
+         * as a result of the realloc call. This works around that
+         * behavior.
+         */
+        if (newdata && errno == ENOMEM) {
+            errno = 0;
+        }
         if (!newdata) {
             return NULL;
         }
