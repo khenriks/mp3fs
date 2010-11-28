@@ -40,7 +40,7 @@
 
 struct mp3fs_params params = {
     .basepath           = NULL,
-    .bitrate            = 0,
+    .bitrate            = 128,
     .quality            = 5,
     .debug              = 0
 };
@@ -57,6 +57,8 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("--quality=%d",     quality, 0),
     MP3FS_OPT("-d",               debug, 1),
     MP3FS_OPT("debug",            debug, 1),
+    MP3FS_OPT("-b %d",            bitrate, 0),
+    MP3FS_OPT("bitrate=%d",       bitrate, 0),
 
     FUSE_OPT_KEY("-h",            KEY_HELP),
     FUSE_OPT_KEY("--help",        KEY_HELP),
@@ -378,7 +380,7 @@ static struct fuse_operations mp3fs_ops = {
 
 void usage(char *name) {
     printf(""
-        "Usage: %s flacdir,bitrate mountpoint [options]\n"
+        "Usage: %s flacdir mountpoint [options]\n"
         "\n"
         "    Acceptable bitrates are 96, 112, 128, 160, 192, 224, 256, 320.\n"
         "    For a list of fuse options use -h after mountpoint.\n"
@@ -391,6 +393,7 @@ void usage(char *name) {
         "MP3FS options:\n"
         "    --quality=<0..9>       encoding quality:\n"
         "                           0=high/slow .. 9=poor/fast, 5=default\n"
+        "    -b bitrate             encoding bitrate\n"
         "\n", name);
 }
 
@@ -399,15 +402,9 @@ static int mp3fs_opt_proc(void *data, const char *arg, int key,
     switch(key) {
         case FUSE_OPT_KEY_NONOPT:
             // check for flacdir and bitrate parameters
-            if (!params.bitrate && !params.basepath) {
-                char *rate;
-                rate = strrchr(arg, ',');
-                if (rate) {
-                    rate[0] = '\0';
-                    params.basepath = arg;
-                    params.bitrate = atoi(rate + 1);
-                    return 0;
-                }
+            if (!params.basepath) {
+                params.basepath = arg;
+                return 0;
             }
             break;
 
@@ -438,8 +435,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (!params.bitrate || !params.basepath) {
-        fprintf(stderr, "No valid flacdir or bitrate specified.\n\n");
+    if (!params.basepath) {
+        fprintf(stderr, "No valid flacdir specified.\n\n");
         usage(argv[0]);
         return 1;
     }
@@ -452,8 +449,10 @@ int main(int argc, char *argv[]) {
 
     struct stat st;
     if (stat(params.basepath, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        fprintf(stderr, "flacdir is not a valid directory: %s\n\n",
+        fprintf(stderr, "flacdir is not a valid directory: %s\n",
                 params.basepath);
+        fprintf(stderr, "Hint: Did you specify bitrate using the old "
+                "syntax instead of the new -b?\n\n");
         usage(argv[0]);
         return 1;
     }
