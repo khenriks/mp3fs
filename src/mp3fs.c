@@ -380,22 +380,23 @@ static struct fuse_operations mp3fs_ops = {
 };
 
 void usage(char *name) {
-    printf(""
-        "Usage: %s flacdir mountpoint [options]\n"
-        "\n"
-        "    Acceptable bitrates are 96, 112, 128, 160, 192, 224, 256, 320.\n"
-        "    For a list of fuse options use -h after mountpoint.\n"
-        "\n"
-        "General options:\n"
-        "    -o opt,[opt...]        mount options\n"
-        "    -h   --help            print help\n"
-        "    -V   --version         print version\n"
-        "\n"
-        "MP3FS options:\n"
-        "    --quality=<0..9>       encoding quality:\n"
-        "                           0=high/slow .. 9=poor/fast, 5=default\n"
-        "    -b bitrate             encoding bitrate\n"
-        "\n", name);
+    printf("Usage: %s [OPTION]... FLACDIR MP3DIR\n", name);
+    fputs("\
+Mount FLACDIR on MP3DIR, converting FLAC files to MP3 upon access.\n\
+\n\
+Encoding options:\n\
+    --quality=<0..9>, -oquality=<0..9>\n\
+                           encoding quality: 0 is slowest, 9 is fastest;\n\
+                           5 is the default\n\
+    -b RATE, -obitrate=RATE\n\
+                           encoding bitrate: Acceptable values for RATE\n\
+                           include 96, 112, 128, 160, 192, 224, 256, and\n\
+                           320; 128 is the default\n\
+\n\
+General options:\n\
+    -h, --help             display this help and exit\n\
+    -V, --version          output version information and exit\n\
+\n", stdout);
 }
 
 static int mp3fs_opt_proc(void *data, const char *arg, int key,
