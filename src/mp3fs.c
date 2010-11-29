@@ -55,6 +55,7 @@ enum {
 
 static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("--quality=%d",     quality, 0),
+    MP3FS_OPT("quality=%d",       quality, 0),
     MP3FS_OPT("-d",               debug, 1),
     MP3FS_OPT("debug",            debug, 1),
     MP3FS_OPT("-b %d",            bitrate, 0),
