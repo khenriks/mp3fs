@@ -1,5 +1,7 @@
 SUBDIRS = src
 
+EXTRA_DIST = README.rst
+
 # Remove absolutely every generated file
 .PHONY: squeaky-clean
 squeaky-clean: maintainer-clean
