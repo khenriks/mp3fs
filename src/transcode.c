@@ -170,9 +170,10 @@ int divideround(long long one, int another) {
  */
 static void lame_print(int priority, const char *fmt, va_list list) {
     char* msg;
-    vasprintf(&msg, fmt, list);
-    syslog(priority, "LAME: %s", msg);
-    free(msg);
+    if (vasprintf(&msg, fmt, list) != -1) {
+        syslog(priority, "LAME: %s", msg);
+        free(msg);
+    }
 }
 
 /* Callback functions for each type of lame message callback */
@@ -239,7 +240,7 @@ write_cb(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,
 
 static void meta_cb(const FLAC__StreamDecoder *decoder,
                     const FLAC__StreamMetadata *metadata, void *client_data) {
-    char *tmpstr;
+    char tmpstr[10];
     float dbgain;
     struct transcoder* trans = (struct transcoder*)client_data;
 
@@ -249,10 +250,9 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
                    sizeof(FLAC__StreamMetadata_StreamInfo));
 
             /* set the length in the id3tag */
-            asprintf(&tmpstr, "%" PRIu64,
+            snprintf(tmpstr, 10, "%" PRIu64,
                 trans->info.total_samples*1000/trans->info.sample_rate);
             id3_tag_attachframe(trans->id3tag, make_frame("TLEN", tmpstr));
-            free(tmpstr);
 
             /* Use the data in STREAMINFO to set lame parameters. */
             lame_set_num_samples(trans->encoder, trans->info.total_samples);
@@ -289,29 +289,29 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
             /* set the track/total */
             if (get_tag(metadata, "TRACKNUMBER")) {
                 if (get_tag(metadata, "TRACKTOTAL")) {
-                    asprintf(&tmpstr, "%s/%s",
+                    snprintf(tmpstr, 10, "%s/%s",
                              get_tag(metadata, "TRACKNUMBER"),
                              get_tag(metadata, "TRACKTOTAL"));
                 } else {
-                    asprintf(&tmpstr, "%s", get_tag(metadata, "TRACKNUMBER"));
+                    snprintf(tmpstr, 10, "%s",
+                             get_tag(metadata, "TRACKNUMBER"));
                 }
                 id3_tag_attachframe(trans->id3tag,
                                     make_frame(ID3_FRAME_TRACK, tmpstr));
-                free(tmpstr);
             }
 
             /* set the disc/total, also less common */
             if (get_tag(metadata, "DISCNUMBER")) {
                 if (get_tag(metadata, "DISCTOTAL")) {
-                    asprintf(&tmpstr, "%s/%s",
+                    snprintf(tmpstr, 10, "%s/%s",
                              get_tag(metadata, "DISCNUMBER"),
                              get_tag(metadata, "DISCTOTAL"));
                 } else {
-                    asprintf(&tmpstr, "%s", get_tag(metadata, "DISCNUMBER"));
+                    snprintf(tmpstr, 10, "%s",
+                             get_tag(metadata, "DISCNUMBER"));
                 }
                 id3_tag_attachframe(trans->id3tag,
                                     make_frame("TPOS", tmpstr));
-                free(tmpstr);
             }
 
             /*
