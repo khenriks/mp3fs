@@ -1,0 +1,73 @@
+MP3FS(1)
+========
+:doctype:	   	manpage
+:man source:   	mp3fs
+:man version:  	{revnumber}
+:man manual:   	User Commands
+
+NAME
+----
+mp3fs - mounts and transcodes FLACs to MP3s on the fly
+
+
+SYNOPSIS
+--------
+*mp3fs* ['OPTION']... 'FLACDIR' 'MP3DIR'
+
+
+DESCRIPTION
+-----------
+The mp3fs(1) command will mount the directory 'FLACDIR' on 'MP3DIR'.
+Thereafter, accessing 'MP3DIR' will show the contents of 'FLACDIR', with
+all FLAC files transparently renamed and transcoded to MP3 format upon
+access.
+
+
+OPTIONS
+-------
+*-b, -obitrate*='RATE'::
+	Set the bitrate to use for encoding. Acceptable values for 'RATE' are
+    any which are allowed by the MP3 format. According to the manual for
+ 	LAME, this means:
++
+For sampling frequencies of 32, 44.1, and 48 kHz, 'RATE' can be among 32,
+40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, and 320.
++
+For sampling frequencies of 16, 22.05, and 24 kHz, 'RATE' can be among 8,
+16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, and 160.
++
+When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
+160, 192, 224, 256, and 320. If not specified, 'RATE' defaults to 128.
+
+*-d, -odebug*::
+    Enable debug output. This will result in a large quantity of
+    diagnostic information being printed to stderr as the program runs.
+    This option will normally not be used. It implies *-f*.
+
+*-f*::
+    Run in foreground instead of detaching from the terminal.
+
+*-h, --help*::
+    Print usage information.
+
+*--quality, -oquality*='QUALITY'::
+    Set quality for encoding, as understood by LAME. The slowest and best
+    quality is 0, while 9 is the fastest and worst quality. The default
+    value is 5, although according to the LAME manual, 2 is recommended.
+
+*-s*::
+    Force single-threaded operation.
+
+*-V, --version*::
+    Output version information.
+
+
+COPYRIGHT
+---------
+Copyright \(C) 2006-2008 David Collett and 2008-2010 Kristofer Henriksson.
+This is free software: you are free to change and redistribute it under
+the terms of the GNU General Public License (GPL) version 3 or later.
+
+This manual is copyright \(C) 2010 Kristofer Henriksson and may be
+distributed under the same terms.
+
