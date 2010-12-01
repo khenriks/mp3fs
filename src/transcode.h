@@ -43,8 +43,8 @@ struct mp3fs_params {
 /* Internal buffer used for output file */
 struct mp3_buffer {
     uint8_t* data;
-    int pos;
-    int size;
+    unsigned long pos;
+    unsigned long size;
 };
 
 /* Transcoder parameters for open mp3 */
