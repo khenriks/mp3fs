@@ -30,10 +30,10 @@
 
 /* Global program parameters */
 struct mp3fs_params {
-    const char      *basepath;
-    int             bitrate;
-    int             quality;
-    int             debug;
+    const char *basepath;
+    unsigned int bitrate;
+    unsigned int quality;
+    int debug;
 };
 
 #define mp3fs_debug(f, ...) syslog(LOG_DEBUG, f, ## __VA_ARGS__)

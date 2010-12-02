@@ -54,12 +54,12 @@ enum {
 #define MP3FS_OPT(t, p, v) { t, offsetof(struct mp3fs_params, p), v }
 
 static struct fuse_opt mp3fs_opts[] = {
-    MP3FS_OPT("--quality=%d",     quality, 0),
-    MP3FS_OPT("quality=%d",       quality, 0),
+    MP3FS_OPT("--quality=%u",     quality, 0),
+    MP3FS_OPT("quality=%u",       quality, 0),
     MP3FS_OPT("-d",               debug, 1),
     MP3FS_OPT("debug",            debug, 1),
-    MP3FS_OPT("-b %d",            bitrate, 0),
-    MP3FS_OPT("bitrate=%d",       bitrate, 0),
+    MP3FS_OPT("-b %u",            bitrate, 0),
+    MP3FS_OPT("bitrate=%u",       bitrate, 0),
 
     FUSE_OPT_KEY("-h",            KEY_HELP),
     FUSE_OPT_KEY("--help",        KEY_HELP),
@@ -459,8 +459,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (params.quality < 0 || params.quality > 9) {
-        fprintf(stderr, "Invalid encoding quality value: %d\n\n",
+    if (params.quality > 9) {
+        fprintf(stderr, "Invalid encoding quality value: %u\n\n",
                 params.quality);
         usage(argv[0]);
         return 1;
@@ -471,8 +471,8 @@ int main(int argc, char *argv[]) {
 
     mp3fs_debug("MP3FS options:\n"
                 "basepath:  %s\n"
-                "bitrate:   %d\n"
-                "quality:   %d%s\n"
+                "bitrate:   %u\n"
+                "quality:   %u%s\n"
                 "\n",
                 params.basepath, params.bitrate,
                 params.quality, params.quality == 5 ? " (default)" : "");
