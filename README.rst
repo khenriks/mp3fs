@@ -2,10 +2,20 @@ MP3FS
 =====
 
 :Maintainer: Kristofer Henriksson (kthenry@users.sourceforge.net)
-:Author: David Collett (daveco@users.sourceforge.net)
+:Authors: - Kristofer Henriksson (kthenry@users.sourceforge.net)
+          - David Collett (daveco@users.sourceforge.net)
 :Web site: http://mp3fs.sourceforge.net/
 
 .. contents::
+
+We're pleased to announce the release of version 0.30 of mp3fs! This is a
+major release and brings us much closer to a 1.0 release in the future.
+Please see the NEWS file for more details about what is new. One of the
+important changes to note is that bitrate is no longer specified using a
+comma in the source path (see Usage_ below for details).
+
+We also would like to thank Gregor Zurowski for code contributions to this
+release (see ChangeLog or NEWS for details).
 
 Introduction
 ------------
@@ -51,23 +61,23 @@ For build instructions see the bundled INSTALL file.
 Usage
 -----
 
-**NOTE:** The command line format changed starting with version 0.10,
-adding a comma.
+**NOTE:** The command line format changed in version 0.30, making bitrate
+a command-line or mount option of the program.
 
 Mount your filesystem like this::
 
-  mp3fs musicdir,bitrate mountpoint [-o fuse_options]
+  mp3fs [-b bitrate] musicdir mountpoint [-o fuse_options]
 
 For example,
 
 ::
 
-  mp3fs /mnt/music,128 /mnt/mp3 -o allow_other,ro
+  mp3fs -b 128 /mnt/music /mnt/mp3 -o allow_other,ro
 
-In recent versions of FUSE and MP3FS, the same can be achieved with the
+In recent versions of FUSE and mp3fs, the same can be achieved with the
 following entry in ``/etc/fstab``::
 
-  mp3fs#/mnt/music,128 /mnt/mp3 fuse allow_other,ro 0 0
+  mp3fs#/mnt/music /mnt/mp3 fuse allow_other,ro,bitrate=128 0 0
 
 Note that this requires /sbin/mount.fuse from the fuse-utils package.
 
@@ -91,7 +101,7 @@ files::
   -rw-r--r-- 1 mythtv mythtv 28060023 2005-06-19 18:36 13 - La Dolly Vita.flac
   -rw-r--r-- 1 mythtv mythtv 11432008 2005-06-19 18:36 14 - Spaced.flac
 
-And now you can use the (virtual) MP3 files from the MP3FS mountpoint::
+And now you can use the (virtual) MP3 files from the mp3fs mountpoint::
 
   dave@bender:~/mp3fs$ ls -l /mnt/mp3/Smashing\ Pumpkins/Pisces\ Iscariot/
   total 53896
@@ -139,7 +149,7 @@ Releases are made through the sourceforge files page:
 
   https://sourceforge.net/projects/mp3fs/files/
 
-There are now two different branches of MP3FS development:
+There are now two different branches of mp3fs development:
 
 - Active development will occur on the main branch, which has version
   numbers 0.20 or higher. FLAC version 1.1.4 or higher is
@@ -152,7 +162,7 @@ of FLAC. This is necessary because a major Linux vendor provides only an
 ancient version of FLAC in several of their releases.
 
 The bottom line is that if you have a suitable version of FLAC, you should
-use the very latest version of MP3FS. If not, you can use a version from
+use the very latest version of mp3fs. If not, you can use a version from
 the legacy branch.
 
 Development
@@ -166,7 +176,7 @@ with::
 MP3FS is written in C and uses the following libraries:
 
 - `FUSE <http://fuse.sourceforge.net/>`_ (>= 2.6.0)
-- `FLAC <http://flac.sourceforge.net/>`_ (>= 1.1.4 unless using MP3FS 0.1x)
+- `FLAC <http://flac.sourceforge.net/>`_ (>= 1.1.4 unless using mp3fs <0.20)
 - `LAME <http://lame.sourceforge.net/>`_
 - `libid3tag <http://www.underbit.com/products/mad/>`_
 
@@ -175,5 +185,5 @@ License
 
 This program can be distributed under the terms of the GNU GPL version 3
 or later. You can find it `online
-<http://www.gnu.org/licenses/gpl-3.0.html>`_ or in the MP3FS distribution
+<http://www.gnu.org/licenses/gpl-3.0.html>`_ or in the mp3fs distribution
 in the COPYING file.
