@@ -430,10 +430,14 @@ struct transcoder* transcoder_new(char *flacname) {
      */
 
     /*
-     * disable id3 compression because it hardly saves space and some
-     * players don't like it
+     * Disable ID3 compression because it hardly saves space and some
+     * players don't like it.
+     * Also add 12 bytes of padding at the end, because again some players
+     * are buggy.
+     * Some players = iTunes
      */
     id3_tag_options(trans->id3tag, ID3_TAG_OPTION_COMPRESSION, 0);
+    id3_tag_setlength(trans->id3tag, id3_tag_render(trans->id3tag, 0)+12);
 
     mp3fs_debug("Ready to write tag.");
 
