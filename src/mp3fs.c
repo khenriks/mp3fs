@@ -139,6 +139,7 @@ translate_fail:
 static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                          off_t offset, struct fuse_file_info *fi) {
     char* origpath;
+    char* origfile;
     DIR *dp;
     struct dirent *de;
 
@@ -151,6 +152,12 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         goto translate_fail;
     }
 
+    /* 2 for directory separator and NULL byte */
+    origfile = malloc(strlen(origpath) + NAME_MAX + 2);
+    if (!origfile) {
+        goto origfile_fail;
+    }
+
     dp = opendir(origpath);
     if (!dp) {
         goto opendir_fail;
@@ -158,21 +165,25 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 
     while ((de = readdir(dp))) {
         struct stat st;
-        memset(&st, 0, sizeof(st));
 
-        st.st_ino = de->d_ino;
-        st.st_mode = de->d_type << 12;
+        snprintf(origfile, strlen(origpath) + NAME_MAX + 2, "%s/%s", origpath, de->d_name);
 
-        /* Only convert regular files or symbolic links. */
-        if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
-            convert_path(de->d_name, 0);
+        if (lstat(origfile, &st) == -1) {
+            goto stat_fail;
+        } else {
+            if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
+                convert_path(de->d_name, 0);
+            }
         }
 
         if (filler(buf, de->d_name, &st, 0)) break;
     }
 
+stat_fail:
     closedir(dp);
 opendir_fail:
+    free(origfile);
+origfile_fail:
     free(origpath);
 translate_fail:
     return -errno;
