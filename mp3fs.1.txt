@@ -26,9 +26,9 @@ access.
 OPTIONS
 -------
 *-b, -obitrate*='RATE'::
-	Set the bitrate to use for encoding. Acceptable values for 'RATE' are
+    Set the bitrate to use for encoding. Acceptable values for 'RATE' are
     any which are allowed by the MP3 format. According to the manual for
- 	LAME, this means:
+    LAME, this means:
 +
 For sampling frequencies of 32, 44.1, and 48 kHz, 'RATE' can be among 32,
 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, and 320.
