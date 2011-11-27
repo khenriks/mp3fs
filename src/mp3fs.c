@@ -483,10 +483,10 @@ int main(int argc, char *argv[]) {
     mp3fs_debug("MP3FS options:\n"
                 "basepath:  %s\n"
                 "bitrate:   %u\n"
-                "quality:   %u%s\n"
+                "quality:   %u\n"
                 "\n",
                 params.basepath, params.bitrate,
-                params.quality, params.quality == 5 ? " (default)" : "");
+                params.quality);
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);
