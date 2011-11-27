@@ -34,6 +34,8 @@ struct mp3fs_params {
     unsigned int bitrate;
     unsigned int quality;
     int debug;
+    int gainmode;
+    float gainref;
 };
 
 #define mp3fs_debug(f, ...) syslog(LOG_DEBUG, f, ## __VA_ARGS__)

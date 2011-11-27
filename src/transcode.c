@@ -241,7 +241,8 @@ write_cb(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,
 static void meta_cb(const FLAC__StreamDecoder *decoder,
                     const FLAC__StreamMetadata *metadata, void *client_data) {
     char tmpstr[10];
-    float dbgain;
+    float dbgain = 0;
+    float filegainref;
     struct transcoder* trans = (struct transcoder*)client_data;
 
     switch (metadata->type) {
@@ -315,17 +316,32 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
             }
 
             /*
-             * Use the Replay Gain tag to set volume scaling. First check
-             * for album gain, then try track gain.
+             * Use the Replay Gain tag to set volume scaling. Obey the
+             * options for gainmode and gainref.
              */
-            if (get_tag(metadata, "REPLAYGAIN_ALBUM_GAIN")) {
+            /* Read reference value from file. */
+            if (get_tag(metadata, "REPLAYGAIN_REFERENCE_LOUDNESS")) {
+                filegainref = atof(get_tag(metadata,
+                                           "REPLAYGAIN_REFERENCE_LOUDNESS"));
+            } else {
+                filegainref = 89.0;
+            }
+            /* Determine what gain value should be applied. */
+            if (params.gainmode == 1 &&
+                get_tag(metadata, "REPLAYGAIN_ALBUM_GAIN")) {
                 dbgain = atof(get_tag(metadata, "REPLAYGAIN_ALBUM_GAIN"));
-                if (dbgain)
-                    lame_set_scale(trans->encoder, powf(10, dbgain/20));
-            } else if (get_tag(metadata, "REPLAYGAIN_TRACK_GAIN")) {
+            } else if ((params.gainmode == 1 || params.gainmode == 2) &&
+                       get_tag(metadata, "REPLAYGAIN_TRACK_GAIN")) {
                 dbgain = atof(get_tag(metadata, "REPLAYGAIN_TRACK_GAIN"));
-                if (dbgain)
-                    lame_set_scale(trans->encoder, powf(10, dbgain/20));
+            }
+            /*
+             * Adjust the gain value, if any, by the change in gain
+             * reference value. The powf formula comes from
+             * http://replaygain.hydrogenaudio.org/proposal/player_scale.html
+             */
+            if (dbgain) {
+                dbgain += params.gainref - filegainref;
+                lame_set_scale(trans->encoder, powf(10, dbgain/20));
             }
 
             break;

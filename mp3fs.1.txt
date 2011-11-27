@@ -44,6 +44,20 @@ When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
     diagnostic information being printed to stderr as the program runs.
     This option will normally not be used. It implies *-f*.
 
+*--gainmode, -ogainmode*='MODE'::
+    Set mode to use for interpreting ReplayGain tags. The allowed
+    values for 'MODE' are: +
+    0 - Ignore all ReplayGain tags. +
+    1 - Prefer album gain tag, but fall back to track gain if album gain
+        is not present. +
+    2 - Use track gain if present. +
+
+*--gainref, -ogainref*='REF'::
+    Set the reference loudness in decibels to adjust ReplayGain tags.
+    ReplayGain software usually defaults to a loudness of 89 dB, but if
+    this is too quiet, a higher value can be set here, causing adjustment
+    of ReplayGain values in tags.
+
 *-f*::
     Run in foreground instead of detaching from the terminal.
 
