@@ -8,4 +8,4 @@ clean:
 
 index.html: ../README.rst
 	@echo "  GEN   " $@
-	@rst2html-2.6.py --stylesheet=voidspace.css --link-stylesheet $< $@
+	@rst2html.py --stylesheet=voidspace.css --link-stylesheet $< $@
