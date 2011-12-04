@@ -78,10 +78,10 @@ When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
 
 COPYRIGHT
 ---------
-Copyright \(C) 2006-2008 David Collett and 2008-2010 Kristofer Henriksson.
+Copyright \(C) 2006-2008 David Collett and 2008-2011 Kristofer Henriksson.
 This is free software: you are free to change and redistribute it under
 the terms of the GNU General Public License (GPL) version 3 or later.
 
-This manual is copyright \(C) 2010 Kristofer Henriksson and may be
+This manual is copyright \(C) 2010-2011 Kristofer Henriksson and may be
 distributed under the same terms.
 

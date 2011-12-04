@@ -2,7 +2,7 @@
  * FileTranscoder interface for MP3FS
  *
  * Copyright (C) 2006-2008 David Collett
- * Copyright (C) 2008-2010 Kristofer Henriksson
+ * Copyright (C) 2008-2011 Kristofer Henriksson
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

@@ -8,14 +8,9 @@ MP3FS
 
 .. contents::
 
-We're pleased to announce the release of version 0.30 of mp3fs! This is a
-major release and brings us much closer to a 1.0 release in the future.
-Please see the NEWS file for more details about what is new. One of the
-important changes to note is that bitrate is no longer specified using a
-comma in the source path (see Usage_ below for details).
-
-We also would like to thank Gregor Zurowski for code contributions to this
-release (see ChangeLog or NEWS for details).
+We're pleased to announce the release of version 0.31 of mp3fs! This is a
+small update which fixes a few bugs and adds configuration options for the
+ReplayGain support.
 
 Introduction
 ------------
