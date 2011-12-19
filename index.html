@@ -24,6 +24,7 @@ David Collett</td></tr>
 <li><a href="#how-it-works" id="id2">How it Works</a></li>
 <li><a href="#usage" id="id3">Usage</a></li>
 <li><a href="#download" id="id4">Download</a></li>
+<li><a href="#issues" id="tc-issues">Issues</a></li>
 <li><a href="#development" id="id5">Development</a></li>
 <li><a href="#license" id="id6">License</a></li>
 </ul>
@@ -35,6 +36,7 @@ direct links below for these pages.</p>
 <p>We're pleased to announce the release of version 0.31 of mp3fs! This is a
 small update which fixes a few bugs and adds configuration options for the
 ReplayGain support.</p>
+
 <h1 id="introduction"><a class="toc-backref" href="#id1">Introduction</a></h1>
 <p>MP3FS is a read-only FUSE filesystem which transcodes audio formats
 (currently FLAC) to MP3 on the fly when opened and read. This was
@@ -44,6 +46,7 @@ Netgear MP101 MP3 player.</p>
 <p>It is also a novel alternative to traditional MP3 encoders. Just use your
 favorite file browser to select the files you want encoded and copy them
 somewhere!</p>
+
 <h1 id="how-it-works"><a class="toc-backref" href="#id2">How it Works</a></h1>
 <p>When a file is opened, the decoder and encoder are initialized and
 the file metadata is read. At this time the final filesize can be
@@ -64,6 +67,7 @@ id3v1 tags do not have to wait for the whole file to be transcoded
 before reading the tag. This <em>dramatically</em> speeds up such
 applications.</p>
 <p>For build instructions see the bundled INSTALL file.</p>
+
 <h1 id="usage"><a class="toc-backref" href="#id3">Usage</a></h1>
 <p><strong>NOTE:</strong> The command line format changed in version 0.30, making bitrate
 a command-line or mount option of the program.</p>
@@ -141,6 +145,7 @@ sys     0m0.020s
 
 dave&#64;bender:~/mp3fs$ xmms /mnt/mp3/Smashing\ Pumpkins/Pisces\ Iscariot/* &amp;
 </pre>
+
 <h1 id="download"><a class="toc-backref" href="#id4">Download</a></h1>
 <p>Our latest release can be downloaded <a
 href="https://github.com/downloads/khenriks/mp3fs/mp3fs-0.31.tar.gz">directly</a>
@@ -163,6 +168,13 @@ GitHub</a>.</p>
 <p>The bottom line is that if you have a suitable version of FLAC, you should
 use the very latest version of mp3fs. If not, you can use a version from
 the legacy branch.</p>
+
+<h1 id="issues"><a class="toc-backref" href="#tc-issues">Issues</a></h1>
+<p>If you find any bugs or have any feature requests, please report them
+on our GitHub <a
+href="https://github.com/khenriks/mp3fs/issues">issue tracker</a>. We'll
+do what we can to fix what's bugging you.</p>
+
 <h1 id="development"><a class="toc-backref" href="#id5">Development</a></h1>
 <p>MP3FS uses Git for revision control. You can obtain the full repository
 with:</p>
@@ -176,6 +188,7 @@ git clone git://github.com/khenriks/mp3fs.git
 <li><a href="http://lame.sourceforge.net/">LAME</a></li>
 <li><a href="http://www.underbit.com/products/mad/">libid3tag</a></li>
 </ul>
+
 <h1 id="license"><a class="toc-backref" href="#id6">License</a></h1>
 <p>This program can be distributed under the terms of the GNU GPL version 3
 or later. You can find it <a href="http://www.gnu.org/licenses/gpl-3.0.html">online</a> or in the mp3fs distribution
