@@ -15,19 +15,6 @@ mp3fs.1: mp3fs.1.txt
 squeaky-clean: maintainer-clean
 	rm -rf aclocal.m4 configure config Makefile.in src/Makefile.in
 
-.PHONY: website
-website:
-	@echo "Making all in web"
-	@$(MAKE) -C web all
-
-clean-local: clean-local-web
-
-.PHONY: clean-local-web
-clean-local-web:
-	@test -d web \
-		&& (echo "Making clean in web" ; $(MAKE) -C web clean) \
-		|| true
-
 dist-hook:
 	@echo 'Creating ChangeLog file from git log'
 	@( set -o pipefail && \
