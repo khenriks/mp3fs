@@ -27,6 +27,10 @@
 <li><a href="#license" id="id6">License</a></li>
 </ul>
 </div>
+<p>We're moving all of our project infrastructure to GitHub from SourceForge.
+For the bug tracker, downloads, and repository, please see our <a
+href="https://github.com/khenriks/mp3fs">new home</a>. You can also find
+direct links below for these pages.</p>
 <p>We're pleased to announce the release of version 0.31 of mp3fs! This is a
 small update which fixes a few bugs and adds configuration options for the
 ReplayGain support.</p>
@@ -137,9 +141,10 @@ sys     0m0.020s
 dave&#64;bender:~/mp3fs$ xmms /mnt/mp3/Smashing\ Pumpkins/Pisces\ Iscariot/* &amp;
 </pre>
 <h1 id="download"><a class="toc-backref" href="#id4">Download</a></h1>
-<p>Releases are made through the sourceforge files page:</p>
-<blockquote>
-<p><a href="https://sourceforge.net/projects/mp3fs/files/">https://sourceforge.net/projects/mp3fs/files/</a></p></blockquote>
+<p>Our latest release can be downloaded <a
+href="https://github.com/downloads/khenriks/mp3fs/mp3fs-0.31.tar.gz">directly</a>
+from GitHub. Other releases can be found through the repository <a
+href="https://github.com/khenriks/mp3fs/downloads">download page</a>.</p>
 <p>There are now two different branches of mp3fs development:</p>
 <ul>
 <li>Active development will occur on the main branch, which has version
@@ -151,6 +156,9 @@ numbers less than 0.20. Any version of FLAC is supported.</li>
 <p>The reason for two branches is to maintain compatibility with old versions
 of FLAC. This is necessary because a major Linux vendor provides only an
 ancient version of FLAC in several of their releases.</p>
+<p>The latest legacy release can also be downloaded <a
+href="https://github.com/downloads/khenriks/mp3fs/mp3fs-0.16.tar.gz">from
+GitHub</a>.</p>
 <p>The bottom line is that if you have a suitable version of FLAC, you should
 use the very latest version of mp3fs. If not, you can use a version from
 the legacy branch.</p>
@@ -158,7 +166,7 @@ the legacy branch.</p>
 <p>MP3FS uses Git for revision control. You can obtain the full repository
 with:</p>
 <pre class="literal-block">
-git clone git://mp3fs.git.sourceforge.net/gitroot/mp3fs/mp3fs
+git clone git://github.com/khenriks/mp3fs.git
 </pre>
 <p>MP3FS is written in C and uses the following libraries:</p>
 <ul>
