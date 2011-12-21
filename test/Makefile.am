@@ -1,1 +1,1 @@
-TESTS = file-names
+TESTS = file-names tags
