@@ -1,4 +1,4 @@
-SUBDIRS = src
+SUBDIRS = src test
 
 dist_man_MANS = mp3fs.1
 
