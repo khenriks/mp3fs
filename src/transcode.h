@@ -19,6 +19,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define FUSE_USE_VERSION 26
+
+#include <fuse.h>
 #include <FLAC/metadata.h>
 #include <FLAC/stream_decoder.h>
 #include <lame/lame.h>
@@ -29,14 +32,17 @@
 #define BUFSIZE 2 * FLAC_BLOCKSIZE
 
 /* Global program parameters */
-struct mp3fs_params {
+extern struct mp3fs_params {
     const char *basepath;
     unsigned int bitrate;
     unsigned int quality;
     int debug;
     int gainmode;
     float gainref;
-};
+} params;
+
+/* Fuse operations struct */
+extern struct fuse_operations mp3fs_ops;
 
 #define mp3fs_debug(f, ...) syslog(LOG_DEBUG, f, ## __VA_ARGS__)
 #define mp3fs_info(f, ...) syslog(LOG_INFO, f, ## __VA_ARGS__)

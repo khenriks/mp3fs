@@ -36,8 +36,6 @@
 
 #include "transcode.h"
 
-extern struct mp3fs_params params;
-
 /* Functions for dealing with the buffer */
 
 /*
