@@ -1,0 +1,9 @@
+#!/bin/bash
+
+. funcs.sh
+
+setup
+FPCMP=$(./fpcompare flac/obama.flac /tmp/mp3/obama.mp3 2>&-)
+finish
+
+[ $FPCMP \< 0.05 ]
