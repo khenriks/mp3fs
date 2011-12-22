@@ -1,0 +1,15 @@
+#!/bin/bash
+
+. funcs.sh
+
+setup
+METADATA=$(mutagen-inspect /tmp/mp3/obama.mp3 | sort | tail -n +4)
+finish
+
+cmp -s - <(echo "$METADATA") <<END
+TALB=US State of the Union 2011
+TIT2=The Internet [excerpt]
+TLEN=6000
+TPE1=Barack Obama
+TSSE=MP3FS
+END

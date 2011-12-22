@@ -1,4 +1,4 @@
-SUBDIRS = src
+SUBDIRS = src test
 
 dist_man_MANS = mp3fs.1
 
@@ -13,7 +13,7 @@ mp3fs.1: mp3fs.1.txt
 # Remove absolutely every generated file
 .PHONY: squeaky-clean
 squeaky-clean: maintainer-clean
-	rm -rf aclocal.m4 configure config Makefile.in src/Makefile.in
+	rm -rf aclocal.m4 configure config Makefile.in src/Makefile.in test/Makefile.in
 
 dist-hook:
 	@echo 'Creating ChangeLog file from git log'

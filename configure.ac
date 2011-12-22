@@ -26,5 +26,6 @@ AC_SYS_LARGEFILE
 
 # Outputs resulting files.
 AC_CONFIG_FILES([Makefile
-                 src/Makefile])
+                 src/Makefile
+                 test/Makefile])
 AC_OUTPUT
