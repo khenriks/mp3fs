@@ -1,10 +1,10 @@
 MP3FS
 =====
 
-:Maintainer: Kristofer Henriksson (kthenry@users.sourceforge.net)
-:Authors: - Kristofer Henriksson (kthenry@users.sourceforge.net)
-          - David Collett (daveco@users.sourceforge.net)
-:Web site: http://mp3fs.sourceforge.net/
+:Maintainer: Kristofer Henriksson
+:Authors: - Kristofer Henriksson
+          - David Collett
+:Web site: http://khenriks.github.com/mp3fs/
 
 .. contents::
 
@@ -140,9 +140,7 @@ And now you can use the (virtual) MP3 files from the mp3fs mountpoint::
 Download
 --------
 
-Releases are made through the sourceforge files page:
-
-  https://sourceforge.net/projects/mp3fs/files/
+Releases are made through our website on GitHub.
 
 There are now two different branches of mp3fs development:
 
@@ -166,7 +164,7 @@ Development
 MP3FS uses Git for revision control. You can obtain the full repository
 with::
 
-  git clone git://mp3fs.git.sourceforge.net/gitroot/mp3fs/mp3fs
+  git clone git://github.com/khenriks/mp3fs.git
 
 MP3FS is written in C and uses the following libraries:
 
