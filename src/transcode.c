@@ -105,8 +105,8 @@ struct id3_frame *make_frame(const char *name, const char *data) {
 /* return a vorbis comment tag */
 const char *get_tag(const FLAC__StreamMetadata *metadata, const char *name) {
     int idx;
-    FLAC__StreamMetadata_VorbisComment *comment;
-    comment = (FLAC__StreamMetadata_VorbisComment *)&metadata->data;
+    const FLAC__StreamMetadata_VorbisComment *comment;
+    comment = &metadata->data.vorbis_comment;
     idx = FLAC__metadata_object_vorbiscomment_find_entry_from(metadata, 0,
                                                               name);
     if (idx<0) return NULL;
@@ -124,11 +124,11 @@ void set_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3tag,
 /* set id3 picture tag from FLAC picture block */
 void set_picture_tag(const FLAC__StreamMetadata *metadata,
                      struct id3_tag *id3tag) {
-    FLAC__StreamMetadata_Picture *picture;
+    const FLAC__StreamMetadata_Picture *picture;
     struct id3_frame *frame;
     id3_ucs4_t       *ucs4;
 
-    picture = (FLAC__StreamMetadata_Picture *)&metadata->data;
+    picture = &metadata->data.picture;
 
     /*
      * There hardly seems a point in separating out these into a different
