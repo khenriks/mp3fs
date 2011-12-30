@@ -61,7 +61,7 @@ struct transcoder {
     unsigned long totalsize;
 
     struct id3_tag *id3tag;
-    char id3v1tag[128];
+    id3_byte_t id3v1tag[128];
 
     FLAC__StreamDecoder *decoder;
     lame_global_flags *encoder;

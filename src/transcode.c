@@ -465,7 +465,7 @@ struct transcoder* transcoder_new(char *flacname) {
 
     // store v1 tag
     id3_tag_options(trans->id3tag, ID3_TAG_OPTION_ID3V1, ~0);
-    id3_tag_render(trans->id3tag, (id3_byte_t *)trans->id3v1tag);
+    id3_tag_render(trans->id3tag, trans->id3v1tag);
 
     mp3fs_debug("Tag written.");
 
@@ -581,7 +581,7 @@ int transcoder_finish(struct transcoder* trans) {
                   "off by %lu", trans->buffer.pos + 128 - trans->totalsize);
             trans->buffer.pos = trans->totalsize - 128;
         }
-        buffer_write(&trans->buffer, (uint8_t*)trans->id3v1tag, 128);
+        buffer_write(&trans->buffer, trans->id3v1tag, 128);
         len += 128;
     }
 
