@@ -245,8 +245,7 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
 
     switch (metadata->type) {
         case FLAC__METADATA_TYPE_STREAMINFO:
-            memcpy(&trans->info, &metadata->data,
-                   sizeof(FLAC__StreamMetadata_StreamInfo));
+            trans->info = metadata->data.stream_info;
 
             /* set the length in the id3tag */
             snprintf(tmpstr, 10, "%" PRIu64,
