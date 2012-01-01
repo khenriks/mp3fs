@@ -1,0 +1,10 @@
+#!/bin/sh
+
+. funcs.sh
+
+setup
+FSIZE=$(stat -c %s /tmp/mp3/obama.mp3)
+cat /tmp/mp3/obama.mp3 > /dev/null
+finish
+
+[ $FSIZE -eq 96834 ]

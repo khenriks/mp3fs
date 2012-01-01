@@ -1,4 +1,4 @@
-TESTS = test_filenames test_tags test_audio
+TESTS = test_filenames test_tags test_audio test_filesize
 
 check_PROGRAMS = fpcompare
 fpcompare_SOURCES = fpcompare.c
