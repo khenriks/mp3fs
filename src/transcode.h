@@ -49,7 +49,7 @@ extern struct fuse_operations mp3fs_ops;
 #define mp3fs_error(f, ...) syslog(LOG_ERR, f, ## __VA_ARGS__)
 
 /* Internal buffer used for output file */
-struct mp3_buffer {
+struct data_buffer {
     uint8_t* data;
     unsigned long pos;
     unsigned long size;
@@ -57,7 +57,7 @@ struct mp3_buffer {
 
 /* Transcoder parameters for open mp3 */
 struct transcoder {
-    struct mp3_buffer buffer;
+    struct data_buffer buffer;
     unsigned long totalsize;
 
     struct id3_tag *id3tag;
@@ -72,3 +72,6 @@ int transcoder_read(struct transcoder* trans, char* buff, int offset,
                     int len);
 int transcoder_finish(struct transcoder* trans);
 void transcoder_delete(struct transcoder* trans);
+
+uint8_t* buffer_write_prepare(struct data_buffer* buffer, int len);
+int buffer_write(struct data_buffer* buffer, uint8_t* data, int len);

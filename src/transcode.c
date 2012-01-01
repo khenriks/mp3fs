@@ -42,7 +42,7 @@
  * Prepare the buffer to accept data and return a pointer to a location
  * where data may be written.
  */
-uint8_t* buffer_write_prepare(struct mp3_buffer* buffer, int len) {
+uint8_t* buffer_write_prepare(struct data_buffer* buffer, int len) {
     uint8_t* newdata;
     if (buffer->size < buffer->pos + len) {
         newdata = realloc(buffer->data, buffer->pos + len);
@@ -69,7 +69,7 @@ uint8_t* buffer_write_prepare(struct mp3_buffer* buffer, int len) {
  * Write data to the buffer. This makes use of the buffer_write_prepare
  * function.
  */
-int buffer_write(struct mp3_buffer* buffer, uint8_t* data, int len) {
+int buffer_write(struct data_buffer* buffer, uint8_t* data, int len) {
     uint8_t* write_ptr;
     write_ptr = buffer_write_prepare(buffer, len);
     if (!write_ptr) {
