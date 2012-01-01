@@ -65,8 +65,6 @@ struct transcoder {
 
     FLAC__StreamDecoder *decoder;
     lame_global_flags *encoder;
-
-    unsigned char mp3buf[BUFSIZE];
 };
 
 struct transcoder* transcoder_new(char *flacname);
