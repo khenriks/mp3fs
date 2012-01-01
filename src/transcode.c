@@ -214,7 +214,7 @@ write_cb(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,
         lbuf[i] = buffer[0][i] <<
             (sizeof(int)*8 - frame->header.bits_per_sample);
         // ignore rbuf for mono sources
-        if (trans->info.channels > 1) {
+        if (frame->header.channels > 1) {
             rbuf[i] = buffer[1][i] <<
                 (sizeof(int)*8 - frame->header.bits_per_sample);
         }
@@ -241,21 +241,22 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
     char tmpstr[10];
     float dbgain = 0;
     float filegainref;
+    FLAC__StreamMetadata_StreamInfo info;
     struct transcoder* trans = (struct transcoder*)client_data;
 
     switch (metadata->type) {
         case FLAC__METADATA_TYPE_STREAMINFO:
-            trans->info = metadata->data.stream_info;
+            info = metadata->data.stream_info;
 
             /* set the length in the id3tag */
             snprintf(tmpstr, 10, "%" PRIu64,
-                trans->info.total_samples*1000/trans->info.sample_rate);
+                info.total_samples*1000/info.sample_rate);
             id3_tag_attachframe(trans->id3tag, make_frame("TLEN", tmpstr));
 
             /* Use the data in STREAMINFO to set lame parameters. */
-            lame_set_num_samples(trans->encoder, trans->info.total_samples);
-            lame_set_in_samplerate(trans->encoder, trans->info.sample_rate);
-            lame_set_num_channels(trans->encoder, trans->info.channels);
+            lame_set_num_samples(trans->encoder, info.total_samples);
+            lame_set_in_samplerate(trans->encoder, info.sample_rate);
+            lame_set_num_channels(trans->encoder, info.channels);
 
             break;
         case FLAC__METADATA_TYPE_VORBIS_COMMENT:
@@ -417,12 +418,10 @@ struct transcoder* transcoder_new(char *flacname) {
 
     /*
      * Process metadata. This will fill in the id3tag and the remaining
-     * lame parameters.
+     * lame parameters. If the function fails, the FLAC is invalid.
      */
-    FLAC__stream_decoder_process_until_end_of_metadata(trans->decoder);
-
-    /* If sample rate hasn't been set yet, the FLAC is invalid. */
-    if (!trans->info.sample_rate) {
+    if (!FLAC__stream_decoder_process_until_end_of_metadata(trans->decoder)) {
+        mp3fs_debug("FLAC is invalid.");
         goto lame_fail;
     }
 
