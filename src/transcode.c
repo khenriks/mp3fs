@@ -357,7 +357,6 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
 
 struct transcoder* transcoder_new(char *flacname) {
     struct transcoder* trans;
-    unsigned long numframes;
     uint8_t* write_ptr;
 
     mp3fs_debug("Creating transcoder object for %s", flacname);
@@ -468,11 +467,13 @@ struct transcoder* transcoder_new(char *flacname) {
 
     mp3fs_debug("Tag written.");
 
-    // id3v2 + lame stuff + mp3 data + id3v1
-    numframes = divideround(trans->info.total_samples, 1152) + 2;
-    trans->totalsize = trans->buffer.pos
-        + divideround((long long)numframes*144*params.bitrate*10,
-                      trans->info.sample_rate/100) + 128;
+    /*
+     * Properly calculate final file size. This is the sum of the size of
+     * ID3v2, ID3v1, and raw MP3 data.
+     */
+    trans->totalsize = trans->buffer.pos + 128
+        + lame_get_totalframes(trans->encoder)*144*params.bitrate*10
+        / (lame_get_out_samplerate(trans->encoder)/100);
 
     id3_tag_delete(trans->id3tag);
     return trans;
