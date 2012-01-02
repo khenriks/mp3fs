@@ -262,11 +262,11 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
         case FLAC__METADATA_TYPE_VORBIS_COMMENT:
 
             /* set the common stuff */
-            set_tag(metadata, trans->id3tag, ID3_FRAME_TITLE, "TITLE");
-            set_tag(metadata, trans->id3tag, ID3_FRAME_ARTIST, "ARTIST");
-            set_tag(metadata, trans->id3tag, ID3_FRAME_ALBUM, "ALBUM");
-            set_tag(metadata, trans->id3tag, ID3_FRAME_GENRE, "GENRE");
-            set_tag(metadata, trans->id3tag, ID3_FRAME_YEAR, "DATE");
+            set_tag(metadata, trans->id3tag, "TIT2", "TITLE");
+            set_tag(metadata, trans->id3tag, "TPE1", "ARTIST");
+            set_tag(metadata, trans->id3tag, "TALB", "ALBUM");
+            set_tag(metadata, trans->id3tag, "TCON", "GENRE");
+            set_tag(metadata, trans->id3tag, "TDRC", "DATE");
 
             /* less common, but often present */
             set_tag(metadata, trans->id3tag, "COMM", "DESCRIPTION");
@@ -296,7 +296,7 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
                              get_tag(metadata, "TRACKNUMBER"));
                 }
                 id3_tag_attachframe(trans->id3tag,
-                                    make_frame(ID3_FRAME_TRACK, tmpstr));
+                                    make_frame("TRCK", tmpstr));
             }
 
             /* set the disc/total, also less common */
