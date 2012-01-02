@@ -106,17 +106,20 @@ void set_text_tag(struct id3_tag* id3tag, const char* id, const char* value) {
         return;
     }
 
-    frame = id3_frame_new(id);
+    frame = id3_tag_findframe(id3tag, id, 0);
+    if (!frame) {
+        frame = id3_frame_new(id);
+        id3_tag_attachframe(id3tag, frame);
+
+        id3_field_settextencoding(id3_frame_field(frame, 0),
+                                  ID3_FIELD_TEXTENCODING_UTF_8);
+    }
 
     ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *)value);
     if (ucs4) {
-        id3_field_settextencoding(id3_frame_field(frame, 0),
-                                  ID3_FIELD_TEXTENCODING_UTF_8);
-        id3_field_setstrings(id3_frame_field(frame, 1), 1, &ucs4);
+        id3_field_addstring(id3_frame_field(frame, 1), ucs4);
         free(ucs4);
     }
-
-    id3_tag_attachframe(id3tag, frame);
 }
 
 /* set id3 picture tag from FLAC picture block */
