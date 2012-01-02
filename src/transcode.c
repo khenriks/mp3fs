@@ -269,11 +269,9 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
             set_tag(metadata, trans->id3tag, "TDRC", "DATE");
 
             /* less common, but often present */
-            set_tag(metadata, trans->id3tag, "COMM", "DESCRIPTION");
             set_tag(metadata, trans->id3tag, "TCOM", "COMPOSER");
             set_tag(metadata, trans->id3tag, "TOPE", "PERFORMER");
             set_tag(metadata, trans->id3tag, "TCOP", "COPYRIGHT");
-            set_tag(metadata, trans->id3tag, "WXXX", "LICENSE");
             set_tag(metadata, trans->id3tag, "TENC", "ENCODED_BY");
             set_tag(metadata, trans->id3tag, "TPUB", "ORGANIZATION");
             set_tag(metadata, trans->id3tag, "TPE3", "CONDUCTOR");
