@@ -85,23 +85,6 @@ int buffer_write(struct data_buffer* buffer, uint8_t* data, int len) {
  CALLBACKS and HELPERS for LAME and FLAC
 *******************************************************************/
 
-/* build an id3 frame */
-struct id3_frame *make_frame(const char *name, const char *data) {
-    struct id3_frame *frame;
-    id3_ucs4_t       *ucs4;
-
-    frame = id3_frame_new(name);
-
-    ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *)data);
-    if (ucs4) {
-        id3_field_settextencoding(&frame->fields[0],
-                                  ID3_FIELD_TEXTENCODING_UTF_8);
-        id3_field_setstrings(&frame->fields[1], 1, &ucs4);
-        free(ucs4);
-    }
-    return frame;
-}
-
 /* return a vorbis comment tag */
 const char *get_tag(const FLAC__StreamMetadata *metadata, const char *name) {
     int idx;
@@ -114,11 +97,26 @@ const char *get_tag(const FLAC__StreamMetadata *metadata, const char *name) {
     return (const char *) (comment->comments[idx].entry + strlen(name) + 1);
 }
 
-void set_tag(const FLAC__StreamMetadata *metadata, struct id3_tag *id3tag,
-             const char *id3name, const char *vcname) {
-    const char *str = get_tag(metadata, vcname);
-    if (str)
-        id3_tag_attachframe(id3tag, make_frame(id3name, str));
+/* Store an ID3 tag with given name and value. */
+void set_text_tag(struct id3_tag* id3tag, const char* id, const char* value) {
+    struct id3_frame* frame;
+    id3_ucs4_t* ucs4;
+
+    if (!value) {
+        return;
+    }
+
+    frame = id3_frame_new(id);
+
+    ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *)value);
+    if (ucs4) {
+        id3_field_settextencoding(id3_frame_field(frame, 0),
+                                  ID3_FIELD_TEXTENCODING_UTF_8);
+        id3_field_setstrings(id3_frame_field(frame, 1), 1, &ucs4);
+        free(ucs4);
+    }
+
+    id3_tag_attachframe(id3tag, frame);
 }
 
 /* set id3 picture tag from FLAC picture block */
@@ -239,6 +237,7 @@ write_cb(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,
 static void meta_cb(const FLAC__StreamDecoder *decoder,
                     const FLAC__StreamMetadata *metadata, void *client_data) {
     char tmpstr[10];
+    const char* tmp2str;
     float dbgain = 0;
     float filegainref;
     FLAC__StreamMetadata_StreamInfo info;
@@ -251,7 +250,7 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
             /* set the length in the id3tag */
             snprintf(tmpstr, 10, "%" PRIu64,
                 info.total_samples*1000/info.sample_rate);
-            id3_tag_attachframe(trans->id3tag, make_frame("TLEN", tmpstr));
+            set_text_tag(trans->id3tag, "TLEN", tmpstr);
 
             /* Use the data in STREAMINFO to set lame parameters. */
             lame_set_num_samples(trans->encoder, info.total_samples);
@@ -262,25 +261,30 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
         case FLAC__METADATA_TYPE_VORBIS_COMMENT:
 
             /* set the common stuff */
-            set_tag(metadata, trans->id3tag, "TIT2", "TITLE");
-            set_tag(metadata, trans->id3tag, "TPE1", "ARTIST");
-            set_tag(metadata, trans->id3tag, "TALB", "ALBUM");
-            set_tag(metadata, trans->id3tag, "TCON", "GENRE");
-            set_tag(metadata, trans->id3tag, "TDRC", "DATE");
+            set_text_tag(trans->id3tag, "TIT2", get_tag(metadata, "TITLE"));
+            set_text_tag(trans->id3tag, "TPE1", get_tag(metadata, "ARTIST"));
+            set_text_tag(trans->id3tag, "TALB", get_tag(metadata, "ALBUM"));
+            set_text_tag(trans->id3tag, "TCON", get_tag(metadata, "GENRE"));
+            set_text_tag(trans->id3tag, "TDRC", get_tag(metadata, "DATE"));
 
             /* less common, but often present */
-            set_tag(metadata, trans->id3tag, "TCOM", "COMPOSER");
-            set_tag(metadata, trans->id3tag, "TOPE", "PERFORMER");
-            set_tag(metadata, trans->id3tag, "TCOP", "COPYRIGHT");
-            set_tag(metadata, trans->id3tag, "TENC", "ENCODED_BY");
-            set_tag(metadata, trans->id3tag, "TPUB", "ORGANIZATION");
-            set_tag(metadata, trans->id3tag, "TPE3", "CONDUCTOR");
+            set_text_tag(trans->id3tag, "TCOM", get_tag(metadata, "COMPOSER"));
+            set_text_tag(trans->id3tag, "TOPE",
+                         get_tag(metadata, "PERFORMER"));
+            set_text_tag(trans->id3tag, "TCOP",
+                         get_tag(metadata, "COPYRIGHT"));
+            set_text_tag(trans->id3tag, "TENC",
+                         get_tag(metadata, "ENCODED_BY"));
+            set_text_tag(trans->id3tag, "TPUB",
+                         get_tag(metadata, "ORGANIZATION"));
+            set_text_tag(trans->id3tag, "TPE3",
+                         get_tag(metadata, "CONDUCTOR"));
 
             /* album artist can be stored in different fields */
-            if (get_tag(metadata, "ALBUMARTIST")) {
-                set_tag(metadata, trans->id3tag, "TPE2", "ALBUMARTIST");
-            } else if (get_tag(metadata, "ALBUM ARTIST")) {
-                set_tag(metadata, trans->id3tag, "TPE2", "ALBUM ARTIST");
+            if ((tmp2str = get_tag(metadata, "ALBUMARTIST"))) {
+                set_text_tag(trans->id3tag, "TPE2", tmp2str);
+            } else if ((tmp2str = get_tag(metadata, "ALBUM ARTIST"))) {
+                set_text_tag(trans->id3tag, "TPE2", tmp2str);
             }
 
             /* set the track/total */
@@ -293,8 +297,7 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
                     snprintf(tmpstr, 10, "%s",
                              get_tag(metadata, "TRACKNUMBER"));
                 }
-                id3_tag_attachframe(trans->id3tag,
-                                    make_frame("TRCK", tmpstr));
+                set_text_tag(trans->id3tag, "TRCK", tmpstr);
             }
 
             /* set the disc/total, also less common */
@@ -307,8 +310,7 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
                     snprintf(tmpstr, 10, "%s",
                              get_tag(metadata, "DISCNUMBER"));
                 }
-                id3_tag_attachframe(trans->id3tag,
-                                    make_frame("TPOS", tmpstr));
+                set_text_tag(trans->id3tag, "TPOS", tmpstr);
             }
 
             /*
@@ -375,7 +377,7 @@ struct transcoder* transcoder_new(char *flacname) {
         goto id3_fail;
     }
 
-    id3_tag_attachframe(trans->id3tag, make_frame("TSSE", "MP3FS"));
+    set_text_tag(trans->id3tag, "TSSE", "MP3FS");
 
     /* Create and initialise decoder */
     trans->decoder = FLAC__stream_decoder_new();
