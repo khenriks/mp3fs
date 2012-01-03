@@ -153,16 +153,6 @@ void set_picture_tag(const FLAC__StreamMetadata *metadata,
     }
 }
 
-/* divide one integer by another and round off the result */
-int divideround(long long one, int another) {
-    int result;
-
-    result = one / another;
-    if (one % another >= another / 2) result++;
-
-    return result;
-}
-
 /*
  * Print messages from lame. We cannot easily prepend a string to indicate
  * that the message comes from lame, so we need to render it ourselves.
