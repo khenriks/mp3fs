@@ -240,7 +240,6 @@ write_cb(const FLAC__StreamDecoder *decoder, const FLAC__Frame *frame,
 static void meta_cb(const FLAC__StreamDecoder *decoder,
                     const FLAC__StreamMetadata *metadata, void *client_data) {
     char tmpstr[10];
-    const char* tmp2str;
     float dbgain = 0;
     float filegainref;
     FLAC__StreamMetadata_StreamInfo info;
@@ -284,11 +283,10 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
                          get_tag(metadata, "CONDUCTOR"));
 
             /* album artist can be stored in different fields */
-            if ((tmp2str = get_tag(metadata, "ALBUMARTIST"))) {
-                set_text_tag(trans->id3tag, "TPE2", tmp2str);
-            } else if ((tmp2str = get_tag(metadata, "ALBUM ARTIST"))) {
-                set_text_tag(trans->id3tag, "TPE2", tmp2str);
-            }
+            set_text_tag(trans->id3tag, "TPE2",
+                         get_tag(metadata, "ALBUMARTIST"));
+            set_text_tag(trans->id3tag, "TPE2",
+                         get_tag(metadata, "ALBUM ARTIST"));
 
             /* set the track/total */
             if (get_tag(metadata, "TRACKNUMBER")) {
