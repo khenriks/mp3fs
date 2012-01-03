@@ -122,33 +122,24 @@ void set_text_tag(struct id3_tag* id3tag, const char* id, const char* value) {
     }
 }
 
-/* set id3 picture tag from FLAC picture block */
-void set_picture_tag(const FLAC__StreamMetadata *metadata,
-                     struct id3_tag *id3tag) {
-    const FLAC__StreamMetadata_Picture *picture;
+/* Set ID3 picture tag from picture data. */
+void set_picture_tag(struct id3_tag* id3tag, const char* mime_type, int type,
+                     const char* description, uint8_t* data, int data_length) {
     struct id3_frame *frame;
-    id3_ucs4_t       *ucs4;
-
-    picture = &metadata->data.picture;
-
-    /*
-     * There hardly seems a point in separating out these into a different
-     * function since it would need access to picture anyway.
-     */
+    id3_ucs4_t *ucs4;
 
     frame = id3_frame_new("APIC");
     id3_tag_attachframe(id3tag, frame);
 
-    ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *)picture->description);
+    ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *)description);
     if (ucs4) {
-        id3_field_settextencoding(&frame->fields[0],
+        id3_field_settextencoding(id3_frame_field(frame, 0),
                                   ID3_FIELD_TEXTENCODING_UTF_8);
         id3_field_setlatin1(id3_frame_field(frame, 1),
-                            (id3_latin1_t*)picture->mime_type);
-        id3_field_setint(id3_frame_field(frame, 2), picture->type);
-        id3_field_setstring(&frame->fields[3], ucs4);
-        id3_field_setbinarydata(id3_frame_field(frame, 4), picture->data,
-                                picture->data_length);
+                            (id3_latin1_t*)mime_type);
+        id3_field_setint(id3_frame_field(frame, 2), type);
+        id3_field_setstring(id3_frame_field(frame, 3), ucs4);
+        id3_field_setbinarydata(id3_frame_field(frame, 4), data, data_length);
         free(ucs4);
     }
 }
@@ -233,6 +224,7 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
     float dbgain = 0;
     float filegainref;
     FLAC__StreamMetadata_StreamInfo info;
+    FLAC__StreamMetadata_Picture picture;
     struct transcoder* trans = (struct transcoder*)client_data;
 
     switch (metadata->type) {
@@ -337,7 +329,10 @@ static void meta_cb(const FLAC__StreamDecoder *decoder,
         case FLAC__METADATA_TYPE_PICTURE:
 
             /* add a picture tag for each picture block */
-            set_picture_tag(metadata, trans->id3tag);
+            picture = metadata->data.picture;
+            set_picture_tag(trans->id3tag, picture.mime_type, picture.type,
+                            (char*)picture.description, picture.data,
+                            picture.data_length);
 
             break;
         default:
