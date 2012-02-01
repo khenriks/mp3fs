@@ -499,6 +499,10 @@ trans_fail:
 /* Read some bytes into the internal buffer and into the given buffer. */
 
 int transcoder_read(struct transcoder* trans, char* buff, int offset, int len) {
+    /* Client asked for more data than exists. */
+    if (offset > trans->totalsize) {
+        return 0;
+    }
     if (offset+len > trans->totalsize) {
         len = trans->totalsize - offset;
     }
