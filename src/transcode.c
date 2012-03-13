@@ -469,9 +469,10 @@ struct transcoder* transcoder_new(char *flacname) {
     /*
      * Properly calculate final file size. This is the sum of the size of
      * ID3v2, ID3v1, and raw MP3 data.
+     * Cast to 64-bit int to avoid overflow
      */
     trans->totalsize = trans->buffer.pos + 128
-        + lame_get_totalframes(trans->encoder)*144*params.bitrate*10
+        + (uint64_t)lame_get_totalframes(trans->encoder)*144*params.bitrate*10
         / (lame_get_out_samplerate(trans->encoder)/100);
 
     id3_tag_delete(trans->id3tag);
