@@ -1,9 +1,9 @@
 #!/bin/sh
 
-. funcs.sh
+. ./funcs.sh
 
 setup
-FLS=($(ls /tmp/mp3))
+FLS=$(ls -m /tmp/mp3)
 finish
 
-[ "${FLS[*]}" == "dir.flac obama.mp3" ]
+[ "$FLS" = "dir.flac, obama.mp3" ]
