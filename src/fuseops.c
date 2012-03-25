@@ -273,11 +273,12 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
         read = pread(fd, buf, size, offset);
         close(fd);
         goto passthrough;
-    }
-    
-    /* File does exist, but can't be opened. */
-    if (fd == -1 && errno != ENOENT) {
+    } else if (errno != ENOENT) {
+        /* File does exist, but can't be opened. */
         goto open_fail;
+    } else {
+        /* File does not exist, and this is fine. */
+        errno = 0;
     }
     
     trans = (struct transcoder*)fi->fh;
