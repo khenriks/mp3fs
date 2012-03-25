@@ -580,7 +580,7 @@ int transcoder_finish(struct transcoder* trans) {
         trans->encoder = NULL;
 
         /* Write the ID3v1 tag, always 128 bytes from end. */
-        mp3fs_debug("Finishing file. Correct size: %lu, actual size: %lu",
+        mp3fs_debug("Finishing file. Correct size: %lu, computed size: %lu",
                     trans->buffer.pos + 128, trans->totalsize);
         trans->buffer.pos = trans->totalsize - 128;
         buffer_write(&trans->buffer, trans->id3v1tag, 128);
