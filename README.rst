@@ -8,9 +8,8 @@ MP3FS
 
 .. contents::
 
-We're pleased to announce the release of version 0.31 of mp3fs! This is a
-small update which fixes a few bugs and adds configuration options for the
-ReplayGain support.
+We're pleased to announce the release of version 0.32 of mp3fs! This is a
+bugfix release that addresses many small bugs.
 
 Introduction
 ------------
