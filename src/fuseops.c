@@ -102,8 +102,8 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                          off_t offset, struct fuse_file_info *fi) {
     char* origpath;
     char* origfile;
-    DIR *dp;
-    struct dirent *de;
+    struct dirent **namelist;
+    int n, i;
     
     mp3fs_debug("readdir %s", path);
     
@@ -120,31 +120,31 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         goto origfile_fail;
     }
     
-    dp = opendir(origpath);
-    if (!dp) {
-        goto opendir_fail;
+    n = scandir(origpath, &namelist, 0, alphasort);
+    if (n < 0) {
+        goto scandir_fail;
     }
     
-    while ((de = readdir(dp))) {
+    for (i = 0; i < n; i++) {
         struct stat st;
         
         snprintf(origfile, strlen(origpath) + NAME_MAX + 2, "%s/%s", origpath,
-                 de->d_name);
+                 namelist[i]->d_name);
         
         if (lstat(origfile, &st) == -1) {
             goto stat_fail;
         } else {
             if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
-                convert_path(de->d_name, 0);
+                convert_path(namelist[i]->d_name, 0);
             }
         }
         
-        if (filler(buf, de->d_name, &st, 0)) break;
+        if (filler(buf, namelist[i]->d_name, &st, 0)) break;
     }
     
 stat_fail:
-    closedir(dp);
-opendir_fail:
+    free(namelist);
+scandir_fail:
     free(origfile);
 origfile_fail:
     free(origpath);
