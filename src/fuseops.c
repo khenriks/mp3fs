@@ -126,7 +126,6 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     }
     
     for (i = 0; i < n; i++) {
-
         if (!skip) {
             struct stat st;
             
