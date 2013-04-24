@@ -1,4 +1,4 @@
-AM_CFLAGS = $(fuse_CFLAGS) -Wall
+AM_CFLAGS = $(fuse_CFLAGS) -Wall -Wextra
 bin_PROGRAMS = mp3fs
 mp3fs_SOURCES = mp3fs.c fuseops.c transcode.c transcode.h
 mp3fs_LDADD	= $(fuse_LIBS)
