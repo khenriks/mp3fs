@@ -24,12 +24,18 @@
 #include <cstdlib>
 #include <cstring>
 
+/* Initially Buffer is empty. It will be allocated as needed. */
 Buffer::Buffer() : buffer_data(0), buffer_pos(0), buffer_size(0) { }
 
+/* If buffer_data was never allocated, this is a no-op. */
 Buffer::~Buffer() {
     free(buffer_data);
 }
 
+/*
+ * Write data to the current position in the Buffer. The position pointer
+ * will be updated.
+ */
 int Buffer::write(uint8_t* data, unsigned int length) {
     uint8_t* write_ptr = write_prepare(length);
     if (!write_ptr) {
@@ -41,6 +47,10 @@ int Buffer::write(uint8_t* data, unsigned int length) {
     return length;
 }
 
+/*
+ * Write data to a specified position in the Buffer. The position pointer
+ * will not be updated.
+ */
 int Buffer::write(uint8_t* data, unsigned int length,
                   unsigned int offset) {
     uint8_t* write_ptr = write_prepare(length, offset);
@@ -52,6 +62,11 @@ int Buffer::write(uint8_t* data, unsigned int length,
     return length;
 }
 
+/*
+ * Ensure the Buffer has sufficient space for a quantity of data and
+ * return a pointer where the data may be written. The position pointer
+ * should be updated afterward with increment_pos().
+ */
 uint8_t* Buffer::write_prepare(unsigned int length) {
     if (reallocate(buffer_pos + length)) {
         return buffer_data + buffer_pos;
@@ -60,6 +75,11 @@ uint8_t* Buffer::write_prepare(unsigned int length) {
     }
 }
 
+/*
+ * Ensure the Buffer has sufficient space for a quantity of data written
+ * to a particular location and return a pointer where the data may be
+ * written.
+ */
 uint8_t* Buffer::write_prepare(unsigned int length, unsigned int offset) {
     if (reallocate(offset + length)) {
         return buffer_data + offset;
@@ -78,6 +98,10 @@ void Buffer::increment_pos(int increment) {
     buffer_pos += increment;
 }
 
+/*
+ * Ensure the allocation has at least size bytes available. If not,
+ * reallocate memory to make more available.
+ */
 bool Buffer::reallocate(unsigned int size) {
     if (size > buffer_size) {
         uint8_t* newdata = (uint8_t*)realloc(buffer_data, size);
