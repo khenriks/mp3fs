@@ -11,6 +11,12 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AC_PROG_CC
 AC_PROG_CXX
 
+# Check integer size
+AC_CHECK_SIZEOF(int)
+
+AS_IF([test "$ac_cv_sizeof_int" -lt 4],
+    AC_MSG_ERROR([Integer type 'int' must be at least 4 bytes in size.]))
+
 # FLAC support checks
 AC_ARG_WITH([flac],
     [AS_HELP_STRING([--without-flac],
