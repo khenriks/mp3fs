@@ -28,16 +28,17 @@ public:
     Buffer();
     ~Buffer();
 
-    int write(uint8_t* data, unsigned int length);
-    int write(uint8_t* data, unsigned int length, unsigned int offset);
-    uint8_t* write_prepare(unsigned int length);
-    uint8_t* write_prepare(unsigned int length, unsigned int offset);
-    void increment_pos(int increment);
+    unsigned long write(uint8_t* data, unsigned long length);
+    unsigned long write(uint8_t* data, unsigned long length,
+                        unsigned long offset);
+    uint8_t* write_prepare(unsigned long length);
+    uint8_t* write_prepare(unsigned long length, unsigned long offset);
+    void increment_pos(long increment);
 private:
-    bool reallocate(unsigned int size);
+    bool reallocate(unsigned long size);
     uint8_t* buffer_data;
-    unsigned int buffer_pos;
-    unsigned int buffer_size;
+    unsigned long buffer_pos;
+    unsigned long buffer_size;
 };
 
 #endif

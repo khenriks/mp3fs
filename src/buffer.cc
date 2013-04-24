@@ -36,7 +36,7 @@ Buffer::~Buffer() {
  * Write data to the current position in the Buffer. The position pointer
  * will be updated.
  */
-int Buffer::write(uint8_t* data, unsigned int length) {
+unsigned long Buffer::write(uint8_t* data, unsigned long length) {
     uint8_t* write_ptr = write_prepare(length);
     if (!write_ptr) {
         return 0;
@@ -51,8 +51,8 @@ int Buffer::write(uint8_t* data, unsigned int length) {
  * Write data to a specified position in the Buffer. The position pointer
  * will not be updated.
  */
-int Buffer::write(uint8_t* data, unsigned int length,
-                  unsigned int offset) {
+unsigned long Buffer::write(uint8_t* data, unsigned long length,
+                            unsigned long offset) {
     uint8_t* write_ptr = write_prepare(length, offset);
     if (!write_ptr) {
         return 0;
@@ -67,7 +67,7 @@ int Buffer::write(uint8_t* data, unsigned int length,
  * return a pointer where the data may be written. The position pointer
  * should be updated afterward with increment_pos().
  */
-uint8_t* Buffer::write_prepare(unsigned int length) {
+uint8_t* Buffer::write_prepare(unsigned long length) {
     if (reallocate(buffer_pos + length)) {
         return buffer_data + buffer_pos;
     } else {
@@ -80,7 +80,7 @@ uint8_t* Buffer::write_prepare(unsigned int length) {
  * to a particular location and return a pointer where the data may be
  * written.
  */
-uint8_t* Buffer::write_prepare(unsigned int length, unsigned int offset) {
+uint8_t* Buffer::write_prepare(unsigned long length, unsigned long offset) {
     if (reallocate(offset + length)) {
         return buffer_data + offset;
     } else {
@@ -94,7 +94,7 @@ uint8_t* Buffer::write_prepare(unsigned int length, unsigned int offset) {
  * that is done by the write_prepare methods via reallocate.
  */
 
-void Buffer::increment_pos(int increment) {
+void Buffer::increment_pos(long increment) {
     buffer_pos += increment;
 }
 
@@ -102,7 +102,7 @@ void Buffer::increment_pos(int increment) {
  * Ensure the allocation has at least size bytes available. If not,
  * reallocate memory to make more available.
  */
-bool Buffer::reallocate(unsigned int size) {
+bool Buffer::reallocate(unsigned long size) {
     if (size > buffer_size) {
         uint8_t* newdata = (uint8_t*)realloc(buffer_data, size);
         if (!newdata) {
