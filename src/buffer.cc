@@ -93,9 +93,13 @@ uint8_t* Buffer::write_prepare(unsigned long length, unsigned long offset) {
  * returns void. It does not ensure the position is valid memory because
  * that is done by the write_prepare methods via reallocate.
  */
-
 void Buffer::increment_pos(long increment) {
     buffer_pos += increment;
+}
+
+/* Give the value of the internal position pointer. */
+unsigned long Buffer::tell() const {
+    return buffer_pos;
 }
 
 /*

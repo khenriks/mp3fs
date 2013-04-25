@@ -34,6 +34,7 @@ public:
     uint8_t* write_prepare(unsigned long length);
     uint8_t* write_prepare(unsigned long length, unsigned long offset);
     void increment_pos(long increment);
+    unsigned long tell() const;
 private:
     bool reallocate(unsigned long size);
     uint8_t* buffer_data;
