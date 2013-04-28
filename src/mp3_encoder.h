@@ -23,6 +23,8 @@
 
 #include "coders.h"
 
+#include <map>
+
 #include <id3tag.h>
 #include <lame/lame.h>
 
@@ -33,7 +35,7 @@ public:
 
     int set_stream_params(uint64_t num_samples, int sample_rate,
                           int channels);
-    void set_text_tag(const char* key, const char* value);
+    void set_text_tag(const int key, const char* value);
     void set_picture_tag(const char* mime_type, int type,
                          const char* description, const uint8_t* data,
                          int data_length);
@@ -46,6 +48,9 @@ private:
     lame_t lame_encoder;
     struct id3_tag* id3tag;
     unsigned long id3size;
+    typedef std::map<int,const char*> meta_map_t;
+    static const meta_map_t create_meta_map();
+    static const meta_map_t metatag_map;
 };
 
 #endif

@@ -67,7 +67,7 @@ Mp3Encoder::Mp3Encoder() {
 
     lame_encoder = lame_init();
 
-    set_text_tag("TSSE", PACKAGE_NAME);
+    set_text_tag(METATAG_ENCODER, PACKAGE_NAME);
 
     /* Set lame parameters. */
     lame_set_quality(lame_encoder, params.quality);
@@ -116,7 +116,7 @@ int Mp3Encoder::set_stream_params(uint64_t num_samples, int sample_rate,
      */
     char tmpstr[10];
     snprintf(tmpstr, 10, "%" PRIu64, num_samples*1000/sample_rate);
-    set_text_tag("TLEN", tmpstr);
+    set_text_tag(METATAG_TRACKLENGTH, tmpstr);
 
     return 0;
 }
@@ -127,24 +127,28 @@ int Mp3Encoder::set_stream_params(uint64_t num_samples, int sample_rate,
  * and the tag will receive multiple values for the tag, as allowed by the
  * standard. The tag is assumed to be encoded in UTF-8.
  */
-void Mp3Encoder::set_text_tag(const char* key, const char* value) {
+void Mp3Encoder::set_text_tag(const int key, const char* value) {
     if (!value) {
         return;
     }
 
-    struct id3_frame* frame = id3_tag_findframe(id3tag, key, 0);
-    if (!frame) {
-        frame = id3_frame_new(key);
-        id3_tag_attachframe(id3tag, frame);
+    meta_map_t::const_iterator it = metatag_map.find(key);
 
-        id3_field_settextencoding(id3_frame_field(frame, 0),
-                                  ID3_FIELD_TEXTENCODING_UTF_8);
-    }
+    if (it != metatag_map.end()) {
+        struct id3_frame* frame = id3_tag_findframe(id3tag, it->second, 0);
+        if (!frame) {
+            frame = id3_frame_new(it->second);
+            id3_tag_attachframe(id3tag, frame);
 
-    id3_ucs4_t* ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *)value);
-    if (ucs4) {
-        id3_field_addstring(id3_frame_field(frame, 1), ucs4);
-        free(ucs4);
+            id3_field_settextencoding(id3_frame_field(frame, 0),
+                                      ID3_FIELD_TEXTENCODING_UTF_8);
+        }
+
+        id3_ucs4_t* ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t *)value);
+        if (ucs4) {
+            id3_field_addstring(id3_frame_field(frame, 1), ucs4);
+            free(ucs4);
+        }
     }
 }
 
@@ -284,3 +288,32 @@ int Mp3Encoder::encode_finish(Buffer& buffer) {
 
     return 0;
 }
+
+/*
+ * This function creates the metadata tag map from the standard values in the
+ * enum in coders.h to ID3 values. It will be called only once to set the
+ * metatag_map static variable.
+ */
+const Mp3Encoder::meta_map_t Mp3Encoder::create_meta_map() {
+    meta_map_t m;
+
+    m[METATAG_TITLE] = "TIT2";
+    m[METATAG_ARTIST] = "TPE1";
+    m[METATAG_ALBUM] = "TALB";
+    m[METATAG_GENRE] = "TCON";
+    m[METATAG_DATE] = "TDRC";
+    m[METATAG_COMPOSER] = "TCOM";
+    m[METATAG_PERFORMER] = "TOPE";
+    m[METATAG_COPYRIGHT] = "TCOP";
+    m[METATAG_ENCODEDBY] = "TENC";
+    m[METATAG_ORGANIZATION] = "TPUB";
+    m[METATAG_CONDUCTOR] = "TPE3";
+    m[METATAG_ALBUMARTIST] = "TPE2";
+    m[METATAG_ENCODER] = "TSSE";
+    m[METATAG_TRACKLENGTH] = "TLEN";
+
+    return m;
+}
+
+const Mp3Encoder::meta_map_t Mp3Encoder::metatag_map
+    = Mp3Encoder::create_meta_map();

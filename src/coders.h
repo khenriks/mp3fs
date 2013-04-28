@@ -25,11 +25,41 @@
 
 #include "buffer.h"
 
+/*
+ * Metadata tag enum constants. These values are needed to coordinate
+ * different tag names for different formats (FLAC vs. ID3 etc.). The
+ * set_text_tag() method of Encoder shall accept these values to determine
+ * which tag it should set. Each constant's name will consist of METATAG_ +
+ * the vorbis comment version of the tag.
+ */
+enum {
+    METATAG_TITLE,
+    METATAG_ARTIST,
+    METATAG_ALBUM,
+    METATAG_GENRE,
+    METATAG_DATE,
+    METATAG_COMPOSER,
+    METATAG_PERFORMER,
+    METATAG_COPYRIGHT,
+    METATAG_ENCODEDBY,
+    METATAG_ORGANIZATION,
+    METATAG_CONDUCTOR,
+    METATAG_ALBUMARTIST,
+    METATAG_TRACKNUMBER,
+    METATAG_TRACKTOTAL,
+    METATAG_DISCNUMBER,
+    METATAG_DISCTOTAL,
+    METATAG_ENCODER,
+    METATAG_TRACKLENGTH,
+    NUMBER_METATAG_FIELDS
+};
+
+/* Encoder class interface */
 class Encoder {
 public:
     virtual int set_stream_params(uint64_t num_samples, int sample_rate,
                                   int channels) = 0;
-    virtual void set_text_tag(const char* key, const char* value) = 0;
+    virtual void set_text_tag(const int key, const char* value) = 0;
     virtual void set_picture_tag(const char* mime_type, int type,
                                  const char* description, const uint8_t* data,
                                  int data_length) = 0;
