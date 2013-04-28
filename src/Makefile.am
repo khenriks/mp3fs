@@ -1,4 +1,14 @@
-AM_CFLAGS	= $(fuse_CFLAGS) $(id3tag_CFLAGS) $(flac_CFLAGS) -Wall
-bin_PROGRAMS	= mp3fs
-mp3fs_SOURCES	= mp3fs.c fuseops.c transcode.c transcode.h
-mp3fs_LDADD	= $(fuse_LIBS) $(id3tag_LIBS) $(flac_LIBS)
+AM_CFLAGS = $(fuse_CFLAGS) -Wall
+bin_PROGRAMS = mp3fs
+mp3fs_SOURCES = mp3fs.c fuseops.c transcode.c transcode.h
+mp3fs_LDADD	= $(fuse_LIBS)
+if HAVE_FLAC
+mp3fs_SOURCES +=
+mp3fs_LDADD += $(flac_LIBS)
+AM_CFLAGS += $(flac_CFLAGS)
+endif
+if HAVE_MP3
+mp3fs_SOURCES +=
+mp3fs_LDADD += $(id3tag_LIBS)
+AM_CFLAGS += $(id3tag_CFLAGS)
+endif
