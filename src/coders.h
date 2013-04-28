@@ -71,8 +71,12 @@ public:
     virtual int encode_finish(Buffer& buffer) = 0;
 };
 
+/* Decoder class interface */
 class Decoder {
-
+public:
+    virtual int open_file(const char* filename) = 0;
+    virtual int process_metadata(Encoder* encoder, Buffer* buffer) = 0;
+    virtual int process_single_fr(Encoder* encoder, Buffer* buffer) = 0;
 };
 
 #endif

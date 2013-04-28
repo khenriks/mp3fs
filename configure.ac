@@ -24,7 +24,7 @@ AC_ARG_WITH([flac],
     [], [with_flac=yes])
 
 AS_IF([test "x$with_flac" != xno ],
-    [PKG_CHECK_MODULES([flac], [flac >= 1.1.4],
+    [PKG_CHECK_MODULES([flac], [flac++ >= 1.1.4],
         [AC_DEFINE([HAVE_FLAC], [1], [Use FLAC library.])])])
 
 AM_CONDITIONAL([HAVE_FLAC], [test "x$with_flac" != xno])
