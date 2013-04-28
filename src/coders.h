@@ -63,6 +63,7 @@ public:
     virtual void set_picture_tag(const char* mime_type, int type,
                                  const char* description, const uint8_t* data,
                                  int data_length) = 0;
+    virtual void set_gain_db(const float dbgain) = 0;
     virtual int render_tag(Buffer& buffer) = 0;
     virtual unsigned long calculate_size() const = 0;
     virtual int encode_pcm_data(const int32_t* data[], int numsamples,

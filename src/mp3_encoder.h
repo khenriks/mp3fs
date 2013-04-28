@@ -39,6 +39,7 @@ public:
     void set_picture_tag(const char* mime_type, int type,
                          const char* description, const uint8_t* data,
                          int data_length);
+    void set_gain_db(const float dbgain);
     int render_tag(Buffer& buffer);
     unsigned long calculate_size() const;
     int encode_pcm_data(const int32_t* data[], int numsamples, int channels,

@@ -22,6 +22,7 @@
 
 #include <inttypes.h>
 
+#include <cmath>
 #include <cstdlib>
 #include <vector>
 
@@ -214,6 +215,16 @@ void Mp3Encoder::set_picture_tag(const char* mime_type, int type,
         id3_field_setstring(id3_frame_field(frame, 3), ucs4);
         free(ucs4);
     }
+}
+
+/*
+ * Set MP3 gain value in decibels. For MP3, there is no standard tag that can
+ * be used, so the value is set directly as a gain in the encoder. The pow
+ * formula comes from
+ * http://replaygain.hydrogenaudio.org/proposal/player_scale.html
+ */
+void Mp3Encoder::set_gain_db(const float dbgain) {
+    lame_set_scale(lame_encoder, pow(10.0, dbgain/20));
 }
 
 /*
