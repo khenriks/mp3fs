@@ -42,8 +42,8 @@ public:
     void set_gain_db(const float dbgain);
     int render_tag(Buffer& buffer);
     unsigned long calculate_size() const;
-    int encode_pcm_data(const int32_t* data[], int numsamples, int channels,
-                        Buffer& buffer);
+    int encode_pcm_data(const int32_t* const data[], int numsamples,
+                        int sample_size, Buffer& buffer);
     int encode_finish(Buffer& buffer);
 private:
     lame_t lame_encoder;

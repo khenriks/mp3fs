@@ -286,8 +286,8 @@ unsigned long Mp3Encoder::calculate_size() const {
  * -2**(sample_size-1) to 2**(sample_size-1)-1. This is not coincidentally
  * the format used by the FLAC library.
  */
-int Mp3Encoder::encode_pcm_data(const int32_t* data[], int numsamples,
-                                 int sample_size, Buffer& buffer) {
+int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
+                                int sample_size, Buffer& buffer) {
     /*
      * We need to properly resample input data to a format LAME wants. LAME
      * requires samples in a C89 sized type, left aligned (i.e. scaled to

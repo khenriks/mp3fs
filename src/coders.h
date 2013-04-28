@@ -66,8 +66,8 @@ public:
     virtual void set_gain_db(const float dbgain) = 0;
     virtual int render_tag(Buffer& buffer) = 0;
     virtual unsigned long calculate_size() const = 0;
-    virtual int encode_pcm_data(const int32_t* data[], int numsamples,
-                                 int channels, Buffer& buffer) = 0;
+    virtual int encode_pcm_data(const int32_t* const data[], int numsamples,
+                                int sample_size, Buffer& buffer) = 0;
     virtual int encode_finish(Buffer& buffer) = 0;
 };
 
