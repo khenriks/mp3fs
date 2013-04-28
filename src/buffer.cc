@@ -36,7 +36,7 @@ Buffer::~Buffer() {
  * Write data to the current position in the Buffer. The position pointer
  * will be updated.
  */
-unsigned long Buffer::write(uint8_t* data, unsigned long length) {
+unsigned long Buffer::write(const uint8_t* data, unsigned long length) {
     uint8_t* write_ptr = write_prepare(length);
     if (!write_ptr) {
         return 0;
@@ -51,7 +51,7 @@ unsigned long Buffer::write(uint8_t* data, unsigned long length) {
  * Write data to a specified position in the Buffer. The position pointer
  * will not be updated.
  */
-unsigned long Buffer::write(uint8_t* data, unsigned long length,
+unsigned long Buffer::write(const uint8_t* data, unsigned long length,
                             unsigned long offset) {
     uint8_t* write_ptr = write_prepare(length, offset);
     if (!write_ptr) {
@@ -100,6 +100,12 @@ void Buffer::increment_pos(long increment) {
 /* Give the value of the internal position pointer. */
 unsigned long Buffer::tell() const {
     return buffer_pos;
+}
+
+/* Copy buffered data into output buffer. */
+void Buffer::copy_into(uint8_t* out_data, unsigned long offset,
+                       unsigned long size) const {
+    memcpy(out_data, buffer_data + offset, size);
 }
 
 /*
