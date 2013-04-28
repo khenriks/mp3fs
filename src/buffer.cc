@@ -104,7 +104,8 @@ unsigned long Buffer::tell() const {
 
 /*
  * Ensure the allocation has at least size bytes available. If not,
- * reallocate memory to make more available.
+ * reallocate memory to make more available. Fill the newly allocated memory
+ * with zeroes.
  */
 bool Buffer::reallocate(unsigned long size) {
     if (size > buffer_size) {
@@ -120,6 +121,8 @@ bool Buffer::reallocate(unsigned long size) {
         if (errno == ENOMEM) {
             errno = 0;
         }
+        /* Set new allocation to zero. */
+        memset(newdata + buffer_size, 0, size - buffer_size);
 
         buffer_data = newdata;
         buffer_size = size;
