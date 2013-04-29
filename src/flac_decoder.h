@@ -32,7 +32,7 @@
 class FlacDecoder : public Decoder, private FLAC::Decoder::File {
 public:
     int open_file(const char* filename);
-    int process_metadata(Encoder* encoder, Buffer* buffer);
+    int process_metadata(Encoder* encoder);
     int process_single_fr(Encoder* encoder, Buffer* buffer);
 protected:
     FLAC__StreamDecoderWriteStatus write_callback(const FLAC__Frame* frame,

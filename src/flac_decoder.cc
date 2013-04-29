@@ -61,9 +61,8 @@ int FlacDecoder::open_file(const char* filename) {
  * metadata_callback(). This function will also read the actual PCM stream
  * parameters.
  */
-int FlacDecoder::process_metadata(Encoder* encoder, Buffer* buffer) {
+int FlacDecoder::process_metadata(Encoder* encoder) {
     encoder_c = encoder;
-    buffer_c = buffer;
     if (!process_until_end_of_metadata()) {
         mp3fs_debug("FLAC is invalid.");
         return -1;
