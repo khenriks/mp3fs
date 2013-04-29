@@ -57,6 +57,8 @@ enum {
 /* Encoder class interface */
 class Encoder {
 public:
+    virtual ~Encoder() { };
+
     virtual int set_stream_params(uint64_t num_samples, int sample_rate,
                                   int channels) = 0;
     virtual void set_text_tag(const int key, const char* value) = 0;
@@ -74,6 +76,8 @@ public:
 /* Decoder class interface */
 class Decoder {
 public:
+    virtual ~Decoder() { };
+
     virtual int open_file(const char* filename) = 0;
     virtual int process_metadata(Encoder* encoder) = 0;
     virtual int process_single_fr(Encoder* encoder, Buffer* buffer) = 0;
