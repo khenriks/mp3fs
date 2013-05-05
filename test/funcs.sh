@@ -1,6 +1,9 @@
 PATH=$PWD/../src:$PATH
 
 function setup {
+    set -e
+    trap finish ERR
+
     DIRNAME="$(mktemp -d)"
     mp3fs -d "$PWD/flac" "$DIRNAME" 2>$0-debug.log &
     while ! mount | grep -q "$DIRNAME" ; do
@@ -9,6 +12,6 @@ function setup {
 }
 
 function finish {
-    hash fusermount 2>&- && fusermount -u "$DIRNAME" || umount "$DIRNAME"
+    hash fusermount 2>&- && fusermount -u "$DIRNAME" || umount "$DIRNAME" || :
     rmdir "$DIRNAME"
 }
