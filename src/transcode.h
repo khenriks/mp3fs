@@ -2,7 +2,7 @@
  * FileTranscoder interface for MP3FS
  *
  * Copyright (C) 2006-2008 David Collett
- * Copyright (C) 2008-2011 Kristofer Henriksson
+ * Copyright (C) 2008-2013 Kristofer Henriksson
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,14 +22,7 @@
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
-#include <FLAC/metadata.h>
-#include <FLAC/stream_decoder.h>
-#include <lame/lame.h>
-#include <id3tag.h>
 #include <syslog.h>
-
-#define FLAC_BLOCKSIZE 4608
-#define BUFSIZE 2 * FLAC_BLOCKSIZE
 
 /* Global program parameters */
 extern struct mp3fs_params {
@@ -48,30 +41,24 @@ extern struct fuse_operations mp3fs_ops;
 #define mp3fs_info(f, ...) syslog(LOG_INFO, f, ## __VA_ARGS__)
 #define mp3fs_error(f, ...) syslog(LOG_ERR, f, ## __VA_ARGS__)
 
-/* Internal buffer used for output file */
-struct data_buffer {
-    uint8_t* data;
-    unsigned long pos;
-    unsigned long size;
-};
+/*
+ * Forward declare transcoder struct. Don't actually define it here, to avoid
+ * including coders.h and turning into C++.
+ */
+struct transcoder;
 
-/* Transcoder parameters for open mp3 */
-struct transcoder {
-    struct data_buffer buffer;
-    unsigned long totalsize;
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    struct id3_tag *id3tag;
-    id3_byte_t id3v1tag[128];
-
-    FLAC__StreamDecoder *decoder;
-    lame_global_flags *encoder;
-};
-
-struct transcoder* transcoder_new(char *flacname);
+/* Functions for doing transcoding, called by main program body */
+struct transcoder* transcoder_new(char* filename);
 int transcoder_read(struct transcoder* trans, char* buff, int offset,
                     int len);
 int transcoder_finish(struct transcoder* trans);
 void transcoder_delete(struct transcoder* trans);
+int transcoder_get_size(struct transcoder* trans);
 
-uint8_t* buffer_write_prepare(struct data_buffer* buffer, int len);
-int buffer_write(struct data_buffer* buffer, uint8_t* data, int len);
+#ifdef __cplusplus
+}
+#endif

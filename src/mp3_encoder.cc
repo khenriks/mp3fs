@@ -330,7 +330,7 @@ int Mp3Encoder::encode_finish(Buffer& buffer) {
 
     buffer.increment_pos(len);
 
-    return 0;
+    return len;
 }
 
 /*
