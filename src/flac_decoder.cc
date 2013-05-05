@@ -20,6 +20,8 @@
 
 #include "flac_decoder.h"
 
+#include <algorithm>
+
 #include "transcode.h"
 
 namespace {
@@ -121,7 +123,9 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
 
             for (unsigned int i=0; i<vc.get_num_comments(); ++i) {
                 const FLAC::Metadata::VorbisComment::Entry comment = vc.get_comment(i);
-                const std::string fname(comment.get_field_name());
+                std::string fname(comment.get_field_name());
+                /* Normalize tag name to uppercase. */
+                std::transform(fname.begin(), fname.end(), fname.begin(), ::toupper);
 
                 meta_map_t::const_iterator it = metatag_map.find(fname);
                 if (it != metatag_map.end()) {
