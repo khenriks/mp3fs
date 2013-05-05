@@ -151,8 +151,15 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
             free(ucs4);
         }
     /* Special handling for track or disc numbers. */
-    } else if (key == METATAG_TRACKNUMBER || key == METATAG_TRACKTOTAL) {
-        struct id3_frame* frame = id3_tag_findframe(id3tag, "TRCK", 0);
+    } else if (key == METATAG_TRACKNUMBER || key == METATAG_TRACKTOTAL
+               || key == METATAG_DISCNUMBER || key == METATAG_DISCTOTAL) {
+        const char* tagname;
+        if (key == METATAG_TRACKNUMBER || key == METATAG_TRACKTOTAL) {
+            tagname = "TRCK";
+        } else {
+            tagname = "TPOS";
+        }
+        struct id3_frame* frame = id3_tag_findframe(id3tag, tagname, 0);
         const id3_latin1_t* lat;
         id3_latin1_t* tofree = 0;
         if (frame) {
@@ -160,43 +167,14 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
             tofree = id3_ucs4_latin1duplicate(pre);
             lat = tofree;
         } else {
-            frame = id3_frame_new("TRCK");
+            frame = id3_frame_new(tagname);
             id3_tag_attachframe(id3tag, frame);
             id3_field_settextencoding(id3_frame_field(frame, 0),
                                       ID3_FIELD_TEXTENCODING_UTF_8);
             lat = (const id3_latin1_t*)"";
         }
         char tmpstr[10];
-        if (key == METATAG_TRACKNUMBER) {
-            snprintf(tmpstr, 10, "%s%s", value, lat);
-        } else {
-            snprintf(tmpstr, 10, "%s/%s", lat, value);
-        }
-        id3_ucs4_t* ucs4 = id3_latin1_ucs4duplicate((id3_latin1_t*)tmpstr);
-        if (ucs4) {
-            id3_field_setstrings(id3_frame_field(frame, 1), 1, &ucs4);
-            free(ucs4);
-        }
-        if (tofree) {
-            free(tofree);
-        }
-    } else if (key == METATAG_DISCNUMBER || key == METATAG_DISCTOTAL) {
-        struct id3_frame* frame = id3_tag_findframe(id3tag, "TPOS", 0);
-        const id3_latin1_t* lat;
-        id3_latin1_t* tofree = 0;
-        if (frame) {
-            const id3_ucs4_t* pre = id3_field_getstrings(id3_frame_field(frame, 1), 0);
-            tofree = id3_ucs4_latin1duplicate(pre);
-            lat = tofree;
-        } else {
-            frame = id3_frame_new("TPOS");
-            id3_tag_attachframe(id3tag, frame);
-            id3_field_settextencoding(id3_frame_field(frame, 0),
-                                      ID3_FIELD_TEXTENCODING_UTF_8);
-            lat = (const id3_latin1_t*)"";
-        }
-        char tmpstr[10];
-        if (key == METATAG_DISCNUMBER) {
+        if (key == METATAG_TRACKNUMBER || key == METATAG_DISCNUMBER) {
             snprintf(tmpstr, 10, "%s%s", value, lat);
         } else {
             snprintf(tmpstr, 10, "%s/%s", lat, value);
