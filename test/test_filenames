@@ -3,7 +3,7 @@
 . funcs.sh
 
 setup
-FLS=($(ls /tmp/mp3))
+FLS=($(ls "$DIRNAME"))
 finish
 
 [ "${FLS[*]}" == "dir.flac obama.mp3" ]
