@@ -161,6 +161,9 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
             lat = tofree;
         } else {
             frame = id3_frame_new("TRCK");
+            id3_tag_attachframe(id3tag, frame);
+            id3_field_settextencoding(id3_frame_field(frame, 0),
+                                      ID3_FIELD_TEXTENCODING_UTF_8);
             lat = (const id3_latin1_t*)"";
         }
         char tmpstr[10];
@@ -187,6 +190,9 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
             lat = tofree;
         } else {
             frame = id3_frame_new("TPOS");
+            id3_tag_attachframe(id3tag, frame);
+            id3_field_settextencoding(id3_frame_field(frame, 0),
+                                      ID3_FIELD_TEXTENCODING_UTF_8);
             lat = (const id3_latin1_t*)"";
         }
         char tmpstr[10];
