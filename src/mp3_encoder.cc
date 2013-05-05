@@ -218,6 +218,7 @@ void Mp3Encoder::set_picture_tag(const char* mime_type, int type,
  * http://replaygain.hydrogenaudio.org/proposal/player_scale.html
  */
 void Mp3Encoder::set_gain_db(const float dbgain) {
+    mp3fs_debug("LAME setting gain to %f.", dbgain);
     lame_set_scale(lame_encoder, pow(10.0, dbgain/20));
 }
 
@@ -237,12 +238,9 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
     id3_tag_options(id3tag, ID3_TAG_OPTION_COMPRESSION, 0);
     id3_tag_setlength(id3tag, id3_tag_render(id3tag, 0) + 12);
 
-    mp3fs_debug("Ready to write tag.");
-
     // grow buffer and write v2 tag
     uint8_t* write_ptr = buffer.write_prepare(id3_tag_render(id3tag, 0));
     if (!write_ptr) {
-        mp3fs_debug("Failed to write tag.");
         return -1;
     }
     id3size = id3_tag_render(id3tag, write_ptr);
@@ -252,8 +250,6 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
     id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
     write_ptr = buffer.write_prepare(128, calculate_size() - 128);
     id3_tag_render(id3tag, write_ptr);
-
-    mp3fs_debug("Tag written.");
 
     return 0;
 }

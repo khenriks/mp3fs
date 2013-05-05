@@ -24,6 +24,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "transcode.h"
+
 /* Initially Buffer is empty. It will be allocated as needed. */
 Buffer::Buffer() : buffer_data(0), buffer_pos(0), buffer_size(0) { }
 
@@ -132,6 +134,8 @@ bool Buffer::reallocate(unsigned long size) {
         }
         /* Set new allocation to zero. */
         memset(newdata + buffer_size, 0, size - buffer_size);
+
+        mp3fs_debug("Buffer reallocate: %p -> %p ; %lu -> %lu", buffer_data, newdata, buffer_size, size);
 
         buffer_data = newdata;
         buffer_size = size;

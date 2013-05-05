@@ -113,6 +113,8 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
             /* Set our copy of STREAMINFO data. */
             info = FLAC::Metadata::StreamInfo(metadata);
 
+            mp3fs_debug("FLAC processing STREAMINFO");
+
             break;
         }
         case FLAC__METADATA_TYPE_VORBIS_COMMENT:
@@ -120,6 +122,8 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
             const FLAC::Metadata::VorbisComment vc(metadata);
             float filegainref = 89.0;
             float dbgain = INVALID_DB_GAIN;
+
+            mp3fs_debug("FLAC processing VORBIS_COMMENT");
 
             for (unsigned int i=0; i<vc.get_num_comments(); ++i) {
                 const FLAC::Metadata::VorbisComment::Entry comment = vc.get_comment(i);
@@ -157,6 +161,9 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
         {
             /* add a picture tag for each picture block */
             const FLAC::Metadata::Picture picture(metadata);
+
+            mp3fs_debug("FLAC processing PICTURE");
+
             encoder_c->set_picture_tag(picture.get_mime_type(),
                                        picture.get_type(),
                                        (char*)picture.get_description(),
