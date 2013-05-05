@@ -154,9 +154,11 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
     } else if (key == METATAG_TRACKNUMBER || key == METATAG_TRACKTOTAL) {
         struct id3_frame* frame = id3_tag_findframe(id3tag, "TRCK", 0);
         const id3_latin1_t* lat;
+        id3_latin1_t* tofree = 0;
         if (frame) {
             const id3_ucs4_t* pre = id3_field_getstrings(id3_frame_field(frame, 1), 0);
-            lat = id3_ucs4_latin1duplicate(pre);
+            tofree = id3_ucs4_latin1duplicate(pre);
+            lat = tofree;
         } else {
             frame = id3_frame_new("TRCK");
             lat = (const id3_latin1_t*)"";
@@ -172,13 +174,17 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
             id3_field_setstrings(id3_frame_field(frame, 1), 1, &ucs4);
             free(ucs4);
         }
-        free((id3_latin1_t*)lat);
+        if (tofree) {
+            free(tofree);
+        }
     } else if (key == METATAG_DISCNUMBER || key == METATAG_DISCTOTAL) {
         struct id3_frame* frame = id3_tag_findframe(id3tag, "TPOS", 0);
         const id3_latin1_t* lat;
+        id3_latin1_t* tofree = 0;
         if (frame) {
             const id3_ucs4_t* pre = id3_field_getstrings(id3_frame_field(frame, 1), 0);
-            lat = id3_ucs4_latin1duplicate(pre);
+            tofree = id3_ucs4_latin1duplicate(pre);
+            lat = tofree;
         } else {
             frame = id3_frame_new("TPOS");
             lat = (const id3_latin1_t*)"";
@@ -194,7 +200,9 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
             id3_field_setstrings(id3_frame_field(frame, 1), 1, &ucs4);
             free(ucs4);
         }
-        free((id3_latin1_t*)lat);
+        if (tofree) {
+            free(tofree);
+        }
     }
 }
 
