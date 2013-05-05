@@ -29,7 +29,10 @@ Buffer::Buffer() : buffer_data(0), buffer_pos(0), buffer_size(0) { }
 
 /* If buffer_data was never allocated, this is a no-op. */
 Buffer::~Buffer() {
+    /* Have to work around OS X Mountain Lion bug */
+    int olderrno = errno;
     free(buffer_data);
+    errno = olderrno;
 }
 
 /*
