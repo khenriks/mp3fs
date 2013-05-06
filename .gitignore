@@ -13,3 +13,4 @@ mp3fs.1
 /src/mp3fs
 /test/fpcompare
 /test/*.log
+/test/*.trs
