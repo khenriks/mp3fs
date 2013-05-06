@@ -2,9 +2,7 @@
 
 . funcs.sh
 
-setup
 METADATA=$(mutagen-inspect "$DIRNAME/obama.mp3" | sort | tail -n +4)
-finish
 
 cmp -s - <(echo "$METADATA") <<END
 TALB=US State of the Union 2011
