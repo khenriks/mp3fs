@@ -2,8 +2,6 @@
 
 . ./funcs.sh
 
-setup
-FLS=$(ls -m /tmp/mp3)
-finish
+FLS=$(ls -m "$DIRNAME")
 
 [ "$FLS" = "dir.flac, obama.mp3" ]

@@ -1,13 +1,25 @@
 PATH=$PWD/../src:$PATH
 export LC_ALL=C
 
-setup () {
-	mkdir /tmp/mp3
-	mp3fs -d "$PWD/flac" /tmp/mp3 2>$0-debug.log &
-	sleep 0.1
+cleanup () {
+    EXIT=$?
+    # Errors are no longer fatal
+    set +e
+    hash fusermount 2>&- && fusermount -u "$DIRNAME" || umount "$DIRNAME"
+    rmdir "$DIRNAME"
+    exit $EXIT
 }
 
-finish () {
-	hash fusermount 2>&- && fusermount -u /tmp/mp3 || umount /tmp/mp3
-	rmdir /tmp/mp3
+mp3fserr () {
+    exit 99
 }
+
+set -e
+trap cleanup EXIT
+trap mp3fserr USR1
+
+DIRNAME="$(mktemp -d)"
+( mp3fs -d "$PWD/flac" "$DIRNAME" || kill -USR1 $$ ) &
+while ! mount | grep -q "$DIRNAME" ; do
+    sleep 0.1
+done

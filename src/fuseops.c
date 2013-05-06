@@ -188,7 +188,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
             goto transcoder_fail;
         }
         
-        stbuf->st_size = trans->totalsize;
+        stbuf->st_size = transcoder_get_size(trans);
         stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
         
         transcoder_finish(trans);
