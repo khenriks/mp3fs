@@ -26,7 +26,7 @@
 
 namespace {
     /* Define invalid value for gain in decibels, to be used later. */
-    const float INVALID_DB_GAIN = 1000.0;
+    const double INVALID_DB_GAIN = 1000.0;
 }
 
 /*
@@ -120,8 +120,8 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
         case FLAC__METADATA_TYPE_VORBIS_COMMENT:
         {
             const FLAC::Metadata::VorbisComment vc(metadata);
-            float filegainref = 89.0;
-            float dbgain = INVALID_DB_GAIN;
+            double filegainref = 89.0;
+            double dbgain = INVALID_DB_GAIN;
 
             mp3fs_debug("FLAC processing VORBIS_COMMENT");
 

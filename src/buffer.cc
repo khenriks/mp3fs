@@ -41,7 +41,7 @@ Buffer::~Buffer() {
  * Write data to the current position in the Buffer. The position pointer
  * will be updated.
  */
-unsigned long Buffer::write(const uint8_t* data, unsigned long length) {
+size_t Buffer::write(const uint8_t* data, size_t length) {
     uint8_t* write_ptr = write_prepare(length);
     if (!write_ptr) {
         return 0;
@@ -56,8 +56,7 @@ unsigned long Buffer::write(const uint8_t* data, unsigned long length) {
  * Write data to a specified position in the Buffer. The position pointer
  * will not be updated.
  */
-unsigned long Buffer::write(const uint8_t* data, unsigned long length,
-                            unsigned long offset) {
+size_t Buffer::write(const uint8_t* data, size_t length, size_t offset) {
     uint8_t* write_ptr = write_prepare(length, offset);
     if (!write_ptr) {
         return 0;
@@ -72,7 +71,7 @@ unsigned long Buffer::write(const uint8_t* data, unsigned long length,
  * return a pointer where the data may be written. The position pointer
  * should be updated afterward with increment_pos().
  */
-uint8_t* Buffer::write_prepare(unsigned long length) {
+uint8_t* Buffer::write_prepare(size_t length) {
     if (reallocate(buffer_pos + length)) {
         return buffer_data + buffer_pos;
     } else {
@@ -85,7 +84,7 @@ uint8_t* Buffer::write_prepare(unsigned long length) {
  * to a particular location and return a pointer where the data may be
  * written.
  */
-uint8_t* Buffer::write_prepare(unsigned long length, unsigned long offset) {
+uint8_t* Buffer::write_prepare(size_t length, size_t offset) {
     if (reallocate(offset + length)) {
         return buffer_data + offset;
     } else {
@@ -98,18 +97,17 @@ uint8_t* Buffer::write_prepare(unsigned long length, unsigned long offset) {
  * returns void. It does not ensure the position is valid memory because
  * that is done by the write_prepare methods via reallocate.
  */
-void Buffer::increment_pos(long increment) {
+void Buffer::increment_pos(ptrdiff_t increment) {
     buffer_pos += increment;
 }
 
 /* Give the value of the internal position pointer. */
-unsigned long Buffer::tell() const {
+size_t Buffer::tell() const {
     return buffer_pos;
 }
 
 /* Copy buffered data into output buffer. */
-void Buffer::copy_into(uint8_t* out_data, unsigned long offset,
-                       unsigned long size) const {
+void Buffer::copy_into(uint8_t* out_data, size_t offset, size_t size) const {
     memcpy(out_data, buffer_data + offset, size);
 }
 
@@ -118,7 +116,7 @@ void Buffer::copy_into(uint8_t* out_data, unsigned long offset,
  * reallocate memory to make more available. Fill the newly allocated memory
  * with zeroes.
  */
-bool Buffer::reallocate(unsigned long size) {
+bool Buffer::reallocate(size_t size) {
     if (size > buffer_size) {
         uint8_t* newdata = (uint8_t*)realloc(buffer_data, size);
         if (!newdata) {

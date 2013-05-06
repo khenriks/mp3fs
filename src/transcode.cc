@@ -98,9 +98,10 @@ trans_fail:
 
 /* Read some bytes into the internal buffer and into the given buffer. */
 
-int transcoder_read(struct transcoder* trans, char* buff, int offset, int len) {
-    mp3fs_debug("Reading %d bytes from offset %d.", len, offset);
-    if (offset > transcoder_get_size(trans)) {
+ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
+                        size_t len) {
+    mp3fs_debug("Reading %zu bytes from offset %jd.", len, (intmax_t)offset);
+    if ((size_t)offset > transcoder_get_size(trans)) {
         return 0;
     }
     if (offset + len > transcoder_get_size(trans)) {
@@ -114,7 +115,7 @@ int transcoder_read(struct transcoder* trans, char* buff, int offset, int len) {
      * where applications read the end of the file first to read the ID3v1
      * tag.
      */
-    if (offset > trans->buffer.tell()
+    if ((size_t)offset > trans->buffer.tell()
         && offset + len > (transcoder_get_size(trans) - 128)) {
         trans->buffer.copy_into((uint8_t*)buff, offset, len);
 
@@ -141,8 +142,11 @@ int transcoder_read(struct transcoder* trans, char* buff, int offset, int len) {
 
     // truncate if we didnt actually get len
     if (trans->buffer.tell() < offset + len) {
-        len = trans->buffer.tell() - offset;
-        if (len < 0) len = 0;
+        if ((size_t)offset < trans->buffer.tell()) {
+            len = trans->buffer.tell() - offset;
+        } else {
+            len = 0;
+        }
     }
 
     trans->buffer.copy_into((uint8_t*)buff, offset, len);
@@ -167,8 +171,9 @@ int transcoder_finish(struct transcoder* trans) {
         }
 
         /* Check encoded buffer size. */
-        mp3fs_debug("Finishing file. Predicted size: %lu, final size: %lu",
-                    trans->encoder->calculate_size(), trans->buffer.tell() + 128);
+        mp3fs_debug("Finishing file. Predicted size: %zu, final size: %jd",
+                    trans->encoder->calculate_size(),
+                    (intmax_t)(trans->buffer.tell() + 128));
         trans->buffer.increment_pos(128);
         delete trans->encoder;
         trans->encoder = NULL;
@@ -185,7 +190,7 @@ void transcoder_delete(struct transcoder* trans) {
 }
 
 /* Return size of output file, as computed by Encoder. */
-int transcoder_get_size(struct transcoder* trans) {
+size_t transcoder_get_size(struct transcoder* trans) {
     if (trans->encoder) {
         return trans->encoder->calculate_size();
     } else {

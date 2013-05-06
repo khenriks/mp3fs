@@ -23,25 +23,25 @@
 
 #include <stdint.h>
 
+#include <cstddef>
+
 class Buffer {
 public:
     Buffer();
     ~Buffer();
 
-    unsigned long write(const uint8_t* data, unsigned long length);
-    unsigned long write(const uint8_t* data, unsigned long length,
-                        unsigned long offset);
-    uint8_t* write_prepare(unsigned long length);
-    uint8_t* write_prepare(unsigned long length, unsigned long offset);
-    void increment_pos(long increment);
-    unsigned long tell() const;
-    void copy_into(uint8_t* out_data, unsigned long offset,
-                   unsigned long size) const;
+    size_t write(const uint8_t* data, size_t length);
+    size_t write(const uint8_t* data, size_t length, size_t offset);
+    uint8_t* write_prepare(size_t length);
+    uint8_t* write_prepare(size_t length, size_t offset);
+    void increment_pos(ptrdiff_t increment);
+    size_t tell() const;
+    void copy_into(uint8_t* out_data, size_t offset, size_t size) const;
 private:
-    bool reallocate(unsigned long size);
+    bool reallocate(size_t size);
     uint8_t* buffer_data;
-    unsigned long buffer_pos;
-    unsigned long buffer_size;
+    size_t buffer_pos;
+    size_t buffer_size;
 };
 
 #endif

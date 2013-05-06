@@ -100,6 +100,8 @@ translate_fail:
 
 static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                          off_t offset, struct fuse_file_info *fi) {
+    (void)offset;
+    (void)fi;
     char* origpath;
     char* origfile;
     DIR *dp;
@@ -255,7 +257,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
                       struct fuse_file_info *fi) {
     char* origpath;
     int fd;
-    int read = 0;
+    ssize_t read = 0;
     struct transcoder* trans;
     
     mp3fs_debug("read %s: %zu bytes from %jd", path, size, (intmax_t)offset);
@@ -296,7 +298,7 @@ open_fail:
     free(origpath);
 translate_fail:
     if (read) {
-        return read;
+        return (int)read;
     } else {
         return -errno;
     }

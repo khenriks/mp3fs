@@ -39,16 +39,16 @@ public:
     void set_picture_tag(const char* mime_type, int type,
                          const char* description, const uint8_t* data,
                          int data_length);
-    void set_gain_db(const float dbgain);
+    void set_gain_db(const double dbgain);
     int render_tag(Buffer& buffer);
-    unsigned long calculate_size() const;
+    size_t calculate_size() const;
     int encode_pcm_data(const int32_t* const data[], int numsamples,
                         int sample_size, Buffer& buffer);
     int encode_finish(Buffer& buffer);
 private:
     lame_t lame_encoder;
     struct id3_tag* id3tag;
-    unsigned long id3size;
+    size_t id3size;
     typedef std::map<int,const char*> meta_map_t;
     static const meta_map_t create_meta_map();
     static const meta_map_t metatag_map;

@@ -93,8 +93,9 @@ General options:\n\
 \n", stdout);
 }
 
-static int mp3fs_opt_proc(void *data, const char *arg, int key,
+static int mp3fs_opt_proc(void* data, const char* arg, int key,
                           struct fuse_args *outargs) {
+    (void)data;
     switch(key) {
         case FUSE_OPT_KEY_NONOPT:
             // check for flacdir and bitrate parameters

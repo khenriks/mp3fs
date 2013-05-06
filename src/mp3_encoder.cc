@@ -217,9 +217,9 @@ void Mp3Encoder::set_picture_tag(const char* mime_type, int type,
  * formula comes from
  * http://replaygain.hydrogenaudio.org/proposal/player_scale.html
  */
-void Mp3Encoder::set_gain_db(const float dbgain) {
+void Mp3Encoder::set_gain_db(const double dbgain) {
     mp3fs_debug("LAME setting gain to %f.", dbgain);
-    lame_set_scale(lame_encoder, pow(10.0, dbgain/20));
+    lame_set_scale(lame_encoder, (float)pow(10.0, dbgain/20));
 }
 
 /*
@@ -260,7 +260,7 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
  * but in practice gives excellent answers, usually exactly correct.
  * Cast to 64-bit int to avoid overflow.
  */
-unsigned long Mp3Encoder::calculate_size() const {
+size_t Mp3Encoder::calculate_size() const {
     return id3size + 128
     + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
     / (lame_get_out_samplerate(lame_encoder)/100);

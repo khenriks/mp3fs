@@ -1,4 +1,4 @@
-WARNINGS = -Wall -Wextra
+WARNINGS = -Wall -Wextra -Wconversion -Wno-sign-conversion
 AM_CFLAGS = $(fuse_CFLAGS) $(WARNINGS)
 AM_CXXFLAGS = $(fuse_CFLAGS) $(WARNINGS)
 bin_PROGRAMS = mp3fs
