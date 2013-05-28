@@ -53,18 +53,39 @@ char* translate_path(const char* path) {
     return result;
 }
 
-/* Convert file extension between mp3 and flac. */
-void convert_path(char* path, int toflac) {
-    char* ptr;
-    ptr = strrchr(path, '.');
-    if (toflac) {
-        if (ptr && strcmp(ptr, ".mp3") == 0) {
-            strcpy(ptr, ".flac");
+/* Convert file name from source to destination name. The new extension will
+ * be copied in place, and the passed path must be large enough to hold the
+ * new name.
+ */
+void transcoded_name(char* path) {
+    char* ext = strrchr(path, '.');
+
+    if (ext && check_decoder(ext + 1)) {
+        strcpy(ext + 1, params.desttype);
+    }
+}
+
+/*
+ * Given the destination (post-transcode) file name, determine the name of
+ * the original file to be transcoded. The new extension will be copied in
+ * place, and the passed path must be large enough to hold the new name.
+ */
+void find_original(char* path) {
+    char* ext = strrchr(path, '.');
+
+    if (ext && strcmp(ext + 1, params.desttype) == 0) {
+        for (size_t i=0; i<sizeof_decoder_list; ++i) {
+            strcpy(ext + 1, decoder_list[i]);
+            if (access(path, F_OK) == 0) {
+                /* File exists with this extension */
+                return;
+            } else {
+                /* File does not exist; not an error */
+                errno = 0;
+            }
         }
-    } else {
-        if (ptr && strcmp(ptr, ".flac") == 0) {
-            strcpy(ptr, ".mp3");
-        }
+        /* Source file exists with no supported extension, restore path */
+        strcpy(ext + 1, params.desttype);
     }
 }
 
@@ -81,7 +102,7 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
         goto translate_fail;
     }
     
-    convert_path(origpath, 1);
+    find_original(origpath);
     
     len = readlink(origpath, buf, size - 2);
     if (len == -1) {
@@ -90,7 +111,7 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
     
     buf[len] = '\0';
     
-    convert_path(buf, 0);
+    transcoded_name(buf);
     
 readlink_fail:
     free(origpath);
@@ -137,7 +158,8 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
             goto stat_fail;
         } else {
             if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
-                convert_path(de->d_name, 0);
+                // TODO: Make this safe if converting from short to long ext.
+                transcoded_name(de->d_name);
             }
         }
         
@@ -175,7 +197,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
         errno = 0;
     }
     
-    convert_path(origpath, 1);
+    find_original(origpath);
     
     if (lstat(origpath, stbuf) == -1) {
         goto stat_fail;
@@ -235,7 +257,7 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
         goto passthrough;
     }
     
-    convert_path(origpath, 1);
+    find_original(origpath);
     
     trans = transcoder_new(origpath);
     if (!trans) {

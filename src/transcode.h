@@ -32,6 +32,7 @@ extern struct mp3fs_params {
     int debug;
     int gainmode;
     float gainref;
+    const char* desttype;
 } params;
 
 /* Fuse operations struct */
@@ -47,6 +48,12 @@ extern struct fuse_operations mp3fs_ops;
  */
 struct transcoder;
 
+/* Define lists of available encoder and decoder extensions. */
+extern const char* encoder_list[];
+extern const size_t sizeof_encoder_list;
+extern const char* decoder_list[];
+extern const size_t sizeof_decoder_list;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -58,6 +65,10 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
 int transcoder_finish(struct transcoder* trans);
 void transcoder_delete(struct transcoder* trans);
 size_t transcoder_get_size(struct transcoder* trans);
+
+/* Check for availability of audio types. */
+int check_encoder(const char* type);
+int check_decoder(const char* type);
 
 #ifdef __cplusplus
 }

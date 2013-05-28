@@ -25,8 +25,6 @@
 #include <cstring>
 
 #include "coders.h"
-#include "mp3_encoder.h"
-#include "flac_decoder.h"
 
 /* Transcoder parameters for open mp3 */
 struct transcoder {
@@ -51,8 +49,8 @@ struct transcoder* transcoder_new(char* filename) {
     }
 
     /* Create Encoder and Decoder objects. */
-    trans->encoder = new Mp3Encoder();
-    trans->decoder = new FlacDecoder();
+    trans->encoder = Encoder::CreateEncoder(params.desttype);
+    trans->decoder = Decoder::CreateDecoder(strrchr(filename, '.') + 1);
     if (!trans->encoder || !trans->decoder) {
         goto endecoder_fail;
     }

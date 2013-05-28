@@ -23,6 +23,8 @@
 
 #include <stdint.h>
 
+#include <string>
+
 #include "buffer.h"
 
 /*
@@ -71,6 +73,8 @@ public:
     virtual int encode_pcm_data(const int32_t* const data[], int numsamples,
                                 int sample_size, Buffer& buffer) = 0;
     virtual int encode_finish(Buffer& buffer) = 0;
+
+    static Encoder* CreateEncoder(const std::string file_type);
 };
 
 /* Decoder class interface */
@@ -81,6 +85,8 @@ public:
     virtual int open_file(const char* filename) = 0;
     virtual int process_metadata(Encoder* encoder) = 0;
     virtual int process_single_fr(Encoder* encoder, Buffer* buffer) = 0;
+
+    static Decoder* CreateDecoder(const std::string file_type);
 };
 
 #endif

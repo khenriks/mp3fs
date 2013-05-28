@@ -29,12 +29,15 @@
 #include "transcode.h"
 
 struct mp3fs_params params = {
-    .basepath           = NULL,
-    .bitrate            = 128,
-    .quality            = 5,
-    .debug              = 0,
-    .gainmode           = 1,
-    .gainref            = 89.0,
+    .basepath   = NULL,
+    .bitrate    = 128,
+    .quality    = 5,
+    .debug      = 0,
+    .gainmode   = 1,
+    .gainref    = 89.0,
+#ifdef HAVE_MP3
+    .desttype  = "mp3",
+#endif
 };
 
 enum {
@@ -56,6 +59,8 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("gainmode=%d",      gainmode, 0),
     MP3FS_OPT("--gainref=%f",     gainref, 0),
     MP3FS_OPT("gainref=%f",       gainref, 0),
+    MP3FS_OPT("--desttype=%s",    desttype, 0),
+    MP3FS_OPT("desttype=%s",      desttype, 0),
 
     FUSE_OPT_KEY("-h",            KEY_HELP),
     FUSE_OPT_KEY("--help",        KEY_HELP),
@@ -161,6 +166,14 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    /* Check for valid destination type. */
+    if (!check_encoder(params.desttype)) {
+        fprintf(stderr, "No encoder available for desttype: %s\n\n",
+                params.desttype);
+        usage(argv[0]);
+        return 1;
+    }
+
     /* Log to the screen if debug is enabled. */
     openlog("mp3fs", params.debug ? LOG_PERROR : 0, LOG_USER);
 
@@ -170,9 +183,10 @@ int main(int argc, char *argv[]) {
                 "quality:   %u\n"
                 "gainmode:  %d\n"
                 "gainref:   %f\n"
+                "desttype:  %s\n"
                 "\n",
-                params.basepath, params.bitrate,
-                params.quality, params.gainmode, params.gainref);
+                params.basepath, params.bitrate, params.quality,
+                params.gainmode, params.gainref, params.desttype);
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);
