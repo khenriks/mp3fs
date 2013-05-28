@@ -21,7 +21,8 @@
 
 #include "transcode.h"
 
-#include <errno.h>
+#include <cerrno>
+#include <cstring>
 
 #include "coders.h"
 #include "mp3_encoder.h"
@@ -108,14 +109,15 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
         len = transcoder_get_size(trans) - offset;
     }
 
-    // TODO: Make this not specific to MP3.
+    // TODO: Avoid favoring MP3 in program structure.
     /*
-     * If the requested data overlaps the ID3v1 tag at the end of the file,
-     * do not encode data first up to that position. This optimizes the case
-     * where applications read the end of the file first to read the ID3v1
-     * tag.
+     * If we are encoding to MP3 and the requested data overlaps the ID3v1 tag
+     * at the end of the file, do not encode data first up to that position.
+     * This optimizes the case where applications read the end of the file
+     * first to read the ID3v1 tag.
      */
-    if ((size_t)offset > trans->buffer.tell()
+    if (strcmp(params.desttype, "mp3") == 0 &&
+        (size_t)offset > trans->buffer.tell()
         && offset + len > (transcoder_get_size(trans) - 128)) {
         trans->buffer.copy_into((uint8_t*)buff, offset, len);
 
