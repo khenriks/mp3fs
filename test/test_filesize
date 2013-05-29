@@ -2,7 +2,7 @@
 
 . ./funcs.sh
 
-FSIZE=$(stat -c %s "$DIRNAME/obama.mp3")
+# Ensure log contains file size, predicted and actual
 cat "$DIRNAME/obama.mp3" > /dev/null
 
-[ $FSIZE -eq 96924 ]
+[ $(stat -c %s "$DIRNAME/obama.mp3") -eq 96924 ]

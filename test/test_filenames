@@ -2,6 +2,4 @@
 
 . ./funcs.sh
 
-FLS=$(ls -m "$DIRNAME")
-
-[ "$FLS" = "dir.flac, obama.mp3" ]
+[ "$(ls -m "$DIRNAME")" = "dir.flac, obama.mp3" ]

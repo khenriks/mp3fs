@@ -2,6 +2,4 @@
 
 . funcs.sh
 
-FPCMP=$(./fpcompare flac/obama.flac "$DIRNAME/obama.mp3" 2>&-)
-
-[ $FPCMP \< 0.05 ]
+[ "$(./fpcompare flac/obama.flac "$DIRNAME/obama.mp3" 2>&-)" \< 0.05 ]
