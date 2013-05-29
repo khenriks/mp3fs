@@ -5,4 +5,4 @@
 FSIZE=$(stat -c %s "$DIRNAME/obama.mp3")
 cat "$DIRNAME/obama.mp3" > /dev/null
 
-[ $FSIZE -eq 96834 ]
+[ $FSIZE -eq 96924 ]
