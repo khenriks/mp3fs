@@ -4,7 +4,7 @@ MP3FS
 :Maintainer: Kristofer Henriksson
 :Authors: - Kristofer Henriksson
           - David Collett
-:Web site: http://khenriks.github.com/mp3fs/
+:Web site: http://khenriks.github.io/mp3fs/
 
 .. contents::
 
