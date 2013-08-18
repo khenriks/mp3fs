@@ -24,6 +24,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <sstream>
 #include <vector>
 
 #include "transcode.h"
@@ -115,9 +116,9 @@ int Mp3Encoder::set_stream_params(uint64_t num_samples, int sample_rate,
      * Set the length in the ID3 tag, as this is the most convenient place
      * to do it.
      */
-    char tmpstr[10];
-    snprintf(tmpstr, 10, "%" PRIu64, num_samples*1000/sample_rate);
-    set_text_tag(METATAG_TRACKLENGTH, tmpstr);
+    std::ostringstream tempstr;
+    tempstr << num_samples*1000/sample_rate;
+    set_text_tag(METATAG_TRACKLENGTH, tempstr.str().c_str());
 
     return 0;
 }
@@ -173,13 +174,14 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
                                       ID3_FIELD_TEXTENCODING_UTF_8);
             lat = (const id3_latin1_t*)"";
         }
-        char tmpstr[10];
+        std::ostringstream tempstr;
         if (key == METATAG_TRACKNUMBER || key == METATAG_DISCNUMBER) {
-            snprintf(tmpstr, 10, "%s%s", value, lat);
+            tempstr << value << lat;
         } else {
-            snprintf(tmpstr, 10, "%s/%s", lat, value);
+            tempstr << lat << "/" << value;
         }
-        id3_ucs4_t* ucs4 = id3_latin1_ucs4duplicate((id3_latin1_t*)tmpstr);
+        id3_ucs4_t* ucs4 =
+            id3_latin1_ucs4duplicate((id3_latin1_t*)tempstr.str().c_str());
         if (ucs4) {
             id3_field_setstrings(id3_frame_field(frame, 1), 1, &ucs4);
             free(ucs4);
