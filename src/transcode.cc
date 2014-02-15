@@ -100,12 +100,12 @@ trans_fail:
 ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
                         size_t len) {
     mp3fs_debug("Reading %zu bytes from offset %jd.", len, (intmax_t)offset);
-    if ((size_t)offset > transcoder_get_size(trans)) {
-        return 0;
-    }
-    if (offset + len > transcoder_get_size(trans)) {
-        len = transcoder_get_size(trans) - offset;
-    }
+//    if ((size_t)offset > transcoder_get_size(trans)) {
+//        return 0;
+//    }
+//    if (offset + len > transcoder_get_size(trans)) {
+//        len = transcoder_get_size(trans) - offset;
+//    }
 
     // TODO: Avoid favoring MP3 in program structure.
     /*
@@ -114,7 +114,8 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
      * This optimizes the case where applications read the end of the file
      * first to read the ID3v1 tag.
      */
-    if (strcmp(params.desttype, "mp3") == 0 &&
+    if (!params.vbr &&
+        strcmp(params.desttype, "mp3") == 0 &&
         (size_t)offset > trans->buffer.tell()
         && offset + len > (transcoder_get_size(trans) - 128)) {
         trans->buffer.copy_into((uint8_t*)buff, offset, len);
@@ -139,6 +140,9 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
             }
         }
     }
+
+    // TODO - Need to render the v1 tag at the end of the file if they are
+    // reading to the end.
 
     // truncate if we didnt actually get len
     if (trans->buffer.tell() < offset + len) {
@@ -191,7 +195,7 @@ void transcoder_delete(struct transcoder* trans) {
 
 /* Return size of output file, as computed by Encoder. */
 size_t transcoder_get_size(struct transcoder* trans) {
-    if (trans->encoder) {
+    if (trans->encoder && !params.vbr) {
         return trans->encoder->calculate_size();
     } else {
         return trans->buffer.tell();

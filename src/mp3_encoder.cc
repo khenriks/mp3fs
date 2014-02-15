@@ -72,9 +72,17 @@ Mp3Encoder::Mp3Encoder() {
     set_text_tag(METATAG_ENCODER, PACKAGE_NAME);
 
     /* Set lame parameters. */
-    lame_set_quality(lame_encoder, params.quality);
-    lame_set_brate(lame_encoder, params.bitrate);
-    lame_set_bWriteVbrTag(lame_encoder, 0);
+    if (params.vbr) {
+        lame_set_VBR(lame_encoder, vbr_default);
+        lame_set_VBR_q(lame_encoder, params.quality);
+        lame_set_VBR_mean_bitrate_kbps(lame_encoder, params.bitrate);
+        lame_set_bWriteVbrTag(lame_encoder, 1);
+    } else {
+        lame_set_quality(lame_encoder, params.quality);
+        lame_set_brate(lame_encoder, params.bitrate);
+        lame_set_bWriteVbrTag(lame_encoder, 0);
+    }
+
     lame_set_errorf(lame_encoder, &lame_error);
     lame_set_msgf(lame_encoder, &lame_msg);
     lame_set_debugf(lame_encoder, &lame_debug);
@@ -248,10 +256,13 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
     id3size = id3_tag_render(id3tag, write_ptr);
     buffer.increment_pos(id3size);
 
-    /* Write v1 tag at end of buffer. */
-    id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
-    write_ptr = buffer.write_prepare(128, calculate_size() - 128);
-    id3_tag_render(id3tag, write_ptr);
+    /* Write v1 tag at end of buffer.  This can not be done with VBR because
+     * the size of the file is unkown until after it is encoded. */
+    if (!params.vbr) {
+        id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
+        write_ptr = buffer.write_prepare(128, calculate_size() - 128);
+        id3_tag_render(id3tag, write_ptr);
+    }
 
     return 0;
 }
@@ -263,9 +274,13 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
  * Cast to 64-bit int to avoid overflow.
  */
 size_t Mp3Encoder::calculate_size() const {
-    return id3size + 128
-    + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
-    / (lame_get_out_samplerate(lame_encoder)/100);
+    if (params.vbr) {
+        return 0;
+    } else {
+        return id3size + 128
+        + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
+        / (lame_get_out_samplerate(lame_encoder)/100);
+    }
 }
 
 /*
