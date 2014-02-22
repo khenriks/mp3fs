@@ -74,9 +74,9 @@ struct transcoder* transcoder_new(char* filename) {
 
     mp3fs_debug("Metadata processing finished.");
 
-    /* Render tag from Encoder to Buffer. */
-    if (trans->encoder->render_tag(trans->buffer) == -1) {
-        mp3fs_debug("Error rendering tag in Encoder.");
+    /* Render the starting tag from Encoder to Buffer. */
+    if (trans->encoder->render_start_tag(trans->buffer) == -1) {
+        mp3fs_debug("Error rendering starting tag in Encoder.");
         goto init_fail;
     }
 
@@ -100,27 +100,28 @@ trans_fail:
 ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
                         size_t len) {
     mp3fs_debug("Reading %zu bytes from offset %jd.", len, (intmax_t)offset);
-//    if ((size_t)offset > transcoder_get_size(trans)) {
-//        return 0;
-//    }
-//    if (offset + len > transcoder_get_size(trans)) {
-//        len = transcoder_get_size(trans) - offset;
-//    }
+    if (!params.vbr) {
+        if ((size_t)offset > transcoder_get_size(trans)) {
+            return 0;
+        }
+        if (offset + len > transcoder_get_size(trans)) {
+            len = transcoder_get_size(trans) - offset;
+        }
 
-    // TODO: Avoid favoring MP3 in program structure.
-    /*
-     * If we are encoding to MP3 and the requested data overlaps the ID3v1 tag
-     * at the end of the file, do not encode data first up to that position.
-     * This optimizes the case where applications read the end of the file
-     * first to read the ID3v1 tag.
-     */
-    if (!params.vbr &&
-        strcmp(params.desttype, "mp3") == 0 &&
-        (size_t)offset > trans->buffer.tell()
-        && offset + len > (transcoder_get_size(trans) - 128)) {
-        trans->buffer.copy_into((uint8_t*)buff, offset, len);
+        // TODO: Avoid favoring MP3 in program structure.
+        /*
+        * If we are encoding to MP3 and the requested data overlaps the ID3v1 tag
+        * at the end of the file, do not encode data first up to that position.
+        * This optimizes the case where applications read the end of the file
+        * first to read the ID3v1 tag.
+        */
+        if (strcmp(params.desttype, "mp3") == 0 &&
+            (size_t)offset > trans->buffer.tell() &&
+            offset + len > (transcoder_get_size(trans) - 128)) {
+            trans->buffer.copy_into((uint8_t*)buff, offset, len);
 
-        return len;
+            return len;
+        }
     }
 
     if (trans->decoder && trans->encoder) {
@@ -132,6 +133,13 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
                 errno = EIO;
                 return 0;
             } else if (stat == 1) {
+                /* Transcoding is complete.  Render the closing tag. */
+                if (trans->encoder->render_close_tag(trans->buffer) == -1) {
+                    mp3fs_debug("Error rendering closing tag in Encoder.");
+                    errno = EIO;
+                    return 0;
+                }
+
                 if (transcoder_finish(trans) == -1) {
                     errno = EIO;
                     return 0;
@@ -141,10 +149,7 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
         }
     }
 
-    // TODO - Need to render the v1 tag at the end of the file if they are
-    // reading to the end.
-
-    // truncate if we didnt actually get len
+    /* Truncate if we didn't actually get the full length. */
     if (trans->buffer.tell() < offset + len) {
         if ((size_t)offset < trans->buffer.tell()) {
             len = trans->buffer.tell() - offset;

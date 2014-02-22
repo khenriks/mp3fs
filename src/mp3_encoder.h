@@ -40,7 +40,8 @@ public:
                          const char* description, const uint8_t* data,
                          int data_length);
     void set_gain_db(const double dbgain);
-    int render_tag(Buffer& buffer);
+    int render_close_tag(Buffer& buffer);
+    int render_start_tag(Buffer& buffer);
     size_t calculate_size() const;
     int encode_pcm_data(const int32_t* const data[], int numsamples,
                         int sample_size, Buffer& buffer);

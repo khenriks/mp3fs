@@ -68,7 +68,8 @@ public:
                                  const char* description, const uint8_t* data,
                                  int data_length) = 0;
     virtual void set_gain_db(const double dbgain) = 0;
-    virtual int render_tag(Buffer& buffer) = 0;
+    virtual int render_close_tag(Buffer& buffer) = 0;
+    virtual int render_start_tag(Buffer& buffer) = 0;
     virtual size_t calculate_size() const = 0;
     virtual int encode_pcm_data(const int32_t* const data[], int numsamples,
                                 int sample_size, Buffer& buffer) = 0;
