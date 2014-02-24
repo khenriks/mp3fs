@@ -31,6 +31,7 @@
 struct mp3fs_params params = {
     .basepath   = NULL,
     .bitrate    = 128,
+    .vbr        = 0,
     .quality    = 5,
     .debug      = 0,
     .gainmode   = 1,
@@ -55,6 +56,8 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("debug",            debug, 1),
     MP3FS_OPT("-b %u",            bitrate, 0),
     MP3FS_OPT("bitrate=%u",       bitrate, 0),
+    MP3FS_OPT("-v",               vbr, 1),
+    MP3FS_OPT("vbr",              vbr, 1),
     MP3FS_OPT("--gainmode=%d",    gainmode, 0),
     MP3FS_OPT("gainmode=%d",      gainmode, 0),
     MP3FS_OPT("--gainref=%f",     gainref, 0),
@@ -84,6 +87,9 @@ Encoding options:\n\
                            encoding bitrate: Acceptable values for RATE\n\
                            include 96, 112, 128, 160, 192, 224, 256, and\n\
                            320; 128 is the default\n\
+    -v, -ovbr\n\
+                           enable variable bit rate encoding; disabled by\n\
+                           default\n\
     --gainmode=<0,1,2>, -ogainmode=<0,1,2>\n\
                            what to do with ReplayGain tags:\n\
                            0 - ignore, 1 - prefer album gain (default),\n\
@@ -180,12 +186,14 @@ int main(int argc, char *argv[]) {
     mp3fs_debug("MP3FS options:\n"
                 "basepath:  %s\n"
                 "bitrate:   %u\n"
+                "vbr:       %s\n"
                 "quality:   %u\n"
                 "gainmode:  %d\n"
                 "gainref:   %f\n"
                 "desttype:  %s\n"
                 "\n",
-                params.basepath, params.bitrate, params.quality,
+                params.basepath, params.bitrate,
+                params.vbr ? "true" : "false",  params.quality,
                 params.gainmode, params.gainref, params.desttype);
 
     // start FUSE

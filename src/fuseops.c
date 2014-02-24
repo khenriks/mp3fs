@@ -266,6 +266,12 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     
     /* Store transcoder in the fuse_file_info structure. */
     fi->fh = (uint64_t)trans;
+
+    /* Enable direct I/O to disable page cache if variable bitrate encoding is
+     * enabled.  This is because the size of the file is unkown up front. */
+    if (params.vbr) {
+        fi->direct_io = 1;
+    }
     
 transcoder_fail:
 passthrough:

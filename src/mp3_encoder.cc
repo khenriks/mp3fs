@@ -72,9 +72,17 @@ Mp3Encoder::Mp3Encoder() {
     set_text_tag(METATAG_ENCODER, PACKAGE_NAME);
 
     /* Set lame parameters. */
-    lame_set_quality(lame_encoder, params.quality);
-    lame_set_brate(lame_encoder, params.bitrate);
-    lame_set_bWriteVbrTag(lame_encoder, 0);
+    if (params.vbr) {
+        lame_set_VBR(lame_encoder, vbr_default);
+        lame_set_VBR_q(lame_encoder, params.quality);
+        lame_set_VBR_mean_bitrate_kbps(lame_encoder, params.bitrate);
+        lame_set_bWriteVbrTag(lame_encoder, 1);
+    } else {
+        lame_set_quality(lame_encoder, params.quality);
+        lame_set_brate(lame_encoder, params.bitrate);
+        lame_set_bWriteVbrTag(lame_encoder, 0);
+    }
+
     lame_set_errorf(lame_encoder, &lame_error);
     lame_set_msgf(lame_encoder, &lame_msg);
     lame_set_debugf(lame_encoder, &lame_debug);
@@ -225,11 +233,31 @@ void Mp3Encoder::set_gain_db(const double dbgain) {
 }
 
 /*
- * Render the ID3 tag into the referenced Buffer. This should be the first
- * thing to go into the Buffer. The ID3v1 tag will also be written 128
- * bytes from the calculated end of the buffer. It has a fixed size.
+ * Render the closing ID3 tag into the reference Bufffer.  For VBR files this
+ * will render the ID3v1 tag at the current end of the buffer.  For CBR files
+ * this will do nothing.
  */
-int Mp3Encoder::render_tag(Buffer& buffer) {
+int Mp3Encoder::render_close_tag(Buffer& buffer) {
+    if (params.vbr) {
+        id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
+        uint8_t* write_ptr = buffer.write_prepare(128, buffer.tell());
+        if (!write_ptr) {
+            return -1;
+        }
+        id3size = id3_tag_render(id3tag, write_ptr);
+        buffer.increment_pos(id3size);
+    }
+
+    return 0;
+}
+
+/*
+ * Render the beginning ID3 tag into the referenced Buffer. This should be the
+ * first thing to go into the Buffer. For CBR files the ID3v1 tag will also be
+ * written 128 bytes from the calculated end of the buffer. It has a fixed
+ * size.
+ */
+int Mp3Encoder::render_start_tag(Buffer& buffer) {
     /*
      * Disable ID3 compression because it hardly saves space and some
      * players don't like it.
@@ -248,10 +276,16 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
     id3size = id3_tag_render(id3tag, write_ptr);
     buffer.increment_pos(id3size);
 
-    /* Write v1 tag at end of buffer. */
-    id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
-    write_ptr = buffer.write_prepare(128, calculate_size() - 128);
-    id3_tag_render(id3tag, write_ptr);
+    /* Write v1 tag at end of buffer.  This can not be done with VBR because
+     * the size of the file is unkown until after it is encoded. */
+    if (!params.vbr) {
+        id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
+        write_ptr = buffer.write_prepare(128, calculate_size() - 128);
+        if (!write_ptr) {
+            return -1;
+        }
+        id3_tag_render(id3tag, write_ptr);
+    }
 
     return 0;
 }
@@ -263,9 +297,13 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
  * Cast to 64-bit int to avoid overflow.
  */
 size_t Mp3Encoder::calculate_size() const {
-    return id3size + 128
-    + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
-    / (lame_get_out_samplerate(lame_encoder)/100);
+    if (params.vbr) {
+        return 0;
+    } else {
+        return id3size + 128
+        + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
+        / (lame_get_out_samplerate(lame_encoder)/100);
+    }
 }
 
 /*

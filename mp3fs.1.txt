@@ -39,6 +39,9 @@ For sampling frequencies of 16, 22.05, and 24 kHz, 'RATE' can be among 8,
 When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
 160, 192, 224, 256, and 320. If not specified, 'RATE' defaults to 128.
 
+*-v, -ovbr*::
+    Enable variable bit rate encoding.  Disabled by default.
+
 *-d, -odebug*::
     Enable debug output. This will result in a large quantity of
     diagnostic information being printed to stderr as the program runs.
