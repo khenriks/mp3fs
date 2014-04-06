@@ -1,4 +1,5 @@
 Installation Instructions for mp3fs
+===================================
 
 This file is copyright (C) 2013-2014 K. Henriksson. It can be distributed
 under the terms of the GFDL 1.3 or later. See README.md for more
