@@ -5,7 +5,7 @@ mp3fs
 
 Web site: http://khenriks.github.io/mp3fs/
 
-MP3FS is a read-only FUSE filesystem which transcodes between audio
+mp3fs is a read-only FUSE filesystem which transcodes between audio
 formats (currently FLAC to MP3) on the fly when opened and read.
 
 This can let you use a FLAC collection with software and/or hardware which
@@ -67,7 +67,7 @@ with:
 
     git clone https://github.com/khenriks/mp3fs.git
 
-MP3FS is written in a mixture of C and C++ and uses the following libraries:
+mp3fs is written in a mixture of C and C++ and uses the following libraries:
 
 * [FUSE](http://fuse.sourceforge.net/)
 * [FLAC](http://flac.sourceforge.net/)
