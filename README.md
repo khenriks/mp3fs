@@ -12,7 +12,7 @@ This can let you use a FLAC collection with software and/or hardware which
 only understands the MP3 format, or transcode files through simple
 drag-and-drop in a file browser.
 
-For installation instructions see the INSTALL.md file.
+For installation instructions see the [install](INSTALL.md) file.
 
 Usage
 -----
