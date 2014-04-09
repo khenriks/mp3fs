@@ -1,0 +1,121 @@
+/* Google Fonts @imports */
+@import url(//fonts.googleapis.com/css?family=Copse);
+@import url(//fonts.googleapis.com/css?family=Quattrocento+Sans:700);
+@import url(//fonts.googleapis.com/css?family=Arvo);
+@import url(//fonts.googleapis.com/css?family=Open+Sans);
+@import url(//fonts.googleapis.com/css?family=Source+Code+Pro:600);
+
+body {
+    background: #07131F;
+    color: #003;
+    margin: 0;
+    font-family: 'Open Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+#top {
+    background: #143352;
+    margin: 0;
+    padding: 0.1em 1em;
+    color: #eee;
+}
+#bar {
+    background: linear-gradient(to bottom, #235F9C, #1A4775);
+    padding: 0.75em;
+    margin: 0;
+    box-shadow: 0 1px 5px 3px rgba(0, 0, 0, .3), inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -1px 0 rgba(0,0,0,.3);
+    font-size: 1.25em;
+    position: relative;
+    z-index: 1;
+    font-family: Copse, serif;
+    color: #eee;
+}
+#bar a {
+    display: inline-block;
+    background: linear-gradient(#fe8, #fb0);
+    color: black;
+    text-decoration: none;
+    text-transform: uppercase;
+    font-family: "Quattrocento Sans", sans-serif;
+    font-weight: bold;
+    font-size: 0.8em;
+    padding: 0.4em 0.4em 0.2em;
+    box-shadow: inset 0px 1px 0px rgba(255, 255, 255, 0.3), 1px 2px 4px rgba(0, 0, 0, 0.7);
+    margin: 0 1em;
+    border: 1px solid #dba500;
+    position: relative;
+    top: -0.25em;
+    border-radius: 3px;
+}
+#bar a:hover {
+    background: linear-gradient(#fe8, #fc3);
+
+    box-shadow: inset 0px 1px 0px rgba(255, 255, 255, 0.3), 1px 2px 6px 1px rgba(0, 0, 0, 0.7);
+}
+#content {
+    padding: 0.5em 2em;
+    box-shadow: 0 0 5px rgba(0, 0, 0, .3);
+    background: #ddd;
+}
+.widthfit {
+    max-width: 750px;
+    margin-left: auto;
+    margin-right: auto;
+}
+h1, h2, h3 {
+    font-family: Arvo, Monaco, serif;
+    font-weight: normal;
+}
+#ribbon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border: 0;
+    z-index: 2;
+}
+code {
+    font-family: "Source Code Pro", monospace;
+    font-weight: 600;
+    background: #023;
+    color: white;
+    text-shadow: rgba(0, 0, 0, 0.498039) 0px 1px 3px;
+    padding: 0.25em;
+    border-radius: 5px;
+    box-shadow: inset 0 1px 10px rgba(0, 0, 0, 0.6),
+        0 1px 0 rgba(255, 255, 255, .1), 0 -1px 0 rgba(0, 0, 0, .5);
+}
+.highlight {
+    border-radius: 5px;
+    box-shadow: inset 0 1px 10px rgba(0, 0, 0, 0.6),
+        0 1px 0 rgba(255, 255, 255, .1), 0 -1px 0 rgba(0, 0, 0, .5);
+    margin: 1em 2em;
+    padding: 0 1em;
+    background: #023;
+    overflow: auto;
+}
+.highlight code {
+    box-shadow: none;
+    background: none;
+}
+/* Minimal syntax highlighting */
+.highlight .go { color: #9ab } /* Generic.Output */
+.highlight .gp { color: #456 } /* Generic.Prompt */
+#bottom {
+    color: #eee;
+    text-align: center;
+    font-size: 0.9em;
+    margin: 0.4em 0 0.8em;
+}
+#bottom a {
+    color: #eee;
+}
+.verticalpad {
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+a:link {
+    color: #159;
+}
+a:visited {
+    color: #717;
+}

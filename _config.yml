@@ -1,0 +1,6 @@
+markdown: kramdown
+
+kramdown:
+  parse_block_html: true
+
+exclude: [Gemfile, Gemfile.lock]
