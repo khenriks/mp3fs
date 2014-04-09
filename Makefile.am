@@ -4,7 +4,7 @@ dist_man_MANS = mp3fs.1
 
 MAINTAINERCLEANFILES = mp3fs.1
 
-EXTRA_DIST = README.rst mp3fs.1.txt
+EXTRA_DIST = README.md mp3fs.1.txt
 
 mp3fs.1: mp3fs.1.txt
 	$(AM_V_GEN)a2x -a revnumber="$(VERSION)" \
