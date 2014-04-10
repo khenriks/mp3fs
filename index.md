@@ -3,7 +3,7 @@ layout: main
 title: mp3fs
 ---
 
-mp3fs is a read-only [FUSE](http://fusess.sourceforge.net/) filesystem which
+mp3fs is a read-only [FUSE](http://fuse.sourceforge.net/) filesystem which
 transcodes between audio formats (currently FLAC to MP3) on the fly when files
 are opened and read.
 
