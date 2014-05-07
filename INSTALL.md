@@ -20,6 +20,8 @@ If building from git, you'll also need:
 * autoconf
 * automake
 * asciidoc
+* xmllint
+* xmlto
 
 The commands to install just the first four prerequisites follow.
 
