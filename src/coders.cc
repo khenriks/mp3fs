@@ -56,7 +56,7 @@ const char* encoder_list[] = {
 #endif
 };
 
-const size_t sizeof_encoder_list = sizeof(encoder_list);
+const size_t encoder_list_len = sizeof(encoder_list)/sizeof(const char*);
 
 /* Define list of available decoder extensions. */
 const char* decoder_list[] = {
@@ -65,7 +65,7 @@ const char* decoder_list[] = {
 #endif
 };
 
-const size_t sizeof_decoder_list = sizeof(decoder_list);
+const size_t decoder_list_len = sizeof(decoder_list)/sizeof(const char*);
 
 /* Use "C" linkage to allow access from C code. */
 extern "C" {

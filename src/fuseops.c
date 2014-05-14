@@ -74,7 +74,7 @@ void find_original(char* path) {
     char* ext = strrchr(path, '.');
 
     if (ext && strcmp(ext + 1, params.desttype) == 0) {
-        for (size_t i=0; i<sizeof_decoder_list; ++i) {
+        for (size_t i=0; i<decoder_list_len; ++i) {
             strcpy(ext + 1, decoder_list[i]);
             if (access(path, F_OK) == 0) {
                 /* File exists with this extension */

@@ -50,9 +50,9 @@ struct transcoder;
 
 /* Define lists of available encoder and decoder extensions. */
 extern const char* encoder_list[];
-extern const size_t sizeof_encoder_list;
+extern const size_t encoder_list_len;
 extern const char* decoder_list[];
-extern const size_t sizeof_decoder_list;
+extern const size_t decoder_list_len;
 
 #ifdef __cplusplus
 extern "C" {
