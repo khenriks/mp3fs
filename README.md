@@ -92,4 +92,4 @@ or in the COPYING file.
 
 This file and other documentation files can be distributed under the terms of
 the GNU Free Documentation License 1.3 or later. It can be found
-[online](http://www.gnu.org/licenses/fdl-1.3.html) or in the COPYING-doc file.
+[online](http://www.gnu.org/licenses/fdl-1.3.html) or in the COPYING.DOC file.
