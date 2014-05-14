@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. funcs.sh
+. "${BASH_SOURCE%/*}/funcs.sh"
 
 METADATA=$(mutagen-inspect "$DIRNAME/obama.mp3" | fgrep = | sort)
 

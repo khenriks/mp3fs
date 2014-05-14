@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-. ./funcs.sh
+. "${BASH_SOURCE%/*}/funcs.sh"
 
 # Ensure log contains file size, predicted and actual
 cat "$DIRNAME/obama.mp3" > /dev/null

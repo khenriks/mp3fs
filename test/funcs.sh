@@ -18,8 +18,9 @@ set -e
 trap cleanup EXIT
 trap mp3fserr USR1
 
+SRCDIR="$( cd "${BASH_SOURCE%/*}/flac" && pwd )"
 DIRNAME="$(mktemp -d)"
-( mp3fs -d "$PWD/flac" "$DIRNAME" || kill -USR1 $$ ) &
+( mp3fs -d "$SRCDIR" "$DIRNAME" || kill -USR1 $$ ) &
 while ! mount | grep -q "$DIRNAME" ; do
     sleep 0.1
 done
