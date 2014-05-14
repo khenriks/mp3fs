@@ -11,7 +11,7 @@ Prerequisites
 mp3fs requires the following libraries:
 
 * fuse (>= 2.6.0)
-* flac (>= 1.1.4)
+* flac++ (>= 1.1.4)
 * lame
 * libid3tag
 
@@ -27,7 +27,7 @@ The commands to install just the first four prerequisites follow.
 
 On Debian:
 
-    aptitude install libfuse-dev libflac-dev libmp3lame-dev libid3tag0-dev
+    aptitude install libfuse-dev libflac++-dev libmp3lame-dev libid3tag0-dev
 
 On Ubuntu use the same command with `apt-get` in place of `aptitude`.
 
