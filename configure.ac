@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # Sets up package and initializes build system.
-AC_INIT([MP3FS], [0.9])
+AC_INIT([MP3FS], [0.91])
 AC_CONFIG_SRCDIR([src/mp3fs.c])
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign])

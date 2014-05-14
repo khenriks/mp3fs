@@ -1,5 +1,15 @@
 mp3fs NEWS
 
+Important changes in 0.91 (2014-05-14)
+
+This is mainly bug fixes.
+
+Changes in this release:
+* Fixed a segfault caused by an overflow reading the list of available
+  decoders.
+* A number of problems with the previous distribution tar are now fixed.
+* The output of `mp3fs --version` has been made more complete.
+
 Important changes in 0.9 (2014-04-06)
 
 This is a major new release, and brings us very close to a 1.0 release!
