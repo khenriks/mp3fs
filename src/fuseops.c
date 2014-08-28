@@ -337,9 +337,20 @@ static int mp3fs_statfs(const char *path, struct statvfs *stbuf) {
     if (!origpath) {
         goto translate_fail;
     }
-    
+
+    /* pass-through for regular files */
+    if (statvfs(origpath, stbuf) == 0) {
+        goto passthrough;
+    } else {
+        /* Not really an error. */
+        errno = 0;
+    }
+
+    find_original(origpath);
+
     statvfs(origpath, stbuf);
-    
+
+passthrough:
     free(origpath);
 translate_fail:
     return -errno;
