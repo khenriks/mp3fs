@@ -30,7 +30,7 @@
 
 class Mp3Encoder : public Encoder {
 public:
-    Mp3Encoder();
+    Mp3Encoder(size_t actual_size);
     ~Mp3Encoder();
 
     int set_stream_params(uint64_t num_samples, int sample_rate,
@@ -41,12 +41,18 @@ public:
                          int data_length);
     void set_gain_db(const double dbgain);
     int render_tag(Buffer& buffer);
+    size_t get_actual_size() const;
     size_t calculate_size() const;
     int encode_pcm_data(const int32_t* const data[], int numsamples,
                         int sample_size, Buffer& buffer);
     int encode_finish(Buffer& buffer);
+
+public:
+    static const size_t id3v1_tag_length = 128;
+
 private:
     lame_t lame_encoder;
+    size_t actual_size;    // Use this as the size instead of computing it.
     struct id3_tag* id3tag;
     size_t id3size;
     typedef std::map<int,const char*> meta_map_t;

@@ -40,6 +40,8 @@ struct mp3fs_params params = {
     .basepath   = NULL,
     .bitrate    = 128,
     .quality    = 5,
+    .vbr        = 0,
+    .statcachesize = 0,
     .debug      = 0,
     .gainmode   = 1,
     .gainref    = 89.0,
@@ -63,6 +65,10 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("debug",            debug, 1),
     MP3FS_OPT("-b %u",            bitrate, 0),
     MP3FS_OPT("bitrate=%u",       bitrate, 0),
+    MP3FS_OPT("--vbr",            vbr, 1),
+    MP3FS_OPT("vbr",              vbr, 1),
+    MP3FS_OPT("--statcachesize=%u", statcachesize, 0),
+    MP3FS_OPT("statcachesize=%u", statcachesize, 1),
     MP3FS_OPT("--gainmode=%d",    gainmode, 0),
     MP3FS_OPT("gainmode=%d",      gainmode, 0),
     MP3FS_OPT("--gainref=%f",     gainref, 0),
@@ -92,6 +98,15 @@ Encoding options:\n\
                            encoding bitrate: Acceptable values for RATE\n\
                            include 96, 112, 128, 160, 192, 224, 256, and\n\
                            320; 128 is the default\n\
+    --vbr, -ovbr           Use variable bit rate encoding.  When set, the\n\
+                           bit rate set with '-b' sets the maximum bit rate.\n\
+                           Performance will be terrible unless the\n\
+			   statcachesize is enabled.\n\
+    --statcachesize=SIZE, -ostatcachesize=SIZE\n\
+			   Set the cache for file stats, where SIZE is in\n\
+			   kilobytes.  Necessary for decent performance when\n\
+			   VBR is enabled.  A megabytes holds stats for on\n\
+			   the order of 10,000 files.\n\
     --gainmode=<0,1,2>, -ogainmode=<0,1,2>\n\
                            what to do with ReplayGain tags:\n\
                            0 - ignore, 1 - prefer album gain (default),\n\
@@ -196,12 +211,15 @@ int main(int argc, char *argv[]) {
                 "basepath:  %s\n"
                 "bitrate:   %u\n"
                 "quality:   %u\n"
+                "vbr:       %u\n"
+                "statcachesize: %u\n"
                 "gainmode:  %d\n"
                 "gainref:   %f\n"
                 "desttype:  %s\n"
                 "\n",
-                params.basepath, params.bitrate, params.quality,
-                params.gainmode, params.gainref, params.desttype);
+                params.basepath, params.bitrate, params.quality, params.vbr,
+                params.statcachesize, params.gainmode, params.gainref,
+		params.desttype);
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);

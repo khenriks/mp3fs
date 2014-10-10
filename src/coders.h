@@ -69,12 +69,14 @@ public:
                                  int data_length) = 0;
     virtual void set_gain_db(const double dbgain) = 0;
     virtual int render_tag(Buffer& buffer) = 0;
+    virtual size_t get_actual_size() const = 0;
     virtual size_t calculate_size() const = 0;
     virtual int encode_pcm_data(const int32_t* const data[], int numsamples,
                                 int sample_size, Buffer& buffer) = 0;
     virtual int encode_finish(Buffer& buffer) = 0;
 
-    static Encoder* CreateEncoder(const std::string file_type);
+    static Encoder* CreateEncoder(const std::string file_type,
+	    size_t actual_size = 0);
 };
 
 /* Decoder class interface */
@@ -83,6 +85,8 @@ public:
     virtual ~Decoder() { };
 
     virtual int open_file(const char* filename) = 0;
+    /* The modified time of the decoder file */
+    virtual time_t mtime() = 0;
     virtual int process_metadata(Encoder* encoder) = 0;
     virtual int process_single_fr(Encoder* encoder, Buffer* buffer) = 0;
 

@@ -43,15 +43,41 @@ int FlacDecoder::open_file(const char* filename) {
 
     mp3fs_debug("FLAC ready to initialize.");
 
+    int fd = open(filename, 0);
+    if (fd < 0) {
+        mp3fs_debug("FLAC open failed.");
+        return -1;
+    }
+
+    struct stat s;
+    if (fstat(fd, &s) < 0) {
+        mp3fs_debug("FLAC stat failed.");
+	close(fd);
+        return -1;
+    }
+    mtime_ = s.st_mtime;
+
+    FILE *file = fdopen(fd, "r");
+    if (file == 0) {
+        mp3fs_debug("FLAC fdopen failed.");
+	close(fd);
+        return -1;
+    }
+
     /* Initialise decoder */
-    if (init(filename) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
+    if (init(file) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
         mp3fs_debug("FLAC init failed.");
+	fclose(file);
         return -1;
     }
 
     mp3fs_debug("FLAC initialized successfully.");
 
     return 0;
+}
+
+time_t FlacDecoder::mtime() {
+    return mtime_;
 }
 
 /*

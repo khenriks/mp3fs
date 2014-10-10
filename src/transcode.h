@@ -29,6 +29,8 @@ extern struct mp3fs_params {
     const char *basepath;
     unsigned int bitrate;
     unsigned int quality;
+    int vbr;
+    unsigned int statcachesize;
     int debug;
     int gainmode;
     float gainref;
