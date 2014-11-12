@@ -52,7 +52,7 @@ int FlacDecoder::open_file(const char* filename) {
     struct stat s;
     if (fstat(fd, &s) < 0) {
         mp3fs_debug("FLAC stat failed.");
-	close(fd);
+        close(fd);
         return -1;
     }
     mtime_ = s.st_mtime;
@@ -60,14 +60,14 @@ int FlacDecoder::open_file(const char* filename) {
     FILE *file = fdopen(fd, "r");
     if (file == 0) {
         mp3fs_debug("FLAC fdopen failed.");
-	close(fd);
+        close(fd);
         return -1;
     }
 
     /* Initialise decoder */
     if (init(file) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
         mp3fs_debug("FLAC init failed.");
-	fclose(file);
+        fclose(file);
         return -1;
     }
 

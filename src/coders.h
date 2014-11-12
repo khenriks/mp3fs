@@ -76,7 +76,7 @@ public:
     virtual int encode_finish(Buffer& buffer) = 0;
 
     static Encoder* CreateEncoder(const std::string file_type,
-	    size_t actual_size = 0);
+            size_t actual_size = 0);
 };
 
 /* Decoder class interface */

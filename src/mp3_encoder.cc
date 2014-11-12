@@ -236,7 +236,7 @@ void Mp3Encoder::set_gain_db(const double dbgain) {
 
 /*
  * Render the ID3 tag into the referenced Buffer. This should be the first
- * thing to go into the Buffer.  The ID3v1 tag will also be written 128
+ * thing to go into the Buffer. The ID3v1 tag will also be written 128
  * bytes from the calculated end of the buffer. It has a fixed size.
  */
 int Mp3Encoder::render_tag(Buffer& buffer) {
@@ -261,9 +261,9 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
     /* Write v1 tag at end of buffer. */
     id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
     write_ptr = buffer.write_prepare(id3v1_tag_length,
-	    calculate_size() - id3v1_tag_length);
+            calculate_size() - id3v1_tag_length);
     if (!write_ptr) {
-	return -1;
+        return -1;
     }
     id3_tag_render(id3tag, write_ptr);
 
@@ -272,7 +272,7 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
 
 /*
  * Get the actual number of bytes in the encoded file, i.e. without any
- * padding.  Valid only after encode_finish() has been called.
+ * padding. Valid only after encode_finish() has been called.
  */
 size_t Mp3Encoder::get_actual_size() const {
     return actual_size;
@@ -286,15 +286,15 @@ size_t Mp3Encoder::get_actual_size() const {
  */
 size_t Mp3Encoder::calculate_size() const {
     if (actual_size != 0) {
-	return actual_size;
+        return actual_size;
     } else if (params.vbr) {
-	return id3size + id3v1_tag_length + MAX_VBR_FRAME_SIZE
-	+ (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
-	/ (lame_get_in_samplerate(lame_encoder)/100);
+        return id3size + id3v1_tag_length + MAX_VBR_FRAME_SIZE
+        + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
+        / (lame_get_in_samplerate(lame_encoder)/100);
     } else {
-	return id3size + id3v1_tag_length
-	+ (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
-	/ (lame_get_out_samplerate(lame_encoder)/100);
+        return id3size + id3v1_tag_length
+        + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
+        / (lame_get_out_samplerate(lame_encoder)/100);
     }
 }
 
@@ -365,18 +365,18 @@ int Mp3Encoder::encode_finish(Buffer& buffer) {
     actual_size = buffer.tell() + id3v1_tag_length;
 
     /*
-     * Write the VBR tag data at id3size bytes after the beginning.  lame
+     * Write the VBR tag data at id3size bytes after the beginning. lame
      * already put dummy bytes here when lame_init_params() was called.
      */
     if (params.vbr) {
         uint8_t* write_ptr = buffer.write_prepare(MAX_VBR_FRAME_SIZE, id3size);
         if (!write_ptr) {
-	    return -1;
+            return -1;
         }
         size_t vbr_tag_size = lame_get_lametag_frame(lame_encoder, write_ptr,
-		MAX_VBR_FRAME_SIZE);
+                MAX_VBR_FRAME_SIZE);
         if (vbr_tag_size > MAX_VBR_FRAME_SIZE) {
-	   return -1;
+           return -1;
         }
     }
 
