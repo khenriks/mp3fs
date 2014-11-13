@@ -19,6 +19,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "mp3_encoder.h"
 #include "transcode.h"
 
 #include <cerrno>
@@ -116,7 +117,8 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
      */
     if (strcmp(params.desttype, "mp3") == 0 &&
         (size_t)offset > trans->buffer.tell()
-        && offset + len > (transcoder_get_size(trans) - 128)) {
+        && offset + len >
+        (transcoder_get_size(trans) - Mp3Encoder::id3v1_tag_length)) {
         trans->buffer.copy_into((uint8_t*)buff, offset, len);
 
         return len;

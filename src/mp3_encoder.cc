@@ -250,7 +250,8 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
 
     /* Write v1 tag at end of buffer. */
     id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
-    write_ptr = buffer.write_prepare(128, calculate_size() - 128);
+    write_ptr = buffer.write_prepare(id3v1_tag_length,
+            calculate_size() - id3v1_tag_length);
     id3_tag_render(id3tag, write_ptr);
 
     return 0;
@@ -263,7 +264,7 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
  * Cast to 64-bit int to avoid overflow.
  */
 size_t Mp3Encoder::calculate_size() const {
-    return id3size + 128
+    return id3size + id3v1_tag_length
     + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
     / (lame_get_out_samplerate(lame_encoder)/100);
 }
