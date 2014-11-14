@@ -41,15 +41,15 @@ struct transcoder {
 };
 
 namespace {
-    StatsCache stats_cache;
-}
+
+StatsCache stats_cache;
 
 /*
  * Transcode the buffer until the buffer has enough or until an error occurs.
  * The buffer needs at least 'end' bytes before transcoding stops. Returns true
  * if no errors and false otherwise.
  */
-static bool transcode_until(struct transcoder* trans, size_t end) {
+bool transcode_until(struct transcoder* trans, size_t end) {
     while (trans->encoder && trans->buffer.tell() < end) {
         int stat = trans->decoder->process_single_fr(trans->encoder,
                                                      &trans->buffer);
@@ -59,6 +59,8 @@ static bool transcode_until(struct transcoder* trans, size_t end) {
         }
     }
     return true;
+}
+
 }
 
 /* Use "C" linkage to allow access from C code. */

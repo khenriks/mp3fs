@@ -36,12 +36,14 @@ void FileStat::update_atime() {
 }
 
 namespace {
-    /* Compare two cache entries by the access time of the FileStat objects. */
 
-    bool cmp_by_atime(const StatsCache::cache_entry_t& a1,
-            const StatsCache::cache_entry_t& a2) {
-        return a1.second.get_atime() < a2.second.get_atime();
-    }
+/* Compare two cache entries by the access time of the FileStat objects. */
+
+bool cmp_by_atime(const StatsCache::cache_entry_t& a1,
+        const StatsCache::cache_entry_t& a2) {
+    return a1.second.get_atime() < a2.second.get_atime();
+}
+
 }
 
 /*
