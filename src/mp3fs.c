@@ -103,10 +103,9 @@ Encoding options:\n\
                            Performance will be terrible unless the\n\
                            statcachesize is enabled.\n\
     --statcachesize=SIZE, -ostatcachesize=SIZE\n\
-                           Set the cache for file stats, where SIZE is in\n\
-                           kilobytes.  Necessary for decent performance when\n\
-                           VBR is enabled.  A megabytes holds stats for on\n\
-                           the order of 10,000 files.\n\
+                           Set the number of entries for the file stats\n\
+                           cache.  Necessary for decent performance when\n\
+                           VBR is enabled.  Each entry takes 100-200 bytes.\n\
     --gainmode=<0,1,2>, -ogainmode=<0,1,2>\n\
                            what to do with ReplayGain tags:\n\
                            0 - ignore, 1 - prefer album gain (default),\n\

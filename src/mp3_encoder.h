@@ -30,6 +30,8 @@
 
 class Mp3Encoder : public Encoder {
 public:
+    static const size_t id3v1_tag_length = 128;
+
     Mp3Encoder(size_t actual_size);
     ~Mp3Encoder();
 
@@ -46,9 +48,6 @@ public:
     int encode_pcm_data(const int32_t* const data[], int numsamples,
                         int sample_size, Buffer& buffer);
     int encode_finish(Buffer& buffer);
-
-public:
-    static const size_t id3v1_tag_length = 128;
 
 private:
     lame_t lame_encoder;
