@@ -30,6 +30,8 @@
 
 class Mp3Encoder : public Encoder {
 public:
+    static const size_t id3v1_tag_length = 128;
+
     Mp3Encoder();
     ~Mp3Encoder();
 
