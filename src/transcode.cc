@@ -142,13 +142,11 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
         }
     }
 
-    // truncate if we didnt actually get len
-    if (trans->buffer.tell() < offset + len) {
-        if ((size_t)offset < trans->buffer.tell()) {
-            len = trans->buffer.tell() - offset;
-        } else {
-            len = 0;
-        }
+    // truncate if we didn't actually get len
+    if (trans->buffer.tell() < (size_t) offset) {
+        len = 0;
+    } else if (trans->buffer.tell() < offset + len) {
+        len = trans->buffer.tell() - offset;
     }
 
     trans->buffer.copy_into((uint8_t*)buff, offset, len);
