@@ -25,6 +25,17 @@
 #include <cerrno>
 #include <vector>
 
+namespace {
+
+/* Compare two cache entries by the access time of the FileStat objects. */
+
+bool cmp_by_atime(const StatsCache::cache_entry_t& a1,
+        const StatsCache::cache_entry_t& a2) {
+    return a1.second.get_atime() < a2.second.get_atime();
+}
+
+}
+
 FileStat::FileStat(size_t _size, time_t _mtime) : size(_size), mtime(_mtime) {
     update_atime();
 }
@@ -35,15 +46,8 @@ void FileStat::update_atime() {
     atime = tv.tv_sec;
 }
 
-namespace {
-
-/* Compare two cache entries by the access time of the FileStat objects. */
-
-bool cmp_by_atime(const StatsCache::cache_entry_t& a1,
-        const StatsCache::cache_entry_t& a2) {
-    return a1.second.get_atime() < a2.second.get_atime();
-}
-
+bool FileStat::operator==(const FileStat& other) const {
+    return size == other.size && atime == other.atime && mtime == other.mtime;
 }
 
 /*
@@ -92,53 +96,79 @@ void StatsCache::put_filesize(const std::string& filename, size_t filesize,
                 filename.c_str(), file_stat.get_size());
         p->second = file_stat;
     }
-    check_size();
+    bool needs_pruning = cache.size() > params.statcachesize;
     pthread_mutex_unlock(&mutex);
+    if (needs_pruning) {
+        prune();
+    }
 }
 
 /*
- * If the cache has exceeded the allotted size, prune invalid and old cache
- * entries until the cache is at 90% of capacity. Assumes the cache is locked.
+ * Prune invalid and old cache entries until the cache is at 90% of capacity.
  */
-void StatsCache::check_size() {
-    if (cache.size() <= params.statcachesize) {
-        return;
-    }
-
+void StatsCache::prune() {
     mp3fs_debug("Pruning stats cache");
     size_t target_size = 9 * params.statcachesize / 10; // 90%
-    std::vector<cache_entry_t> sorted_entries;
+    typedef std::vector<cache_entry_t> entry_vector;
+    entry_vector sorted_entries;
 
-    /* First remove all invalid cache entries. */
-    cache_t::iterator next_p;
-    for (cache_t::iterator p = cache.begin(); p != cache.end(); p = next_p) {
+    /* Copy all the entries to a vector to be sorted. */
+    pthread_mutex_lock(&mutex);
+    sorted_entries.reserve(cache.size());
+    for (cache_t::iterator p = cache.begin(); p != cache.end(); ++p) {
+        /* Force a true copy of the string to prevent multithreading issues. */
+        std::string file(p->first.c_str());
+        sorted_entries.push_back(std::make_pair(file, p->second));
+    }
+    pthread_mutex_unlock(&mutex);
+    /* Sort the entries by access time, with the oldest first */
+    sort(sorted_entries.begin(), sorted_entries.end(), cmp_by_atime);
+
+    /*
+     * Remove all invalid cache entries. Don't bother removing invalid
+     * entries from sorted_entries, as the removal from a vector can have bad
+     * performance and removing the entry twice (once here and once in the next
+     * loop) is harmless.
+     *
+     * Lock the cache for each entry removed instead of putting the lock around
+     * the entire loop because the stat() can be expensive.
+     */
+    for (entry_vector::iterator p = sorted_entries.begin();
+            p != sorted_entries.end(); ++p) {
         const std::string& decoded_file = p->first;
         const FileStat& file_stat = p->second;
-        next_p = p;
-        ++next_p;
-
         struct stat s;
         if (stat(decoded_file.c_str(), &s) < 0 ||
                 s.st_mtime > file_stat.get_mtime()) {
             mp3fs_debug("Removed out of date file '%s' from stats cache",
-                    p->first.c_str());
+                    decoded_file.c_str());
             errno = 0;
-            cache.erase(p);
-        } else {
-            sorted_entries.push_back(*p);
+            pthread_mutex_lock(&mutex);
+            remove_entry(decoded_file, file_stat);
+            pthread_mutex_unlock(&mutex);
         }
     }
-    if (cache.size() <= target_size) {
-        return;
-    }
 
-    // Sort all cache entries by the atime, and remove the oldest entries until
-    // the cache size meets the target.
-    sort(sorted_entries.begin(), sorted_entries.end(), cmp_by_atime);
-    for (std::vector<cache_entry_t>::iterator p = sorted_entries.begin();
+    /* Remove the oldest entries until the cache size meets the target. */
+    pthread_mutex_lock(&mutex);
+    for (entry_vector::iterator p = sorted_entries.begin();
             p != sorted_entries.end() && cache.size() > target_size; ++p) {
         mp3fs_debug("Pruned oldest file '%s' from stats cache",
                 p->first.c_str());
-        cache.erase(p->first);
+        remove_entry(p->first, p->second);
+    }
+    pthread_mutex_unlock(&mutex);
+}
+
+/*
+ * Remove the cache entry if it exists and if the entry's file stat matches the
+ * given file stat, i.e. the file stat hasn't changed.  Assumes the cache is
+ * locked.
+ */
+void StatsCache::remove_entry(const std::string& file,
+        const FileStat& file_stat) {
+    cache_t::iterator p = cache.find(file);
+    if (p != cache.end() && p->second == file_stat) {
+        cache.erase(p);
     }
 }

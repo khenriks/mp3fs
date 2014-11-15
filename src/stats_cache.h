@@ -38,6 +38,7 @@ public:
     size_t get_size() const  { return size; }
     time_t get_atime() const { return atime; }
     time_t get_mtime() const { return mtime; }
+    bool operator==(const FileStat& other) const;
 private:
     size_t size;
     // The last time this object was accessed. Used to implement the most
@@ -62,7 +63,8 @@ public:
     void put_filesize(const std::string& filename, size_t filesize,
             time_t mtime);
 private:
-    void check_size();
+    void prune();
+    void remove_entry(const std::string& file, const FileStat& file_stat);
     cache_t cache;
     pthread_mutex_t mutex;
 };
