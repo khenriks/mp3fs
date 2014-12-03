@@ -43,10 +43,10 @@ AS_IF([test "x$with_mp3" != xno ],
 
 AM_CONDITIONAL([HAVE_MP3], [test "x$with_mp3" != xno])
 
-AS_IF([test "$with_mp3" == no],
+AS_IF([test "$with_mp3" = no],
     AC_MSG_ERROR([No encoders enabled. Ensure --with-mp3 is given.]))
 
-AS_IF([test "$with_flac" == no],
+AS_IF([test "$with_flac" = no],
     AC_MSG_ERROR([No decoders enabled. Ensure --with-flac is given.]))
 
 # Checks for packages which use pkg-config.
