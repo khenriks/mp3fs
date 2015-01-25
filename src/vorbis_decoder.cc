@@ -64,8 +64,6 @@ int VorbisDecoder::open_file(const char* filename) {
 int VorbisDecoder::process_metadata(Encoder* encoder) {
 	vorbis_comment *vc = NULL;
 
-	mp3fs_debug("Ogg Vorbis decoder: Processing the metadata.");
-
 	if ((vi = ov_info(&vf, -1)) == NULL) {
 		mp3fs_debug("Ogg Vorbis decoder: Failed to retrieve the file info.");
 		return -1;
@@ -156,19 +154,24 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
 	const int bigendian = 0;
 	const int word = sizeof(int32_t);
 	const int signed_pcm = 1;
-	char decode_buffer[2 * word * 1024];
-
-	mp3fs_debug("Ogg Vorbis decoder: Transcoding a frame.");
+	const int decode_buf_size = 2 * word * 1024;
 	
-	long read_bytes = ov_read(&vf, decode_buffer, sizeof(decode_buffer),
+	union combining_buf {
+		int32_t as_int[decode_buf_size / sizeof(int32_t)];
+		short as_short[decode_buf_size / sizeof(short)];
+		char as_char[decode_buf_size];
+	} decode_buffer;
+
+	if (!(word == sizeof(int32_t) || word == sizeof(short) ||
+			word == sizeof(char))) {
+		mp3fs_debug("Ogg Vorbis decoder: Word size not supported.");
+		return -1;
+	}
+	
+	long read_bytes = ov_read(&vf, decode_buffer.as_char, decode_buf_size,
 			bigendian, word, signed_pcm, &current_section);
 	
 	if (read_bytes > 0) {
-
-		/* Translate bytes from decode_buffer into integers inside
-		 * encode_buffer. For multi-channel interleaving of decode_buffer refer
-		 * to ov_read(..) from libvorbisfile.
-		 */
 		int total_samples = read_bytes / word;
 
 		if (total_samples < 1) {
@@ -193,14 +196,20 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
 		for (int i = 0; i < samples_per_channel; ++i) {
 
 			for (int channel = 0; channel < vi->channels; ++channel) {
-				encode_buffer[channel][i] = 0;
+				switch (word) {
 
-				/* Merge bytes into integers. The decode buffer is set to
-				 * little endian.
-				 */
-				for (int j = 0; j < word; ++j) {
-					encode_buffer[channel][i] += decode_buffer[i * word + j]
-							<< (j * 8);
+					case sizeof(int32_t):
+						encode_buffer[channel][i] = decode_buffer.as_int[i];
+						break;
+
+					case sizeof(short):
+						encode_buffer[channel][i] = 0;
+						encode_buffer[channel][i] += decode_buffer.as_short[i];
+						break;
+
+					case sizeof(char):
+						encode_buffer[channel][i] = 0;
+						encode_buffer[channel][i] += decode_buffer.as_char[i];
 				}
 			}
 		}
