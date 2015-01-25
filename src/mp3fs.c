@@ -1,7 +1,7 @@
 /*
  * MP3FS: A read-only FUSE filesystem which transcodes audio formats
- * (currently FLAC) to MP3 on the fly when opened and read. See README
- * for more details.
+ * (currently FLAC and Ogg Vorbis) to MP3 on the fly when opened and read.
+ * See README for more details.
  *
  * Copyright (C) 2006-2008 David Collett
  * Copyright (C) 2008-2012 K. Henriksson

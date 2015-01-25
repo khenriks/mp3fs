@@ -32,6 +32,9 @@
 #ifdef HAVE_FLAC
 #include "flac_decoder.h"
 #endif
+#ifdef HAVE_VORBISDEC
+#include "vorbis_decoder.h"
+#endif
 
 /* Create instance of class derived from Encoder. */
 Encoder* Encoder::CreateEncoder(std::string file_type) {
@@ -45,6 +48,10 @@ Encoder* Encoder::CreateEncoder(std::string file_type) {
 Decoder* Decoder::CreateDecoder(std::string file_type) {
 #ifdef HAVE_FLAC
     if (file_type == "flac") return new FlacDecoder();
+#endif
+#ifdef HAVE_VORBISDEC
+    if (file_type == "ogg" || file_type == "oga")
+		return new VorbisDecoder();
 #endif
     return NULL;
 }
@@ -62,6 +69,10 @@ const size_t encoder_list_len = sizeof(encoder_list)/sizeof(const char*);
 const char* decoder_list[] = {
 #ifdef HAVE_FLAC
     "flac",
+#endif
+#ifdef HAVE_VORBISDEC
+	"ogg",
+	"oga",
 #endif
 };
 
