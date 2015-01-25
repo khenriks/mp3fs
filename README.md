@@ -5,12 +5,12 @@ mp3fs
 
 Web site: http://khenriks.github.io/mp3fs/
 
-mp3fs is a read-only FUSE filesystem which transcodes between audio
-formats (currently FLAC to MP3) on the fly when opened and read.
+mp3fs is a read-only FUSE filesystem which transcodes between audio formats
+(currently FLAC and Ogg Vorbis to MP3) on the fly when opened and read.
 
-This can let you use a FLAC collection with software and/or hardware which
-only understands the MP3 format, or transcode files through simple
-drag-and-drop in a file browser.
+This can let you use a FLAC or Ogg Vorbis collection with software and/or
+hardware which only understands the MP3 format, or transcode files through
+simple drag-and-drop in a file browser.
 
 For installation instructions see the [install](INSTALL.md) file.
 
@@ -30,8 +30,8 @@ following entry in `/etc/fstab`:
 
     mp3fs#/mnt/music /mnt/mp3 fuse allow_other,ro,bitrate=128 0 0
 
-At this point the files `/mnt/media/**.flac` will show up as
-`/mnt/mp3/**.mp3`.
+At this point the files `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
+show up as `/mnt/mp3/**.mp3`.
 
 How it Works
 ------------
@@ -51,8 +51,8 @@ since most programs will read a file from start to finish. Future
 enhancements may provide true random seeking.
 
 ID3 version 2.4 and 1.1 tags are created from the vorbis comments in
-the FLAC file. They are located at the start and end of the file
-respectively.
+the FLAC or Ogg Vorbis file. They are located at the start and end of
+the file respectively.
 
 A special optimisation is made so that applicatins which scan for
 id3v1 tags do not have to wait for the whole file to be transcoded
@@ -71,6 +71,7 @@ mp3fs is written in a mixture of C and C++ and uses the following libraries:
 
 * [FUSE](http://fuse.sourceforge.net/)
 * [FLAC](http://flac.sourceforge.net/)
+* [libvorbisfile3] (http://www.xiph.org/vorbis/)
 * [LAME](http://lame.sourceforge.net/)
 * [libid3tag](http://www.underbit.com/products/mad/)
 

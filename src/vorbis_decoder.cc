@@ -188,7 +188,7 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
 		
 		int32_t *encode_buffer[vi->channels];
 
-		/* Mono/ Stereo: 0 = left, 1 = right */
+		/* Mono/Stereo: 0 = left, 1 = right */
 		for (int channel = 0; channel < vi->channels; ++channel) {
 			encode_buffer[channel] = new int32_t[samples_per_channel];
 		}
@@ -203,13 +203,11 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
 						break;
 
 					case sizeof(short):
-						encode_buffer[channel][i] = 0;
-						encode_buffer[channel][i] += decode_buffer.as_short[i];
+						encode_buffer[channel][i] = decode_buffer.as_short[i];
 						break;
 
 					case sizeof(char):
-						encode_buffer[channel][i] = 0;
-						encode_buffer[channel][i] += decode_buffer.as_char[i];
+						encode_buffer[channel][i] = decode_buffer.as_char[i];
 				}
 			}
 		}
