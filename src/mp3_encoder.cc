@@ -85,7 +85,7 @@ Mp3Encoder::Mp3Encoder() {
  * so we have to check ourselves to avoid this case.
  */
 Mp3Encoder::~Mp3Encoder() {
-    if (!id3tag) {
+    if (id3tag) {
         id3_tag_delete(id3tag);
     }
     lame_close(lame_encoder);
