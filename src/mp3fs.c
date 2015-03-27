@@ -80,9 +80,9 @@ static struct fuse_opt mp3fs_opts[] = {
 };
 
 void usage(char *name) {
-    printf("Usage: %s [OPTION]... FLACDIR MP3DIR\n", name);
+    printf("Usage: %s [OPTION]... IN_DIR OUT_DIR\n", name);
     fputs("\
-Mount FLACDIR on MP3DIR, converting FLAC files to MP3 upon access.\n\
+Mount IN_DIR on OUT_DIR, converting FLAC/Ogg Vorbis files to MP3 upon access.\n\
 \n\
 Encoding options:\n\
     --quality=<0..9>, -oquality=<0..9>\n\

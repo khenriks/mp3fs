@@ -24,7 +24,7 @@
 #include <algorithm>
 
 namespace {
-	 
+     
     /* Define invalid value for gain in decibels, to be used later. */
     const double INVALID_DB_GAIN = 1000.0;
 }
@@ -33,8 +33,8 @@ namespace {
  * after the decoding process has finished.
  */
 VorbisDecoder::~VorbisDecoder() {
-	ov_clear(&vf);	
-	mp3fs_debug("Ogg Vorbis decoder: Closed.");
+    ov_clear(&vf);    
+    mp3fs_debug("Ogg Vorbis decoder: Closed.");
 }
 
 /*
@@ -43,12 +43,12 @@ VorbisDecoder::~VorbisDecoder() {
  */
 int VorbisDecoder::open_file(const char* filename) {
 
-	mp3fs_debug("Ogg Vorbis decoder: Initializing.");
-	
+    mp3fs_debug("Ogg Vorbis decoder: Initializing.");
+    
     /* Initialise decoder */
     if (ov_fopen(filename, &vf) < 0) {
         mp3fs_debug("Ogg Vorbis decoder: Initialization failed.");
-		return -1;
+        return -1;
     }
 
     return 0;
@@ -62,69 +62,69 @@ int VorbisDecoder::open_file(const char* filename) {
  * read the actual PCM stream parameters.
  */
 int VorbisDecoder::process_metadata(Encoder* encoder) {
-	vorbis_comment *vc = NULL;
+    vorbis_comment *vc = NULL;
 
-	if ((vi = ov_info(&vf, -1)) == NULL) {
-		mp3fs_debug("Ogg Vorbis decoder: Failed to retrieve the file info.");
-		return -1;
-	}
-
-	if (vi->channels > 2) {
-		mp3fs_debug("Ogg Vorbis decoder: Only mono/stereo audio currently supported.");
-		return -1;
-	}
-	
-	if (encoder->set_stream_params(
-			ov_pcm_total(&vf, -1),
-			vi->rate,
-			vi->channels) == -1) {
-		mp3fs_debug("Ogg Vorbis decoder: Failed to set encoder stream parameters.");
+    if ((vi = ov_info(&vf, -1)) == NULL) {
+        mp3fs_debug("Ogg Vorbis decoder: Failed to retrieve the file info.");
         return -1;
     }
 
-	if ((vc = ov_comment(&vf, -1)) == NULL) {
-		mp3fs_debug("Ogg Vorbis decoder: Failed to retrieve the Ogg Vorbis comment.");
-		return -1;
-	}
-	    
-	double filegainref = 89.0;
+    if (vi->channels > 2) {
+        mp3fs_debug("Ogg Vorbis decoder: Only mono/stereo audio currently supported.");
+        return -1;
+    }
+    
+    if (encoder->set_stream_params(
+            ov_pcm_total(&vf, -1),
+            vi->rate,
+            vi->channels) == -1) {
+        mp3fs_debug("Ogg Vorbis decoder: Failed to set encoder stream parameters.");
+        return -1;
+    }
+
+    if ((vc = ov_comment(&vf, -1)) == NULL) {
+        mp3fs_debug("Ogg Vorbis decoder: Failed to retrieve the Ogg Vorbis comment.");
+        return -1;
+    }
+        
+    double filegainref = 89.0;
     double dbgain = INVALID_DB_GAIN;
 
-	for (int i = 0; i < vc->comments; ++i) {
+    for (int i = 0; i < vc->comments; ++i) {
 
-		/* Get the tagname - tagvalue pairs */
-		std::string comment(vc->user_comments[i]);
-		unsigned long delimiter_pos = comment.find_first_of('=');
+        /* Get the tagname - tagvalue pairs */
+        std::string comment(vc->user_comments[i]);
+        unsigned long delimiter_pos = comment.find_first_of('=');
 
-		if ((delimiter_pos == 0) || (delimiter_pos >= comment.length() - 1))
-			continue;
-		
-		std::string tagname = comment.substr(0, delimiter_pos);
-		const char *tagvalue = comment.substr(
-				delimiter_pos + 1, std::string::npos).c_str();
+        if ((delimiter_pos == 0) || (delimiter_pos >= comment.length() - 1))
+            continue;
+        
+        std::string tagname = comment.substr(0, delimiter_pos);
+        const char *tagvalue = comment.substr(
+                delimiter_pos + 1, std::string::npos).c_str();
 
-		/* Normalize tag name to uppercase. */
+        /* Normalize tag name to uppercase. */
         std::transform(tagname.begin(), tagname.end(),
-				tagname.begin(), ::toupper);
+                tagname.begin(), ::toupper);
 
-		/* Set the encoder's text tag if it's in the metatag_map, or else,
-		 * prepare the ReplayGain.
-		 */
+        /* Set the encoder's text tag if it's in the metatag_map, or else,
+         * prepare the ReplayGain.
+         */
         meta_map_t::const_iterator it = metatag_map.find(tagname);
-		
+        
         if (it != metatag_map.end()) {
             encoder->set_text_tag(it->second, tagvalue);
         }
-		else if (tagname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
+        else if (tagname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
             filegainref = atof(tagvalue);
         }
-		else if (params.gainmode == 1
-				&& tagname == "REPLAYGAIN_ALBUM_GAIN") {
+        else if (params.gainmode == 1
+                && tagname == "REPLAYGAIN_ALBUM_GAIN") {
             dbgain = atof(tagvalue);
         }
-		else if ((params.gainmode == 1 || params.gainmode == 2)
-				&& dbgain == INVALID_DB_GAIN
-				&& tagname == "REPLAYGAIN_TRACK_GAIN") {
+        else if ((params.gainmode == 1 || params.gainmode == 2)
+                && dbgain == INVALID_DB_GAIN
+                && tagname == "REPLAYGAIN_TRACK_GAIN") {
             dbgain = atof(tagvalue);
         }
     }
@@ -138,10 +138,10 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         encoder->set_gain_db(params.gainref - filegainref + dbgain);
     }
 
-	/* TODO: decode METADATA_BLOCK_PICTURE for use with
-	 * encoder->set_picture_tag(..)
-	 */
-	    
+    /* TODO: decode METADATA_BLOCK_PICTURE for use with
+     * encoder->set_picture_tag(..)
+     */
+        
     return 0;
 }
 
@@ -151,100 +151,100 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
  * result going into the given Buffer.
  */
 int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
-	const int bigendian = 0;
-	const int word = sizeof(int32_t);
-	const int signed_pcm = 1;
-	const int decode_buf_size = 2 * word * 1024;
-	
-	union combining_buf {
-		int32_t as_int[decode_buf_size / sizeof(int32_t)];
-		short as_short[decode_buf_size / sizeof(short)];
-		char as_char[decode_buf_size];
-	} decode_buffer;
+    const int bigendian = 0;
+    const int word = sizeof(int32_t);
+    const int signed_pcm = 1;
+    const int decode_buf_size = 2 * word * 1024;
+    
+    union combining_buf {
+        int32_t as_int[decode_buf_size / sizeof(int32_t)];
+        short as_short[decode_buf_size / sizeof(short)];
+        char as_char[decode_buf_size];
+    } decode_buffer;
 
-	if (!(word == sizeof(int32_t) || word == sizeof(short) ||
-			word == sizeof(char))) {
-		mp3fs_debug("Ogg Vorbis decoder: Word size not supported.");
-		return -1;
-	}
-	
-	long read_bytes = ov_read(&vf, decode_buffer.as_char, decode_buf_size,
-			bigendian, word, signed_pcm, &current_section);
-	
-	if (read_bytes > 0) {
-		int total_samples = read_bytes / word;
+    if (!(word == sizeof(int32_t) || word == sizeof(short) ||
+            word == sizeof(char))) {
+        mp3fs_debug("Ogg Vorbis decoder: Word size not supported.");
+        return -1;
+    }
+    
+    long read_bytes = ov_read(&vf, decode_buffer.as_char, decode_buf_size,
+            bigendian, word, signed_pcm, &current_section);
+    
+    if (read_bytes > 0) {
+        int total_samples = read_bytes / word;
 
-		if (total_samples < 1) {
-			mp3fs_debug("Ogg Vorbis decoder: Byte buffer contains less than word size.");
-			return -1;
-		}
+        if (total_samples < 1) {
+            mp3fs_debug("Ogg Vorbis decoder: Byte buffer contains less than word size.");
+            return -1;
+        }
 
-		int samples_per_channel = total_samples / vi->channels;
+        int samples_per_channel = total_samples / vi->channels;
 
-		if (samples_per_channel < 1) {
-			mp3fs_debug("Ogg Vorbis decoder: Not enough samples per channel.");
-			return -1;
-		}
-		
-		int32_t *encode_buffer[vi->channels];
+        if (samples_per_channel < 1) {
+            mp3fs_debug("Ogg Vorbis decoder: Not enough samples per channel.");
+            return -1;
+        }
+        
+        int32_t *encode_buffer[vi->channels];
 
-		/* Mono/Stereo: 0 = left, 1 = right */
-		for (int channel = 0; channel < vi->channels; ++channel) {
-			encode_buffer[channel] = new int32_t[samples_per_channel];
-		}
-		
-		for (int i = 0; i < samples_per_channel; ++i) {
+        /* Mono/Stereo: 0 = left, 1 = right */
+        for (int channel = 0; channel < vi->channels; ++channel) {
+            encode_buffer[channel] = new int32_t[samples_per_channel];
+        }
+        
+        for (int i = 0; i < samples_per_channel; ++i) {
 
-			for (int channel = 0; channel < vi->channels; ++channel) {
-				switch (word) {
+            for (int channel = 0; channel < vi->channels; ++channel) {
+                switch (word) {
 
-					case sizeof(int32_t):
-						encode_buffer[channel][i] = decode_buffer.as_int[i];
-						break;
+                    case sizeof(int32_t):
+                        encode_buffer[channel][i] = decode_buffer.as_int[i];
+                        break;
 
-					case sizeof(short):
-						encode_buffer[channel][i] = decode_buffer.as_short[i];
-						break;
+                    case sizeof(short):
+                        encode_buffer[channel][i] = decode_buffer.as_short[i];
+                        break;
 
-					case sizeof(char):
-						encode_buffer[channel][i] = decode_buffer.as_char[i];
-				}
-			}
-		}
-		
-		/* Send integer buffer to encoder */
-		if (encoder->encode_pcm_data(encode_buffer, samples_per_channel,
+                    case sizeof(char):
+                        encode_buffer[channel][i] = decode_buffer.as_char[i];
+                }
+            }
+        }
+        
+        /* Send integer buffer to encoder */
+        if (encoder->encode_pcm_data(encode_buffer, samples_per_channel,
                                  8 * word, *buffer) < 0) {
 
-			mp3fs_debug("Ogg Vorbis decoder: Failed to encode integer buffer.");
+            mp3fs_debug("Ogg Vorbis decoder: Failed to encode integer buffer.");
 
-			for (int channel = 0; channel < vi->channels; ++channel) {
-				if (encode_buffer[channel] != NULL) {
-					delete[] encode_buffer[channel];
-					encode_buffer[channel] = NULL;
-				}
-			}
-			
-			return -1;
-		}
+            for (int channel = 0; channel < vi->channels; ++channel) {
+                if (encode_buffer[channel] != NULL) {
+                    delete[] encode_buffer[channel];
+                    encode_buffer[channel] = NULL;
+                }
+            }
+            
+            return -1;
+        }
 
-		for (int channel = 0; channel < vi->channels; ++channel) {
-			if (encode_buffer[channel] != NULL) {
-				delete[] encode_buffer[channel];
-				encode_buffer[channel] = NULL;
-			}
-		}
-		
-		return 0;
-	}
-	else if (read_bytes == 0) {
-		mp3fs_debug("Ogg Vorbis decoder: Reached end of file.");
-		return 1;
-	}
-	else {
-		mp3fs_debug("Ogg Vorbis decoder: Failed to read file.");
-		return -1;
-	}                   	 
+        for (int channel = 0; channel < vi->channels; ++channel) {
+            if (encode_buffer[channel] != NULL) {
+                delete[] encode_buffer[channel];
+                encode_buffer[channel] = NULL;
+            }
+        }
+        
+        return 0;
+    }
+    else if (read_bytes == 0) {
+        mp3fs_debug("Ogg Vorbis decoder: Reached end of file.");
+        return 1;
+    }
+    else {
+        mp3fs_debug("Ogg Vorbis decoder: Failed to read file.");
+        return -1;
+    }                        
 }
 
 /*

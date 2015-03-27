@@ -17,7 +17,7 @@ AC_CHECK_SIZEOF(int)
 AS_IF([test "$ac_cv_sizeof_int" -lt 4],
     AC_MSG_ERROR([Integer type 'int' must be at least 4 bytes in size.]))
 
-# FLAC decoding support checks
+# FLAC support checks
 AC_ARG_WITH([flac],
     [AS_HELP_STRING([--without-flac],
         [disable support for FLAC decoding])],
@@ -29,19 +29,19 @@ AS_IF([test "x$with_flac" != xno ],
 
 AM_CONDITIONAL([HAVE_FLAC], [test "x$with_flac" != xno])
 
-# Ogg Vorbis decoding support checks
-AC_ARG_WITH([vorbisdec],
-    [AS_HELP_STRING([--without-vorbisdec],
+# Ogg Vorbis support checks
+AC_ARG_WITH([vorbis],
+    [AS_HELP_STRING([--without-vorbis],
         [disable support for Ogg Vorbis decoding])],
-    [], [with_vorbisdec=yes])
+    [], [with_vorbis=yes])
 
-AS_IF([test "x$with_vorbisdec" != xno ],
+AS_IF([test "x$with_vorbis" != xno ],
     [PKG_CHECK_MODULES([vorbisfile], [vorbisfile >= 1.3.0],
-        [AC_DEFINE([HAVE_VORBISDEC], [1], [Use vorbisfile library.])])])
+        [AC_DEFINE([HAVE_VORBIS], [1], [Use vorbisfile library.])])])
 
-AM_CONDITIONAL([HAVE_VORBISDEC], [test "x$with_vorbisdec" != xno])
+AM_CONDITIONAL([HAVE_VORBIS], [test "x$with_vorbis" != xno])
 
-# MP3 encoding support checks
+# MP3 support checks
 AC_ARG_WITH([mp3],
     [AS_HELP_STRING([--without-mp3],
         [disable support for MP3 encoding])],
@@ -58,8 +58,8 @@ AM_CONDITIONAL([HAVE_MP3], [test "x$with_mp3" != xno])
 AS_IF([test "$with_mp3" = no],
     AC_MSG_ERROR([No encoders enabled. Ensure --with-mp3 is given.]))
 
-AS_IF([test "$with_flac" = no -a "$with_vorbisdec" = no],
-    AC_MSG_ERROR([No decoders enabled. Ensure --with-flac or --with-vorbisdec is given.]))
+AS_IF([test "$with_flac" = no -a "$with_vorbis" = no],
+    AC_MSG_ERROR([No decoders enabled. Ensure --with-flac or --with-vorbis is given.]))
 
 # Checks for packages which use pkg-config.
 PKG_CHECK_MODULES([fuse], [fuse >= 2.6.0])

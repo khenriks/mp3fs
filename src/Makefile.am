@@ -10,10 +10,11 @@ mp3fs_LDADD += $(flac_LIBS)
 AM_CFLAGS += $(flac_CFLAGS)
 AM_CXXFLAGS += $(flac_CFLAGS)
 endif
-if HAVE_VORBISDEC
+if HAVE_VORBIS
 mp3fs_SOURCES += vorbis_decoder.cc vorbis_decoder.h
 mp3fs_LDADD += $(vorbisfile_LIBS)
 AM_CFLAGS += $(vorbisfile_CFLAGS)
+AM_CXXFLAGS += $(vorbisfile_CFLAGS)
 endif
 if HAVE_MP3
 mp3fs_SOURCES += mp3_encoder.cc mp3_encoder.h

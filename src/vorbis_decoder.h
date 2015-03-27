@@ -31,14 +31,14 @@
 
 class VorbisDecoder : public Decoder {
 public:
-	~VorbisDecoder();
+    ~VorbisDecoder();
     int open_file(const char* filename);
     int process_metadata(Encoder* encoder);
     int process_single_fr(Encoder* encoder, Buffer* buffer);
 private:
-	OggVorbis_File vf;
-	vorbis_info *vi;
-	int current_section;
+    OggVorbis_File vf;
+    vorbis_info *vi;
+    int current_section;
     typedef std::map<std::string,int> meta_map_t;
     static const meta_map_t create_meta_map();
     static const meta_map_t metatag_map;

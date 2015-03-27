@@ -1,7 +1,7 @@
 MP3FS(1)
 ========
-:doctype:	manpage
-:man source:   	mp3fs
+:doctype:       manpage
+:man source:    mp3fs
 :man version:  	{revnumber}
 :man manual:   	User Commands
 
@@ -12,15 +12,15 @@ mp3fs - mounts and transcodes FLACs and OGGs to MP3s on the fly
 
 SYNOPSIS
 --------
-*mp3fs* ['OPTION']... 'FLACDIR|OGGDIR' 'MP3DIR'
+*mp3fs* ['OPTION']... 'IN_DIR' 'OUT_DIR'
 
 
 DESCRIPTION
 -----------
-The mp3fs(1) command will mount the directory 'FLACDIR' or 'OGGDIR' on
-'MP3DIR'. Thereafter, accessing 'MP3DIR' will show the contents of 'FLACDIR'
-or 'OGGDIR', with all FLAC/Ogg Vorbis files transparently renamed and
-transcoded to MP3 format upon access.
+The mp3fs(1) command will mount the directory 'IN_DIR' on 'OUT_DIR'.
+Thereafter, accessing 'OUT_DIR' will show the contents of 'IN_DIR', with
+all FLAC/Ogg Vorbis files transparently renamed and transcoded to MP3
+format upon access.
 
 
 OPTIONS
