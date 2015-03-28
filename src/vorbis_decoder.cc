@@ -21,6 +21,7 @@
 #include "vorbis_decoder.h"
 #include "transcode.h"
 
+#include <string.h>
 #include <algorithm>
 
 namespace {
@@ -92,40 +93,46 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
 
     for (int i = 0; i < vc->comments; ++i) {
 
-        /* Get the tagname - tagvalue pairs */
-        std::string comment(vc->user_comments[i]);
+        /*
+         * Get the tagname - tagvalue pairs
+         */
+        std::string comment(vc->user_comments[i], vc->comment_lengths[i]);
         unsigned long delimiter_pos = comment.find_first_of('=');
 
-        if ((delimiter_pos == 0) || (delimiter_pos >= comment.length() - 1))
+        if ((delimiter_pos == 0) || (delimiter_pos >= comment.length() - 1)) {
             continue;
+        }
         
         std::string tagname = comment.substr(0, delimiter_pos);
-        const char *tagvalue = comment.substr(
-                delimiter_pos + 1, std::string::npos).c_str();
+        std::string tagvalue = comment.substr(
+                delimiter_pos + 1, comment.length() - delimiter_pos);
 
-        /* Normalize tag name to uppercase. */
+        /*
+         * Normalize tag name to uppercase.
+         */
         std::transform(tagname.begin(), tagname.end(),
                 tagname.begin(), ::toupper);
 
-        /* Set the encoder's text tag if it's in the metatag_map, or else,
+        /*
+         * Set the encoder's text tag if it's in the metatag_map, or else,
          * prepare the ReplayGain.
          */
         meta_map_t::const_iterator it = metatag_map.find(tagname);
         
         if (it != metatag_map.end()) {
-            encoder->set_text_tag(it->second, tagvalue);
+            encoder->set_text_tag(it->second, tagvalue.c_str());
         }
         else if (tagname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
-            filegainref = atof(tagvalue);
+            filegainref = atof(tagvalue.c_str());
         }
         else if (params.gainmode == 1
                 && tagname == "REPLAYGAIN_ALBUM_GAIN") {
-            dbgain = atof(tagvalue);
+            dbgain = atof(tagvalue.c_str());
         }
         else if ((params.gainmode == 1 || params.gainmode == 2)
                 && dbgain == INVALID_DB_GAIN
                 && tagname == "REPLAYGAIN_TRACK_GAIN") {
-            dbgain = atof(tagvalue);
+            dbgain = atof(tagvalue.c_str());
         }
     }
 
@@ -138,7 +145,8 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         encoder->set_gain_db(params.gainref - filegainref + dbgain);
     }
 
-    /* TODO: decode METADATA_BLOCK_PICTURE for use with
+    /*
+     * TODO: decode METADATA_BLOCK_PICTURE for use with
      * encoder->set_picture_tag(..)
      */
         
