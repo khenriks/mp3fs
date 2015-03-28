@@ -21,7 +21,6 @@
 #include "vorbis_decoder.h"
 #include "transcode.h"
 
-#include <string.h>
 #include <algorithm>
 
 namespace {
