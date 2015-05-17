@@ -1,6 +1,6 @@
 WARNINGS = -Wall -Wextra -Wconversion -Wno-sign-conversion
 AM_CFLAGS = -std=gnu99 $(fuse_CFLAGS) $(WARNINGS)
-AM_CXXFLAGS = -std=c++11 $(fuse_CFLAGS) $(WARNINGS)
+AM_CXXFLAGS = -std=c++0x $(fuse_CFLAGS) $(WARNINGS)
 bin_PROGRAMS = mp3fs
 mp3fs_SOURCES = mp3fs.c fuseops.c transcode.cc transcode.h buffer.cc buffer.h coders.cc coders.h stats_cache.cc stats_cache.h
 mp3fs_LDADD	= $(fuse_LIBS)
