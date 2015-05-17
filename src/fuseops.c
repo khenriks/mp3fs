@@ -215,7 +215,6 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
         stbuf->st_size = transcoder_get_size(trans);
         stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
         
-        transcoder_finish(trans);
         transcoder_delete(trans);
     }
     
@@ -319,7 +318,7 @@ passthrough:
 open_fail:
     free(origpath);
 translate_fail:
-    if (read) {
+    if (read >= 0) {
         return (int)read;
     } else {
         return -errno;
@@ -363,7 +362,6 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
     
     trans = (struct transcoder*)fi->fh;
     if (trans) {
-        transcoder_finish(trans);
         transcoder_delete(trans);
     }
     

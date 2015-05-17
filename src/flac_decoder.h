@@ -32,6 +32,7 @@
 class FlacDecoder : public Decoder, private FLAC::Decoder::File {
 public:
     int open_file(const char* filename);
+    time_t mtime();
     int process_metadata(Encoder* encoder);
     int process_single_fr(Encoder* encoder, Buffer* buffer);
 protected:
@@ -42,6 +43,7 @@ protected:
 private:
     Encoder* encoder_c;
     Buffer* buffer_c;
+    time_t mtime_;
     FLAC::Metadata::StreamInfo info;
     typedef std::map<std::string,int> meta_map_t;
     static const meta_map_t create_meta_map();
