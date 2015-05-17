@@ -26,8 +26,12 @@
 #include <map>
 #include <string>
 
+// The pragmas suppress the named warning from FLAC++, on both GCC and clang.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include <FLAC++/decoder.h>
 #include <FLAC++/metadata.h>
+#pragma GCC diagnostic pop
 
 class FlacDecoder : public Decoder, private FLAC::Decoder::File {
 public:
