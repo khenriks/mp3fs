@@ -69,7 +69,7 @@ bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
                     p->first.c_str());
             cache.erase(p);
         } else {
-            mp3fs_debug("Found file '%s' in stats cache with size %u",
+            mp3fs_debug("Found file '%s' in stats cache with size %zu",
                     p->first.c_str(), file_stat.get_size());
             in_cache = true;
             filesize = file_stat.get_size();
@@ -88,11 +88,11 @@ void StatsCache::put_filesize(const std::string& filename, size_t filesize,
     pthread_mutex_lock(&mutex);
     cache_t::iterator p = cache.find(filename);
     if (p == cache.end()) {
-        mp3fs_debug("Added file '%s' to stats cache with size %u",
+        mp3fs_debug("Added file '%s' to stats cache with size %zu",
                 filename.c_str(), file_stat.get_size());
         cache.insert(std::make_pair(filename, file_stat));
     } else if (mtime >= p->second.get_mtime()) {
-        mp3fs_debug("Updated file '%s' in stats cache with size %u",
+        mp3fs_debug("Updated file '%s' in stats cache with size %zu",
                 filename.c_str(), file_stat.get_size());
         p->second = file_stat;
     }

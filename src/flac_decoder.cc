@@ -21,6 +21,7 @@
 #include "flac_decoder.h"
 
 #include <algorithm>
+#include <unistd.h>
 
 #include "transcode.h"
 
