@@ -37,9 +37,9 @@
 #endif
 
 /* Create instance of class derived from Encoder. */
-Encoder* Encoder::CreateEncoder(std::string file_type) {
+Encoder* Encoder::CreateEncoder(std::string file_type, size_t actual_size) {
 #ifdef HAVE_MP3
-    if (file_type == "mp3") return new Mp3Encoder();
+    if (file_type == "mp3") return new Mp3Encoder(actual_size);
 #endif
     return NULL;
 }

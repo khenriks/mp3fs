@@ -26,12 +26,17 @@
 #include <map>
 #include <string>
 
+// The pragmas suppress the named warning from FLAC++, on both GCC and clang.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #include <FLAC++/decoder.h>
 #include <FLAC++/metadata.h>
+#pragma GCC diagnostic pop
 
 class FlacDecoder : public Decoder, private FLAC::Decoder::File {
 public:
     int open_file(const char* filename);
+    time_t mtime();
     int process_metadata(Encoder* encoder);
     int process_single_fr(Encoder* encoder, Buffer* buffer);
 protected:
@@ -42,6 +47,7 @@ protected:
 private:
     Encoder* encoder_c;
     Buffer* buffer_c;
+    time_t mtime_;
     FLAC::Metadata::StreamInfo info;
     typedef std::map<std::string,int> meta_map_t;
     static const meta_map_t create_meta_map();

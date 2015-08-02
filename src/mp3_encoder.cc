@@ -29,6 +29,9 @@
 
 #include "transcode.h"
 
+/* Copied from lame */
+#define MAX_VBR_FRAME_SIZE 2880
+
 /* Keep these items in static scope. */
 namespace  {
 
@@ -62,7 +65,7 @@ static void lame_debug(const char *fmt, va_list list) {
  * particular file. Currently error handling is poor. If we run out
  * of memory, these routines will fail silently.
  */
-Mp3Encoder::Mp3Encoder() {
+Mp3Encoder::Mp3Encoder(size_t _actual_size) : actual_size(_actual_size) {
     id3tag = id3_tag_new();
 
     mp3fs_debug("LAME ready to initialize.");
@@ -72,9 +75,16 @@ Mp3Encoder::Mp3Encoder() {
     set_text_tag(METATAG_ENCODER, PACKAGE_NAME);
 
     /* Set lame parameters. */
-    lame_set_quality(lame_encoder, params.quality);
-    lame_set_brate(lame_encoder, params.bitrate);
-    lame_set_bWriteVbrTag(lame_encoder, 0);
+    if (params.vbr) {
+       lame_set_VBR(lame_encoder, vbr_mt);
+       lame_set_VBR_q(lame_encoder, params.quality);
+       lame_set_VBR_max_bitrate_kbps(lame_encoder, params.bitrate);
+       lame_set_bWriteVbrTag(lame_encoder, 1);
+    } else {
+       lame_set_quality(lame_encoder, params.quality);
+       lame_set_brate(lame_encoder, params.bitrate);
+       lame_set_bWriteVbrTag(lame_encoder, 0);
+    }
     lame_set_errorf(lame_encoder, &lame_error);
     lame_set_msgf(lame_encoder, &lame_msg);
     lame_set_debugf(lame_encoder, &lame_debug);
@@ -252,9 +262,20 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
     id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
     write_ptr = buffer.write_prepare(id3v1_tag_length,
             calculate_size() - id3v1_tag_length);
+    if (!write_ptr) {
+        return -1;
+    }
     id3_tag_render(id3tag, write_ptr);
 
     return 0;
+}
+
+/*
+ * Get the actual number of bytes in the encoded file, i.e. without any
+ * padding. Valid only after encode_finish() has been called.
+ */
+size_t Mp3Encoder::get_actual_size() const {
+    return actual_size;
 }
 
 /*
@@ -264,9 +285,17 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
  * Cast to 64-bit int to avoid overflow.
  */
 size_t Mp3Encoder::calculate_size() const {
-    return id3size + id3v1_tag_length
-    + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
-    / (lame_get_out_samplerate(lame_encoder)/100);
+    if (actual_size != 0) {
+        return actual_size;
+    } else if (params.vbr) {
+        return id3size + id3v1_tag_length + MAX_VBR_FRAME_SIZE
+        + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
+        / (lame_get_in_samplerate(lame_encoder)/100);
+    } else {
+        return id3size + id3v1_tag_length
+        + (uint64_t)lame_get_totalframes(lame_encoder)*144*params.bitrate*10
+        / (lame_get_out_samplerate(lame_encoder)/100);
+    }
 }
 
 /*
@@ -333,6 +362,23 @@ int Mp3Encoder::encode_finish(Buffer& buffer) {
     }
 
     buffer.increment_pos(len);
+    actual_size = buffer.tell() + id3v1_tag_length;
+
+    /*
+     * Write the VBR tag data at id3size bytes after the beginning. lame
+     * already put dummy bytes here when lame_init_params() was called.
+     */
+    if (params.vbr) {
+        uint8_t* write_ptr = buffer.write_prepare(MAX_VBR_FRAME_SIZE, id3size);
+        if (!write_ptr) {
+            return -1;
+        }
+        size_t vbr_tag_size = lame_get_lametag_frame(lame_encoder, write_ptr,
+                MAX_VBR_FRAME_SIZE);
+        if (vbr_tag_size > MAX_VBR_FRAME_SIZE) {
+           return -1;
+        }
+    }
 
     return len;
 }

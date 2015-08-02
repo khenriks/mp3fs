@@ -20,20 +20,48 @@
  */
 
 #include "mp3_encoder.h"
+#include "stats_cache.h"
 #include "transcode.h"
 
 #include <cerrno>
 #include <cstring>
+#include <limits>
+#include <vector>
 
 #include "coders.h"
 
 /* Transcoder parameters for open mp3 */
 struct transcoder {
     Buffer buffer;
+    std::string filename;
+    size_t encoded_filesize;
 
     Encoder* encoder;
     Decoder* decoder;
 };
+
+namespace {
+
+StatsCache stats_cache;
+
+/*
+ * Transcode the buffer until the buffer has enough or until an error occurs.
+ * The buffer needs at least 'end' bytes before transcoding stops. Returns true
+ * if no errors and false otherwise.
+ */
+bool transcode_until(struct transcoder* trans, size_t end) {
+    while (trans->encoder && trans->buffer.tell() < end) {
+        int stat = trans->decoder->process_single_fr(trans->encoder,
+                                                     &trans->buffer);
+        if (stat == -1 || (stat == 1 && transcoder_finish(trans) == -1)) {
+            errno = EIO;
+            return false;
+        }
+    }
+    return true;
+}
+
+}
 
 /* Use "C" linkage to allow access from C code. */
 extern "C" {
@@ -50,10 +78,11 @@ struct transcoder* transcoder_new(char* filename) {
     }
 
     /* Create Encoder and Decoder objects. */
-    trans->encoder = Encoder::CreateEncoder(params.desttype);
+    trans->filename = filename;
+    trans->encoded_filesize = 0;
     trans->decoder = Decoder::CreateDecoder(strrchr(filename, '.') + 1);
-    if (!trans->encoder || !trans->decoder) {
-        goto endecoder_fail;
+    if (!trans->decoder) {
+        goto decoder_fail;
     }
 
     mp3fs_debug("Ready to initialize decoder.");
@@ -63,6 +92,14 @@ struct transcoder* transcoder_new(char* filename) {
     }
 
     mp3fs_debug("Decoder initialized successfully.");
+
+    stats_cache.get_filesize(trans->filename, trans->decoder->mtime(),
+            trans->encoded_filesize);
+    trans->encoder = Encoder::CreateEncoder(params.desttype,
+            trans->encoded_filesize);
+    if (!trans->encoder) {
+        goto encoder_fail;
+    }
 
     /*
      * Process metadata. The Decoder will call the Encoder to set appropriate
@@ -85,9 +122,10 @@ struct transcoder* transcoder_new(char* filename) {
 
     return trans;
 
-init_fail:
-endecoder_fail:
+encoder_fail:
     delete trans->decoder;
+decoder_fail:
+init_fail:
     delete trans->encoder;
 
     delete trans;
@@ -102,7 +140,7 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
                         size_t len) {
     mp3fs_debug("Reading %zu bytes from offset %jd.", len, (intmax_t)offset);
     if ((size_t)offset > transcoder_get_size(trans)) {
-        return 0;
+        return -1;
     }
     if (offset + len > transcoder_get_size(trans)) {
         len = transcoder_get_size(trans) - offset;
@@ -124,22 +162,22 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
         return len;
     }
 
+    bool success = true;
     if (trans->decoder && trans->encoder) {
-        /* Transcode up to what we need, unless we encounter an error. */
-        while (trans->buffer.tell() < offset + len) {
-            int stat = trans->decoder->process_single_fr(trans->encoder,
-                                                         &trans->buffer);
-            if (stat == -1) {
-                errno = EIO;
-                return 0;
-            } else if (stat == 1) {
-                if (transcoder_finish(trans) == -1) {
-                    errno = EIO;
-                    return 0;
-                }
-                break;
-            }
+        if (strcmp(params.desttype, "mp3") == 0 && params.vbr) {
+            /*
+             * The Xing data (which is pretty close to the beginning of the
+             * file) cannot be determined until the entire file is encoded, so
+             * transcode the entire file for any read.
+             */
+            success = transcode_until(trans,
+                    std::numeric_limits<size_t>::max());
+        } else {
+            success = transcode_until(trans, offset + len);
         }
+    }
+    if (!success) {
+        return -1;
     }
 
     // truncate if we didn't actually get len
@@ -158,7 +196,9 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
 
 int transcoder_finish(struct transcoder* trans) {
     // flac cleanup
+    time_t decoded_file_mtime = 0;
     if (trans->decoder) {
+        decoded_file_mtime = trans->decoder->mtime();
         delete trans->decoder;
         trans->decoder = NULL;
     }
@@ -171,12 +211,16 @@ int transcoder_finish(struct transcoder* trans) {
         }
 
         /* Check encoded buffer size. */
-        mp3fs_debug("Finishing file. Predicted size: %zu, final size: %jd",
-                    trans->encoder->calculate_size(),
-                    (intmax_t)(trans->buffer.tell() + 128));
-        trans->buffer.increment_pos(128);
+        trans->encoded_filesize = trans->encoder->get_actual_size();
+        mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu",
+                    trans->encoder->calculate_size(), trans->encoded_filesize);
         delete trans->encoder;
         trans->encoder = NULL;
+    }
+
+    if (params.statcachesize > 0 && trans->encoded_filesize != 0) {
+        stats_cache.put_filesize(trans->filename, trans->encoded_filesize,
+                decoded_file_mtime);
     }
 
     return 0;
@@ -185,13 +229,20 @@ int transcoder_finish(struct transcoder* trans) {
 /* Free the transcoder structure. */
 
 void transcoder_delete(struct transcoder* trans) {
-    transcoder_finish(trans);
+    if (trans->decoder) {
+        delete trans->decoder;
+    }
+    if (trans->encoder) {
+        delete trans->encoder;
+    }
     delete trans;
 }
 
 /* Return size of output file, as computed by Encoder. */
 size_t transcoder_get_size(struct transcoder* trans) {
-    if (trans->encoder) {
+    if (trans->encoded_filesize != 0) {
+        return trans->encoded_filesize;
+    } else if (trans->encoder) {
         return trans->encoder->calculate_size();
     } else {
         return trans->buffer.tell();
