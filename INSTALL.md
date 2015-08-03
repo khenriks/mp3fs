@@ -12,7 +12,7 @@ mp3fs requires the following libraries:
 
 * fuse (>= 2.6.0)
 * flac++ (>= 1.1.4)
-* libvorbisfile3
+* libvorbis
 * lame
 * libid3tag
 

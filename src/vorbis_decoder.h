@@ -33,9 +33,11 @@ class VorbisDecoder : public Decoder {
 public:
     ~VorbisDecoder();
     int open_file(const char* filename);
+    time_t mtime();
     int process_metadata(Encoder* encoder);
     int process_single_fr(Encoder* encoder, Buffer* buffer);
 private:
+    time_t mtime_;
     OggVorbis_File vf;
     vorbis_info *vi;
     int current_section;

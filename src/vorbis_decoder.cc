@@ -22,6 +22,7 @@
 #include "transcode.h"
 
 #include <algorithm>
+#include <unistd.h>
 
 namespace {
      
@@ -45,14 +46,42 @@ int VorbisDecoder::open_file(const char* filename) {
 
     mp3fs_debug("Ogg Vorbis decoder: Initializing.");
     
+    int fd = open(filename, 0);
+    if (fd < 0) {
+        mp3fs_debug("Ogg Vorbis decoder: open failed.");
+        return -1;
+    }
+
+    struct stat s;
+    if (fstat(fd, &s) < 0) {
+        mp3fs_debug("Ogg Vorbis decoder: fstat failed.");
+        close(fd);
+        return -1;
+    }
+    mtime_ = s.st_mtime;
+    
+    FILE *file = fdopen(fd, "r");
+    if (file == 0) {
+        mp3fs_debug("Ogg Vorbis decoder: fdopen failed.");
+        close(fd);
+        return -1;
+    }
+    
     /* Initialise decoder */
-    if (ov_fopen(filename, &vf) < 0) {
+    if (ov_open(file, &vf, NULL, 0) < 0) {
         mp3fs_debug("Ogg Vorbis decoder: Initialization failed.");
+        fclose(file);
         return -1;
     }
 
     return 0;
 }
+
+
+time_t VorbisDecoder::mtime() {
+    return mtime_;
+}
+
 
 /*
  * Process the metadata in the Ogg Vorbis file. This should be called at the
@@ -179,14 +208,14 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
             bigendian, word, signed_pcm, &current_section);
     
     if (read_bytes > 0) {
-        int total_samples = read_bytes / word;
+        long total_samples = read_bytes / word;
 
         if (total_samples < 1) {
             mp3fs_debug("Ogg Vorbis decoder: Byte buffer contains less than word size.");
             return -1;
         }
 
-        int samples_per_channel = total_samples / vi->channels;
+        long samples_per_channel = total_samples / vi->channels;
 
         if (samples_per_channel < 1) {
             mp3fs_debug("Ogg Vorbis decoder: Not enough samples per channel.");
