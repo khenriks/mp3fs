@@ -44,17 +44,17 @@ private:
     int length = 0;
 
     typedef struct meta {
-        unsigned int start = 0;
-        unsigned int length = 0;
+        int start = 0;
+        int length = 0;
         union block_data {
-            unsigned int as_int;
-            char* as_str = NULL;
+            unsigned int number;
+            char* string = NULL;
         } data;
     } metadata;
 
     metadata type, mime_type, description, picture;
 
-    unsigned int sequence_to_uint(unsigned int start);
+    unsigned int sequence_to_uint(int start);
     void sequence_to_str(metadata* m, bool is_cstr);
 };
 

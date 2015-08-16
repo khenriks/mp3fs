@@ -21,11 +21,15 @@
 #include "vorbis_decoder.h"
 #include "transcode.h"
 
+#ifdef HAVE_VORBIS_PICTURE
+#include "picture.h"
+#endif
+
 #include <algorithm>
 #include <unistd.h>
 
 namespace {
-     
+
     /* Define invalid value for gain in decibels, to be used later. */
     const double INVALID_DB_GAIN = 1000.0;
 }
@@ -34,7 +38,7 @@ namespace {
  * after the decoding process has finished.
  */
 VorbisDecoder::~VorbisDecoder() {
-    ov_clear(&vf);    
+    ov_clear(&vf);
     mp3fs_debug("Ogg Vorbis decoder: Closed.");
 }
 
@@ -45,7 +49,7 @@ VorbisDecoder::~VorbisDecoder() {
 int VorbisDecoder::open_file(const char* filename) {
 
     mp3fs_debug("Ogg Vorbis decoder: Initializing.");
-    
+
     int fd = open(filename, 0);
     if (fd < 0) {
         mp3fs_debug("Ogg Vorbis decoder: open failed.");
@@ -59,14 +63,14 @@ int VorbisDecoder::open_file(const char* filename) {
         return -1;
     }
     mtime_ = s.st_mtime;
-    
+
     FILE *file = fdopen(fd, "r");
     if (file == 0) {
         mp3fs_debug("Ogg Vorbis decoder: fdopen failed.");
         close(fd);
         return -1;
     }
-    
+
     /* Initialise decoder */
     if (ov_open(file, &vf, NULL, 0) < 0) {
         mp3fs_debug("Ogg Vorbis decoder: Initialization failed.");
@@ -102,10 +106,10 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         mp3fs_debug("Ogg Vorbis decoder: Only mono/stereo audio currently supported.");
         return -1;
     }
-    
+
     if (encoder->set_stream_params(
             ov_pcm_total(&vf, -1),
-            vi->rate,
+            (int)vi->rate,
             vi->channels) == -1) {
         mp3fs_debug("Ogg Vorbis decoder: Failed to set encoder stream parameters.");
         return -1;
@@ -115,7 +119,7 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         mp3fs_debug("Ogg Vorbis decoder: Failed to retrieve the Ogg Vorbis comment.");
         return -1;
     }
-        
+
     double filegainref = 89.0;
     double dbgain = INVALID_DB_GAIN;
 
@@ -130,7 +134,7 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         if ((delimiter_pos == 0) || (delimiter_pos >= comment.length() - 1)) {
             continue;
         }
-        
+
         std::string tagname = comment.substr(0, delimiter_pos);
         std::string tagvalue = comment.substr(
                 delimiter_pos + 1, comment.length() - delimiter_pos);
@@ -146,10 +150,29 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
          * prepare the ReplayGain.
          */
         meta_map_t::const_iterator it = metatag_map.find(tagname);
-        
+
         if (it != metatag_map.end()) {
             encoder->set_text_tag(it->second, tagvalue.c_str());
         }
+
+
+#ifdef HAVE_VORBIS_PICTURE
+
+        else if (tagname == "METADATA_BLOCK_PICTURE") {
+            Picture picture;
+
+            if (picture.decode(&tagvalue) == EXIT_SUCCESS) {
+                encoder->set_picture_tag(picture.get_mime_type(),
+                        picture.get_type(),
+                        picture.get_description(),
+                        picture.get_data(),
+                        picture.get_data_length());
+            }
+        }
+
+#endif
+
+
         else if (tagname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
             filegainref = atof(tagvalue.c_str());
         }
@@ -173,11 +196,6 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         encoder->set_gain_db(params.gainref - filegainref + dbgain);
     }
 
-    /*
-     * TODO: decode METADATA_BLOCK_PICTURE for use with
-     * encoder->set_picture_tag(..)
-     */
-        
     return 0;
 }
 
@@ -191,7 +209,7 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
     const int word = sizeof(int32_t);
     const int signed_pcm = 1;
     const int decode_buf_size = 2 * word * 1024;
-    
+
     union combining_buf {
         int32_t as_int[decode_buf_size / sizeof(int32_t)];
         short as_short[decode_buf_size / sizeof(short)];
@@ -203,10 +221,10 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
         mp3fs_debug("Ogg Vorbis decoder: Word size not supported.");
         return -1;
     }
-    
+
     long read_bytes = ov_read(&vf, decode_buffer.as_char, decode_buf_size,
             bigendian, word, signed_pcm, &current_section);
-    
+
     if (read_bytes > 0) {
         long total_samples = read_bytes / word;
 
@@ -221,14 +239,14 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
             mp3fs_debug("Ogg Vorbis decoder: Not enough samples per channel.");
             return -1;
         }
-        
+
         int32_t *encode_buffer[vi->channels];
 
         /* Mono/Stereo: 0 = left, 1 = right */
         for (int channel = 0; channel < vi->channels; ++channel) {
             encode_buffer[channel] = new int32_t[samples_per_channel];
         }
-        
+
         for (int i = 0; i < samples_per_channel; ++i) {
 
             for (int channel = 0; channel < vi->channels; ++channel) {
@@ -247,9 +265,9 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
                 }
             }
         }
-        
+
         /* Send integer buffer to encoder */
-        if (encoder->encode_pcm_data(encode_buffer, samples_per_channel,
+        if (encoder->encode_pcm_data(encode_buffer, (int)samples_per_channel,
                                  8 * word, *buffer) < 0) {
 
             mp3fs_debug("Ogg Vorbis decoder: Failed to encode integer buffer.");
@@ -260,7 +278,7 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
                     encode_buffer[channel] = NULL;
                 }
             }
-            
+
             return -1;
         }
 
@@ -270,7 +288,7 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
                 encode_buffer[channel] = NULL;
             }
         }
-        
+
         return 0;
     }
     else if (read_bytes == 0) {
@@ -280,7 +298,7 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
     else {
         mp3fs_debug("Ogg Vorbis decoder: Failed to read file.");
         return -1;
-    }                        
+    }
 }
 
 /*
