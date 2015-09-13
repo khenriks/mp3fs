@@ -10,6 +10,16 @@ mp3fs_LDADD += $(flac_LIBS)
 AM_CFLAGS += $(flac_CFLAGS)
 AM_CXXFLAGS += $(flac_CFLAGS)
 endif
+if HAVE_VORBIS
+mp3fs_SOURCES += vorbis_decoder.cc vorbis_decoder.h
+mp3fs_LDADD += $(vorbis_LIBS)
+AM_CFLAGS += $(vorbis_CFLAGS)
+AM_CXXFLAGS += $(vorbis_CFLAGS)
+endif
+if HAVE_VORBIS_PICTURE
+mp3fs_SOURCES += picture.cc picture.h
+mp3fs_LDADD += -lb64
+endif
 if HAVE_MP3
 mp3fs_SOURCES += mp3_encoder.cc mp3_encoder.h
 mp3fs_LDADD += $(id3tag_LIBS)

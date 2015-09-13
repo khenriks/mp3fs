@@ -29,6 +29,35 @@ AS_IF([test "x$with_flac" != xno ],
 
 AM_CONDITIONAL([HAVE_FLAC], [test "x$with_flac" != xno])
 
+# Ogg Vorbis support checks
+AC_ARG_WITH([vorbis],
+    [AS_HELP_STRING([--without-vorbis],
+        [disable support for Ogg Vorbis decoding])],
+    [], [with_vorbis=yes])
+
+AS_IF([test "x$with_vorbis" != xno],
+    [PKG_CHECK_MODULES([vorbis], [vorbisfile >= 1.3.0],
+        [AC_DEFINE([HAVE_VORBIS], [1], [Use Ogg Vorbis libraries.])])])
+
+AM_CONDITIONAL([HAVE_VORBIS], [test "x$with_vorbis" != xno])
+
+# Ogg Vorbis picture support checks
+AC_ARG_WITH([vorbis-picture],
+    [AS_HELP_STRING([--without-vorbis-picture],
+        [disable support for Ogg Vorbis picture])],
+    [], [with_vorbis_picture=yes])
+
+AS_IF([test "x$with_vorbis" != xno -a "x$with_vorbis_picture" != xno],
+    [AC_LANG_PUSH([C++])
+     AC_CHECK_LIB([b64], [base64_decode_block],, [AC_MSG_ERROR([libb64-dev must be installed for Ogg Vorbis picture support.])])
+     AC_CHECK_HEADER([b64/decode.h],, [AC_MSG_ERROR([libb64-dev must be installed for Ogg Vorbis picture support.])])
+     AC_LANG_POP([C++])
+     AC_DEFINE([HAVE_VORBIS_PICTURE], [1], [Enable support for Ogg Vorbis picture.])])
+
+
+AM_CONDITIONAL([HAVE_VORBIS_PICTURE],
+    [test "x$with_vorbis" != xno -a "x$with_vorbis_picture" != xno])
+
 # MP3 support checks
 AC_ARG_WITH([mp3],
     [AS_HELP_STRING([--without-mp3],
@@ -46,8 +75,8 @@ AM_CONDITIONAL([HAVE_MP3], [test "x$with_mp3" != xno])
 AS_IF([test "$with_mp3" = no],
     AC_MSG_ERROR([No encoders enabled. Ensure --with-mp3 is given.]))
 
-AS_IF([test "$with_flac" = no],
-    AC_MSG_ERROR([No decoders enabled. Ensure --with-flac is given.]))
+AS_IF([test "$with_flac" = no -a "$with_vorbis" = no],
+    AC_MSG_ERROR([No decoders enabled. Ensure --with-flac or --with-vorbis is given.]))
 
 # Checks for packages which use pkg-config.
 PKG_CHECK_MODULES([fuse], [fuse >= 2.6.0])
