@@ -206,9 +206,9 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
  */
 int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
     const int bigendian = 0;
-    const int word = sizeof(int32_t);
+    const int word = sizeof(char);
     const int signed_pcm = 1;
-    const int decode_buf_size = 2 * word * 1024;
+    const int decode_buf_size = 64 * 1024;
 
     union combining_buf {
         int32_t as_int[decode_buf_size / sizeof(int32_t)];
@@ -245,21 +245,25 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
         /* Mono/Stereo: 0 = left, 1 = right */
         for (int channel = 0; channel < vi->channels; ++channel) {
             encode_buffer[channel] = new int32_t[samples_per_channel];
+        }
         
-            for (int i = 0; i < samples_per_channel; ++i) {
+        int sample = 0;
+        for (int i = 0; i < samples_per_channel; ++i) {
+            for (int channel = 0; channel < vi->channels; ++channel) {
                 switch (word) {
 
-                    case sizeof(int32_t):
-                        encode_buffer[channel][i] = decode_buffer.as_int[i];
-                        break;
+                case sizeof(int32_t):
+                    encode_buffer[channel][i] = decode_buffer.as_int[sample];
+                    break;
 
-                    case sizeof(short):
-                        encode_buffer[channel][i] = (int32_t)decode_buffer.as_short[i];
-                        break;
+                case sizeof(short):
+                    encode_buffer[channel][i] = (int32_t)decode_buffer.as_short[sample];
+                    break;
 
-                    case sizeof(char):
-                        encode_buffer[channel][i] =(int32_t)decode_buffer.as_char[i];
+                case sizeof(char):
+                    encode_buffer[channel][i] = (int32_t)decode_buffer.as_char[sample];
                 }
+                ++sample;
             }
         }
 
@@ -270,22 +274,17 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
             mp3fs_debug("Ogg Vorbis decoder: Failed to encode integer buffer.");
 
             for (int channel = 0; channel < vi->channels; ++channel) {
-                if (encode_buffer[channel] != NULL) {
-                    delete[] encode_buffer[channel];
-                    encode_buffer[channel] = NULL;
-                }
+                delete[] encode_buffer[channel];
+                encode_buffer[channel] = NULL;
             }
-
             return -1;
         }
 
         for (int channel = 0; channel < vi->channels; ++channel) {
-            if (encode_buffer[channel] != NULL) {
-                delete[] encode_buffer[channel];
-                encode_buffer[channel] = NULL;
-            }
+            delete[] encode_buffer[channel];
+            encode_buffer[channel] = NULL;
         }
-
+        
         return 0;
     }
     else if (read_bytes == 0) {
