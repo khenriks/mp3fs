@@ -206,7 +206,7 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
  */
 int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
     const int bigendian = 0;
-    const int word = sizeof(char);
+    const int word = sizeof(short);
     const int signed_pcm = 1;
     const int decode_buf_size = 64 * 1024;
 
@@ -247,8 +247,8 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
             encode_buffer[channel] = new int32_t[samples_per_channel];
         }
         
-        int sample = 0;
-        for (int i = 0; i < samples_per_channel; ++i) {
+        long sample = 0;
+        for (long i = 0; i < samples_per_channel; ++i) {
             for (int channel = 0; channel < vi->channels; ++channel) {
                 switch (word) {
 
