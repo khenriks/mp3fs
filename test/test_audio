@@ -1,5 +1,0 @@
-#!/bin/bash
-
-. "${BASH_SOURCE%/*}/funcs.sh"
-
-[ "$(./fpcompare "$SRCDIR/obama.flac" "$DIRNAME/obama.mp3" 2>&-)" \< 0.05 ]

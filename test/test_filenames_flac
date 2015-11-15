@@ -1,0 +1,5 @@
+#!/bin/bash
+
+. "${BASH_SOURCE%/*}/funcs.sh"
+
+[ "$(ls -m "$DIRNAME/flac")" = "dir.flac, obama.mp3" ]

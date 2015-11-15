@@ -3,6 +3,6 @@
 . "${BASH_SOURCE%/*}/funcs.sh"
 
 # Ensure log contains file size, predicted and actual
-cat "$DIRNAME/obama.mp3" > /dev/null
+cat "$DIRNAME/flac/obama.mp3" > /dev/null
 
-[ $(stat -c %s "$DIRNAME/obama.mp3") -eq 96924 ]
+[ $(stat -c %s "$DIRNAME/flac/obama.mp3") -eq 96924 ]
