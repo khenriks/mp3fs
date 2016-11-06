@@ -213,7 +213,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
         }
         
         stbuf->st_size = transcoder_get_size(trans);
-        stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
+        stbuf->st_blocks = ((stbuf->st_size - 1) / stbuf->st_blksize + 1) * stbuf->st_blksize / 512;
         
         transcoder_delete(trans);
     }
