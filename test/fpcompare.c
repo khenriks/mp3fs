@@ -2,31 +2,19 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
-#ifdef HAVE_SWRESAMPLE
-#include <libswresample/swresample.h>
-#endif
 #include <chromaprint.h>
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 int decode_audio_file(ChromaprintContext *chromaprint_ctx, const char *file_name, int max_length, int *duration)
 {
-    int ok = 0, remaining, length, consumed, codec_ctx_opened = 0, got_frame, stream_index;
+    int ok = 0, remaining, length, codec_ctx_opened = 0, stream_index;
     AVFormatContext *format_ctx = NULL;
     AVCodecContext *codec_ctx = NULL;
     AVCodec *codec = NULL;
     AVStream *stream = NULL;
     AVFrame *frame = NULL;
-#ifdef HAVE_SWRESAMPLE
-    SwrContext *swr_ctx = NULL;
-    int max_dst_nb_samples = 0, dst_linsize = 0;
-    uint8_t *dst_data[1] = { NULL };
-#endif
-    uint8_t **data;
     AVPacket packet;
 
     if (!strcmp(file_name, "-")) {
@@ -51,7 +39,16 @@ int decode_audio_file(ChromaprintContext *chromaprint_ctx, const char *file_name
 
     stream = format_ctx->streams[stream_index];
 
-    codec_ctx = stream->codec;
+    codec_ctx = avcodec_alloc_context3(codec);
+    if (!codec_ctx) {
+        fprintf(stderr, "ERROR: couldn't allocate codec context\n");
+        goto done;
+    }
+
+    if (avcodec_parameters_to_context(codec_ctx, stream->codecpar) < 0) {
+        fprintf(stderr, "ERROR: couldn't populate codex context\n");
+        goto done;
+    }
     codec_ctx->request_sample_fmt = AV_SAMPLE_FMT_S16;
 
     if (avcodec_open2(codec_ctx, codec, NULL) < 0) {
@@ -66,23 +63,8 @@ int decode_audio_file(ChromaprintContext *chromaprint_ctx, const char *file_name
     }
 
     if (codec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) {
-#ifdef HAVE_SWRESAMPLE
-        swr_ctx = swr_alloc_set_opts(NULL,
-            codec_ctx->channel_layout, AV_SAMPLE_FMT_S16, codec_ctx->channel_layout,
-            codec_ctx->channel_layout, codec_ctx->sample_fmt, codec_ctx->channel_layout,
-            0, NULL);
-        if (!swr_ctx) {
-            fprintf(stderr, "ERROR: couldn't allocate audio converter\n");
-            goto done;
-        }
-        if (swr_init(swr_ctx) < 0) {
-            fprintf(stderr, "ERROR: couldn't initialize the audio converter\n");
-            goto done;
-        }
-#else
-        fprintf(stderr, "ERROR: unsupported audio format (please build fpcalc with libswresample)\n");
+        fprintf(stderr, "ERROR: unsupported audio format\n");
         goto done;
-#endif
     }
 
     *duration = stream->time_base.num * stream->duration / stream->time_base.den;
@@ -90,7 +72,7 @@ int decode_audio_file(ChromaprintContext *chromaprint_ctx, const char *file_name
     remaining = max_length * codec_ctx->channels * codec_ctx->sample_rate;
     chromaprint_start(chromaprint_ctx, codec_ctx->sample_rate, codec_ctx->channels);
 
-    frame = avcodec_alloc_frame();
+    frame = av_frame_alloc();
 
     while (1) {
         if (av_read_frame(format_ctx, &packet) < 0) {
@@ -98,37 +80,23 @@ int decode_audio_file(ChromaprintContext *chromaprint_ctx, const char *file_name
         }
 
         if (packet.stream_index == stream_index) {
-            avcodec_get_frame_defaults(frame);
-
-            got_frame = 0;
-            consumed = avcodec_decode_audio4(codec_ctx, frame, &got_frame, &packet);
-            if (consumed < 0) {
-                fprintf(stderr, "WARNING: error decoding audio\n");
+            if (avcodec_send_packet(codec_ctx, &packet) < 0) {
+                fprintf(stderr, "WARNING: error sending audio data\n");
                 continue;
             }
 
-            if (got_frame) {
-                data = frame->data;
-#ifdef HAVE_SWRESAMPLE
-                if (swr_ctx) {
-                    if (frame->nb_samples > max_dst_nb_samples) {
-                        av_freep(&dst_data[0]);
-                        if (av_samples_alloc(dst_data, &dst_linsize, codec_ctx->channels, frame->nb_samples, AV_SAMPLE_FMT_S16, 1) < 0) {
-                            fprintf(stderr, "ERROR: couldn't allocate audio converter buffer\n");
-                            goto done;
-                        }
-                        max_dst_nb_samples = frame->nb_samples;
-                    }
-                    if (swr_convert(swr_ctx, dst_data, frame->nb_samples, (const uint8_t **)frame->data, frame->nb_samples) < 0) {
-                        fprintf(stderr, "ERROR: couldn't convert the audio\n");
-                        goto done;
-                    }
-                    data = dst_data;
+            while(1) {
+                int recv_result = avcodec_receive_frame(codec_ctx, frame);
+                if (recv_result == AVERROR(EAGAIN)) break;
+
+                if (recv_result < 0) {
+                    fprintf(stderr, "WARNING: error decoding audio\n");
+                    break;
                 }
-#endif
+
 
                 length = MIN(remaining, frame->nb_samples * codec_ctx->channels);
-                if (!chromaprint_feed(chromaprint_ctx, data[0], length)) {
+                if (!chromaprint_feed(chromaprint_ctx, frame->data[0], length)) {
                     goto done;
                 }
 
@@ -139,8 +107,9 @@ int decode_audio_file(ChromaprintContext *chromaprint_ctx, const char *file_name
                     }
                 }
             }
+
         }
-        av_free_packet(&packet);
+        av_packet_unref(&packet);
     }
 
 finish:
@@ -153,30 +122,25 @@ finish:
 
 done:
     if (frame) {
-        avcodec_free_frame(&frame);
+        av_frame_unref(frame);
     }
-#ifdef HAVE_SWRESAMPLE
-    if (dst_data[0]) {
-        av_freep(&dst_data[0]);
-    }
-    if (swr_ctx) {
-        swr_free(&swr_ctx);
-    }
-#endif
     if (codec_ctx_opened) {
         avcodec_close(codec_ctx);
     }
     if (format_ctx) {
         avformat_close_input(&format_ctx);
     }
+    if (codec_ctx) {
+        avcodec_free_context(&codec_ctx);
+    }
     return ok;
 }
 
-int fpcalc_main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int i, j, max_length = 120, num_file_names = 0, raw = 0, raw_fingerprint_size, duration;
     int32_t *raw_fingerprints[2];
-    char *file_name, *fingerprint, **file_names;
+    char *file_name, **file_names;
     ChromaprintContext *chromaprint_ctx;
     int algo = CHROMAPRINT_ALGORITHM_DEFAULT, num_failed = 0;
     int32_t thisdiff;
@@ -242,37 +206,15 @@ int fpcalc_main(int argc, char **argv)
             num_failed++;
             continue;
         }
-        if (i > 0) {
-            //printf("\n");
-        }
-        //printf("FILE=%s\n", file_name);
-        //printf("DURATION=%d\n", duration);
-        if (1) {
-            if (!chromaprint_get_raw_fingerprint(chromaprint_ctx, (void **)&raw_fingerprints[i], &raw_fingerprint_size)) {
-                fprintf(stderr, "ERROR: unable to calculate fingerprint for file %s, skipping\n", file_name);
-                num_failed++;
-                continue;
-            }
-            /*printf("FINGERPRINT=");
-            for (j = 0; j < raw_fingerprint_size; j++) {
-                printf("%d%s", raw_fingerprints[i][j], j + 1 < raw_fingerprint_size ? "," : "");
-            }
-            printf("\n");*/
-        }
-        else {
-            if (!chromaprint_get_fingerprint(chromaprint_ctx, &fingerprint)) {
-                fprintf(stderr, "ERROR: unable to calculate fingerprint for file %s, skipping\n", file_name);
-                num_failed++;
-                continue;
-            }
-            printf("FINGERPRINT=%s\n", fingerprint);
-            chromaprint_dealloc(fingerprint);
+        if (!chromaprint_get_raw_fingerprint(chromaprint_ctx, (void **)&raw_fingerprints[i], &raw_fingerprint_size)) {
+            fprintf(stderr, "ERROR: unable to calculate fingerprint for file %s, skipping\n", file_name);
+            num_failed++;
+            continue;
         }
     }
 
     for (j = 0; j < raw_fingerprint_size; j++) {
         thisdiff = raw_fingerprints[0][j]^raw_fingerprints[1][j];
-        //        printf("0x%08x%s", thisdiff, j + 1 < raw_fingerprint_size ? "," : "\n");
         setbits += __builtin_popcount(thisdiff);
     }
     printf("%f\n", setbits/(raw_fingerprint_size*sizeof(int32_t)*8.0));
@@ -284,37 +226,3 @@ int fpcalc_main(int argc, char **argv)
 
     return num_failed ? 1 : 0;
 }
-
-#ifdef _WIN32
-int main(int win32_argc, char **win32_argv)
-{
-    int i, argc = 0, buffsize = 0, offset = 0;
-    char **utf8_argv, *utf8_argv_ptr;
-    wchar_t **argv;
-
-    argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-
-    buffsize = 0;
-    for (i = 0; i < argc; i++) {
-        buffsize += WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, NULL, 0, NULL, NULL);
-    }
-
-    utf8_argv = av_mallocz(sizeof(char *) * (argc + 1) + buffsize);
-    utf8_argv_ptr = (char *)utf8_argv + sizeof(char *) * (argc + 1);
-
-    for (i = 0; i < argc; i++) {
-        utf8_argv[i] = &utf8_argv_ptr[offset];
-        offset += WideCharToMultiByte(CP_UTF8, 0, argv[i], -1, &utf8_argv_ptr[offset], buffsize - offset, NULL, NULL);
-    }
-
-    LocalFree(argv);
-
-    return fpcalc_main(argc, utf8_argv);
-}
-#else
-int main(int argc, char **argv)
-{
-    return fpcalc_main(argc, argv);
-}
-#endif
-
