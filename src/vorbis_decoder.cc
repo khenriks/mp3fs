@@ -26,6 +26,7 @@
 #endif
 
 #include <algorithm>
+#include <cstdlib>
 #include <unistd.h>
 
 namespace {
