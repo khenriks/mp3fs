@@ -19,8 +19,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "mp3_encoder.h"
-#include "stats_cache.h"
 #include "transcode.h"
 
 #include <cerrno>
@@ -29,6 +27,8 @@
 #include <vector>
 
 #include "coders.h"
+#include "mp3_encoder.h"
+#include "stats_cache.h"
 
 /* Transcoder parameters for open mp3 */
 struct transcoder {
