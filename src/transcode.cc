@@ -22,11 +22,13 @@
 #include "transcode.h"
 
 #include <cerrno>
+#include <cstdarg>
 #include <cstring>
 #include <limits>
 #include <vector>
 
 #include "coders.h"
+#include "logging.h"
 #include "mp3_encoder.h"
 #include "stats_cache.h"
 
@@ -247,6 +249,43 @@ size_t transcoder_get_size(struct transcoder* trans) {
     } else {
         return trans->buffer.tell();
     }
+}
+
+void mp3fs_debug(const char* format, ...) {
+    char buffer[1024];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    Log(DEBUG) << buffer;
+}
+
+void mp3fs_error(const char* format, ...) {
+    char buffer[1024];
+    va_list args;
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    Log(ERROR) << buffer;
+}
+
+int init_logging(const char* logfile, const char* max_level, int to_stderr,
+                 int to_syslog) {
+    std::string max_level_str = max_level;
+    Logging::level lev;
+    if (max_level_str == "DEBUG") {
+        lev = DEBUG;
+    } else if (max_level_str == "INFO") {
+        lev = INFO;
+    } else if (max_level_str == "ERROR") {
+        lev = ERROR;
+    } else {
+        fprintf(stderr, "Invalid logging level string: %s\n", max_level);
+        return false;
+    }
+    return InitLogging(logfile, lev, to_stderr, to_syslog);
 }
 
 }

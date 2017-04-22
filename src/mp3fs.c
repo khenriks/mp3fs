@@ -42,6 +42,10 @@ struct mp3fs_params params = {
     .debug           = 0,
     .gainmode        = 1,
     .gainref         = 89.0,
+    .log_maxlevel    = "INFO",
+    .log_stderr      = 0,
+    .log_syslog      = 0,
+    .logfile         = "",
     .quality         = 5,
     .statcachesize   = 0,
     .vbr             = 0,
@@ -69,6 +73,14 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("gainmode=%d",          gainmode, 0),
     MP3FS_OPT("--gainref=%f",         gainref, 0),
     MP3FS_OPT("gainref=%f",           gainref, 0),
+    MP3FS_OPT("--log_maxlevel=%s",    log_maxlevel, 0),
+    MP3FS_OPT("log_maxlevel=%s",      log_maxlevel, 0),
+    MP3FS_OPT("--log_stderr",         log_stderr, 1),
+    MP3FS_OPT("log_stderr",           log_stderr, 1),
+    MP3FS_OPT("--log_syslog",         log_syslog, 1),
+    MP3FS_OPT("log_syslog",           log_syslog, 1),
+    MP3FS_OPT("--logfile=%s",         logfile, 0),
+    MP3FS_OPT("logfile=%s",           logfile, 0),
     MP3FS_OPT("--quality=%u",         quality, 0),
     MP3FS_OPT("quality=%u",           quality, 0),
     MP3FS_OPT("--statcachesize=%u",   statcachesize, 0),
@@ -102,6 +114,19 @@ Encoding options:\n\
     --gainref=REF, -ogainref=REF\n\
                            reference value to use for ReplayGain in \n\
                            decibels: defaults to 89 dB\n\
+    --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL\n\
+                           maximum level of messages to log, either ERROR,\n\
+                           INFO, or DEBUG. Defaults to INFO, and always set\n\
+                           to DEBUG in debug mode. Note that the other log\n\
+                           flags must also be set to enable logging\n\
+    --log_stderr, -olog_stderr\n\
+                           enable outputting logging messages to stderr.\n\
+                           Enabled in debug mode.\n\
+    --log_syslog, -olog_syslog\n\
+                           enable outputting logging messages to syslog\n\
+    --logfile=FILE, -ologfile=FILE\n\
+                           file to output log messages to. By default, no\n\
+                           file will be written.\n\
     --quality=<0..9>, -oquality=<0..9>\n\
                            encoding quality: 0 is slowest, 9 is fastest;\n\
                            5 is the default\n\
@@ -166,6 +191,19 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    /* Log to the screen, and enable debug messages, if debug is enabled. */
+    if (params.debug) {
+        params.log_stderr = 1;
+        params.log_maxlevel = "DEBUG";
+    }
+
+    if (!init_logging(params.logfile, params.log_maxlevel, params.log_stderr,
+                      params.log_syslog)) {
+        fprintf(stderr, "Failed to initialize logging module.\n");
+        fprintf(stderr, "Maybe log file couldn't be opened for writing?\n");
+        return 1;
+    }
+
     if (!params.basepath) {
         fprintf(stderr, "No valid flacdir specified.\n\n");
         usage(argv[0]);
@@ -203,24 +241,29 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    /* Log to the screen if debug is enabled. */
-    openlog("mp3fs", params.debug ? LOG_PERROR : 0, LOG_USER);
-
     mp3fs_debug("MP3FS options:\n"
                 "basepath:       %s\n"
                 "bitrate:        %u\n"
                 "desttype:       %s\n"
                 "gainmode:       %d\n"
                 "gainref:        %f\n"
+                "log_maxlevel:   %s\n"
+                "log_stderr:     %u\n"
+                "log_syslog:     %u\n"
+                "logfile:        %s\n"
                 "quality:        %u\n"
                 "statcachesize:  %u\n"
                 "vbr:            %u\n"
-                "\n",
+                ,
                 params.basepath,
                 params.bitrate,
                 params.desttype,
                 params.gainmode,
                 params.gainref,
+                params.log_maxlevel,
+                params.log_stderr,
+                params.log_syslog,
+                params.logfile,
                 params.quality,
                 params.statcachesize,
                 params.vbr);

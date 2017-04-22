@@ -32,6 +32,10 @@ extern struct mp3fs_params {
     const char* desttype;
     int gainmode;
     float gainref;
+    const char* log_maxlevel;
+    int log_stderr;
+    int log_syslog;
+    const char* logfile;
     unsigned int quality;
     unsigned int statcachesize;
     int vbr;
@@ -39,10 +43,6 @@ extern struct mp3fs_params {
 
 /* Fuse operations struct */
 extern struct fuse_operations mp3fs_ops;
-
-#define mp3fs_debug(f, ...) syslog(LOG_DEBUG, f, ## __VA_ARGS__)
-#define mp3fs_info(f, ...) syslog(LOG_INFO, f, ## __VA_ARGS__)
-#define mp3fs_error(f, ...) syslog(LOG_ERR, f, ## __VA_ARGS__)
 
 /*
  * Forward declare transcoder struct. Don't actually define it here, to avoid
@@ -71,6 +71,13 @@ size_t transcoder_get_size(struct transcoder* trans);
 /* Check for availability of audio types. */
 int check_encoder(const char* type);
 int check_decoder(const char* type);
+
+/* Functions to print output until C++ conversion is done. */
+void mp3fs_debug(const char* f, ...);
+void mp3fs_error(const char* f, ...);
+
+int init_logging(const char* logfile, const char* max_level, int to_stderr,
+                 int to_syslog);
 
 #ifdef __cplusplus
 }
