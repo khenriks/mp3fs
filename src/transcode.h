@@ -28,13 +28,13 @@
 extern struct mp3fs_params {
     const char *basepath;
     unsigned int bitrate;
-    unsigned int quality;
-    int vbr;
-    unsigned int statcachesize;
     int debug;
+    const char* desttype;
     int gainmode;
     float gainref;
-    const char* desttype;
+    unsigned int quality;
+    unsigned int statcachesize;
+    int vbr;
 } params;
 
 /* Fuse operations struct */

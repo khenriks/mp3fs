@@ -39,12 +39,12 @@
 struct mp3fs_params params = {
     .basepath        = NULL,
     .bitrate         = 128,
-    .quality         = 5,
-    .vbr             = 0,
-    .statcachesize   = 0,
     .debug           = 0,
     .gainmode        = 1,
     .gainref         = 89.0,
+    .quality         = 5,
+    .statcachesize   = 0,
+    .vbr             = 0,
 #ifdef HAVE_MP3
     .desttype  = "mp3",
 #endif
@@ -59,22 +59,22 @@ enum {
 #define MP3FS_OPT(t, p, v) { t, offsetof(struct mp3fs_params, p), v }
 
 static struct fuse_opt mp3fs_opts[] = {
-    MP3FS_OPT("--quality=%u",         quality, 0),
-    MP3FS_OPT("quality=%u",           quality, 0),
-    MP3FS_OPT("-d",                   debug, 1),
-    MP3FS_OPT("debug",                debug, 1),
     MP3FS_OPT("-b %u",                bitrate, 0),
     MP3FS_OPT("bitrate=%u",           bitrate, 0),
-    MP3FS_OPT("--vbr",                vbr, 1),
-    MP3FS_OPT("vbr",                  vbr, 1),
-    MP3FS_OPT("--statcachesize=%u",   statcachesize, 0),
-    MP3FS_OPT("statcachesize=%u",     statcachesize, 1),
+    MP3FS_OPT("-d",                   debug, 1),
+    MP3FS_OPT("debug",                debug, 1),
+    MP3FS_OPT("--desttype=%s",        desttype, 0),
+    MP3FS_OPT("desttype=%s",          desttype, 0),
     MP3FS_OPT("--gainmode=%d",        gainmode, 0),
     MP3FS_OPT("gainmode=%d",          gainmode, 0),
     MP3FS_OPT("--gainref=%f",         gainref, 0),
     MP3FS_OPT("gainref=%f",           gainref, 0),
-    MP3FS_OPT("--desttype=%s",        desttype, 0),
-    MP3FS_OPT("desttype=%s",          desttype, 0),
+    MP3FS_OPT("--quality=%u",         quality, 0),
+    MP3FS_OPT("quality=%u",           quality, 0),
+    MP3FS_OPT("--statcachesize=%u",   statcachesize, 0),
+    MP3FS_OPT("statcachesize=%u",     statcachesize, 1),
+    MP3FS_OPT("--vbr",                vbr, 1),
+    MP3FS_OPT("vbr",                  vbr, 1),
 
     FUSE_OPT_KEY("-h",                KEY_HELP),
     FUSE_OPT_KEY("--help",            KEY_HELP),
@@ -91,21 +91,10 @@ void usage(char *name) {
 Mount IN_DIR on OUT_DIR, converting FLAC/Ogg Vorbis files to MP3 upon access.\n\
 \n\
 Encoding options:\n\
-    --quality=<0..9>, -oquality=<0..9>\n\
-                           encoding quality: 0 is slowest, 9 is fastest;\n\
-                           5 is the default\n\
     -b RATE, -obitrate=RATE\n\
                            encoding bitrate: Acceptable values for RATE\n\
                            include 96, 112, 128, 160, 192, 224, 256, and\n\
                            320; 128 is the default\n\
-    --vbr, -ovbr           Use variable bit rate encoding.  When set, the\n\
-                           bit rate set with '-b' sets the maximum bit rate.\n\
-                           Performance will be terrible unless the\n\
-                           statcachesize is enabled.\n\
-    --statcachesize=SIZE, -ostatcachesize=SIZE\n\
-                           Set the number of entries for the file stats\n\
-                           cache.  Necessary for decent performance when\n\
-                           VBR is enabled.  Each entry takes 100-200 bytes.\n\
     --gainmode=<0,1,2>, -ogainmode=<0,1,2>\n\
                            what to do with ReplayGain tags:\n\
                            0 - ignore, 1 - prefer album gain (default),\n\
@@ -113,6 +102,17 @@ Encoding options:\n\
     --gainref=REF, -ogainref=REF\n\
                            reference value to use for ReplayGain in \n\
                            decibels: defaults to 89 dB\n\
+    --quality=<0..9>, -oquality=<0..9>\n\
+                           encoding quality: 0 is slowest, 9 is fastest;\n\
+                           5 is the default\n\
+    --statcachesize=SIZE, -ostatcachesize=SIZE\n\
+                           Set the number of entries for the file stats\n\
+                           cache.  Necessary for decent performance when\n\
+                           VBR is enabled.  Each entry takes 100-200 bytes.\n\
+    --vbr, -ovbr           Use variable bit rate encoding.  When set, the\n\
+                           bit rate set with '-b' sets the maximum bit rate.\n\
+                           Performance will be terrible unless the\n\
+                           statcachesize is enabled.\n\
 \n\
 General options:\n\
     -h, --help             display this help and exit\n\
@@ -209,16 +209,21 @@ int main(int argc, char *argv[]) {
     mp3fs_debug("MP3FS options:\n"
                 "basepath:       %s\n"
                 "bitrate:        %u\n"
-                "quality:        %u\n"
-                "vbr:            %u\n"
-                "statcachesize:  %u\n"
+                "desttype:       %s\n"
                 "gainmode:       %d\n"
                 "gainref:        %f\n"
-                "desttype:       %s\n"
+                "quality:        %u\n"
+                "statcachesize:  %u\n"
+                "vbr:            %u\n"
                 "\n",
-                params.basepath, params.bitrate, params.quality, params.vbr,
-                params.statcachesize, params.gainmode, params.gainref,
-                params.desttype);
+                params.basepath,
+                params.bitrate,
+                params.desttype,
+                params.gainmode,
+                params.gainref,
+                params.quality,
+                params.statcachesize,
+                params.vbr);
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);
