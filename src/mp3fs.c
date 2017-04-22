@@ -72,7 +72,7 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("--quality=%u",         quality, 0),
     MP3FS_OPT("quality=%u",           quality, 0),
     MP3FS_OPT("--statcachesize=%u",   statcachesize, 0),
-    MP3FS_OPT("statcachesize=%u",     statcachesize, 1),
+    MP3FS_OPT("statcachesize=%u",     statcachesize, 0),
     MP3FS_OPT("--vbr",                vbr, 1),
     MP3FS_OPT("vbr",                  vbr, 1),
 
