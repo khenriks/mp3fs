@@ -67,7 +67,7 @@ int decode_audio_file(ChromaprintContext *chromaprint_ctx, const char *file_name
         goto done;
     }
 
-    *duration = stream->time_base.num * stream->duration / stream->time_base.den;
+    *duration = (int)(stream->time_base.num * stream->duration / stream->time_base.den);
 
     remaining = max_length * codec_ctx->channels * codec_ctx->sample_rate;
     chromaprint_start(chromaprint_ctx, codec_ctx->sample_rate, codec_ctx->channels);
