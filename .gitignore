@@ -10,6 +10,7 @@ Makefile.in
 Makefile
 .deps/
 mp3fs.1
+/lib/libbase64.a
 /src/mp3fs
 /test/fpcompare
 /test/*.log

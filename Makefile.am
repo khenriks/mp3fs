@@ -3,7 +3,7 @@ export WARNINGS = -Wall -Wextra -Wconversion -Wno-sign-conversion
 export AM_CFLAGS = -std=gnu99 $(INCLUDES) $(WARNINGS)
 export AM_CXXFLAGS = -std=c++0x $(INCLUDES) $(WARNINGS)
 
-SUBDIRS = src test
+SUBDIRS = lib src test
 
 dist_man_MANS = mp3fs.1
 
@@ -18,7 +18,7 @@ mp3fs.1: mp3fs.1.txt
 # Remove absolutely every generated file
 .PHONY: squeaky-clean
 squeaky-clean: maintainer-clean
-	rm -rf aclocal.m4 configure config Makefile.in src/Makefile.in test/Makefile.in
+	rm -rf aclocal.m4 configure config Makefile.in lib/Makefile.in src/Makefile.in test/Makefile.in
 
 dist-hook:
 	@echo 'Creating ChangeLog file from git log'

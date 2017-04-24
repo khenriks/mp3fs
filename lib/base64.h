@@ -38,18 +38,18 @@ struct base64_decode_context
   char buf[4];
 };
 
-extern bool isbase64 (char ch) _GL_ATTRIBUTE_CONST;
+extern bool isbase64 (char ch) __attribute__ ((const));
 
-extern void base64_encode (const char *restrict in, size_t inlen,
-                           char *restrict out, size_t outlen);
+extern void base64_encode (const char *__restrict in, size_t inlen,
+                           char *__restrict out, size_t outlen);
 
 extern size_t base64_encode_alloc (const char *in, size_t inlen, char **out);
 
 extern void base64_decode_ctx_init (struct base64_decode_context *ctx);
 
 extern bool base64_decode_ctx (struct base64_decode_context *ctx,
-                               const char *restrict in, size_t inlen,
-                               char *restrict out, size_t *outlen);
+                               const char *__restrict in, size_t inlen,
+                               char *__restrict out, size_t *outlen);
 
 extern bool base64_decode_alloc_ctx (struct base64_decode_context *ctx,
                                      const char *in, size_t inlen,

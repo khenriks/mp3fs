@@ -10,6 +10,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
+AC_PROG_RANLIB
 
 # Check integer size
 AC_CHECK_SIZEOF(int)
@@ -86,6 +87,7 @@ AC_SYS_LARGEFILE
 
 # Outputs resulting files.
 AC_CONFIG_FILES([Makefile
+                 lib/Makefile
                  src/Makefile
                  test/Makefile])
 AC_OUTPUT

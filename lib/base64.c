@@ -39,8 +39,6 @@
  *
  */
 
-#include <config.h>
-
 /* Get prototype. */
 #include "base64.h"
 
@@ -412,7 +410,7 @@ decode_4 (char const *restrict in, size_t inlen,
 
   if (*outleft)
     {
-      *out++ = ((b64[to_uchar (in[0])] << 2)
+      *out++ = (((b64[to_uchar (in[0])] << 2) & 0xff)
                 | (b64[to_uchar (in[1])] >> 4));
       --*outleft;
     }
