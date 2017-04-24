@@ -73,8 +73,8 @@ int check_encoder(const char* type);
 int check_decoder(const char* type);
 
 /* Functions to print output until C++ conversion is done. */
-void mp3fs_debug(const char* f, ...);
-void mp3fs_error(const char* f, ...);
+void mp3fs_debug(const char* f, ...) __attribute__ ((format(printf, 1, 2)));;
+void mp3fs_error(const char* f, ...) __attribute__ ((format(printf, 1, 2)));;
 
 int init_logging(const char* logfile, const char* max_level, int to_stderr,
                  int to_syslog);
