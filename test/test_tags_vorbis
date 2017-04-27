@@ -1,0 +1,18 @@
+#!/bin/bash
+
+. "${BASH_SOURCE%/*}/funcs.sh"
+
+METADATA=$(mutagen-inspect "$DIRNAME/ogg/obama.mp3" | fgrep = | sort)
+
+cmp -s - <(echo "$METADATA") <<END
+TALB=US State of the Union 2011
+TCON=Spoken
+TCOP=Public Domain
+TDRC=2011-01-25
+TIT2=The Internet [excerpt]
+TLEN=6000
+TPE1=Barack Obama
+TPOS=0/0
+TRCK=1/1
+TSSE=MP3FS 
+END

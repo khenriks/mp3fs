@@ -207,21 +207,14 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
  */
 int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
     const int bigendian = 0;
-    const int word = sizeof(int32_t);
+    const int word = sizeof(short);
     const int signed_pcm = 1;
-    const int decode_buf_size = 2 * word * 1024;
+    const int decode_buf_size = 64 * 1024;
 
     union combining_buf {
-        int32_t as_int[decode_buf_size / sizeof(int32_t)];
         short as_short[decode_buf_size / sizeof(short)];
         char as_char[decode_buf_size];
     } decode_buffer;
-
-    if (!(word == sizeof(int32_t) || word == sizeof(short) ||
-            word == sizeof(char))) {
-        mp3fs_debug("Ogg Vorbis decoder: Word size not supported.");
-        return -1;
-    }
 
     long read_bytes = ov_read(&vf, decode_buffer.as_char, decode_buf_size,
             bigendian, word, signed_pcm, &current_section);
@@ -248,22 +241,9 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
             encode_buffer[channel] = new int32_t[samples_per_channel];
         }
 
-        for (int i = 0; i < samples_per_channel; ++i) {
-
+        for (long i = 0; i < samples_per_channel; ++i) {
             for (int channel = 0; channel < vi->channels; ++channel) {
-                switch (word) {
-
-                    case sizeof(int32_t):
-                        encode_buffer[channel][i] = decode_buffer.as_int[i];
-                        break;
-
-                    case sizeof(short):
-                        encode_buffer[channel][i] = decode_buffer.as_short[i];
-                        break;
-
-                    case sizeof(char):
-                        encode_buffer[channel][i] = decode_buffer.as_char[i];
-                }
+                encode_buffer[channel][i] = decode_buffer.as_short[i * vi->channels + channel];
             }
         }
 
@@ -274,20 +254,15 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
             mp3fs_debug("Ogg Vorbis decoder: Failed to encode integer buffer.");
 
             for (int channel = 0; channel < vi->channels; ++channel) {
-                if (encode_buffer[channel] != NULL) {
-                    delete[] encode_buffer[channel];
-                    encode_buffer[channel] = NULL;
-                }
+                delete[] encode_buffer[channel];
+                encode_buffer[channel] = NULL;
             }
-
             return -1;
         }
 
         for (int channel = 0; channel < vi->channels; ++channel) {
-            if (encode_buffer[channel] != NULL) {
-                delete[] encode_buffer[channel];
-                encode_buffer[channel] = NULL;
-            }
+            delete[] encode_buffer[channel];
+            encode_buffer[channel] = NULL;
         }
 
         return 0;
@@ -333,3 +308,4 @@ const VorbisDecoder::meta_map_t VorbisDecoder::create_meta_map() {
 
 const VorbisDecoder::meta_map_t VorbisDecoder::metatag_map
     = VorbisDecoder::create_meta_map();
+

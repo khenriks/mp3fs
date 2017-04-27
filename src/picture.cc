@@ -85,7 +85,7 @@ int Picture::decode(const std::string* encoded) {
                 if (description.start <= length) {
                     description.length = sequence_to_uint(length_start);
 
-                    if (description.start + description.length) {
+                    if (description.start + description.length <= length) {
                         sequence_to_str(&description, true);
 
                         mp3fs_debug("Picture handler: Preparing the picture data metadata.");
