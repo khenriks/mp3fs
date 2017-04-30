@@ -19,15 +19,15 @@
  */
 
 #include "vorbis_decoder.h"
-#include "transcode.h"
-
-#ifdef HAVE_VORBIS_PICTURE
-#include "picture.h"
-#endif
 
 #include <algorithm>
 #include <cstdlib>
+
 #include <unistd.h>
+
+#include "base64.h"
+#include "picture.h"
+#include "transcode.h"
 
 namespace {
 
@@ -155,25 +155,28 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         if (it != metatag_map.end()) {
             encoder->set_text_tag(it->second, tagvalue.c_str());
         }
-
-
-#ifdef HAVE_VORBIS_PICTURE
-
         else if (tagname == "METADATA_BLOCK_PICTURE") {
-            Picture picture;
+            char* data;
+            size_t data_len;
+            base64_decode_alloc(tagvalue.c_str(), tagvalue.size(),
+                                &data, &data_len);
+            if (data == nullptr) {
+                mp3fs_debug("Failed to decode METADATA_BLOCK_PICTURE; invalid "
+                            "base64 or could not allocate memory.");
+                return -1;
+            }
 
-            if (picture.decode(&tagvalue) == EXIT_SUCCESS) {
+            Picture picture({data, data + data_len});
+            free(data);
+
+            if (picture.decode()) {
                 encoder->set_picture_tag(picture.get_mime_type(),
-                        picture.get_type(),
-                        picture.get_description(),
-                        picture.get_data(),
-                        picture.get_data_length());
+                    picture.get_type(),
+                    picture.get_description(),
+                    picture.get_data(),
+                    picture.get_data_length());
             }
         }
-
-#endif
-
-
         else if (tagname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
             filegainref = atof(tagvalue.c_str());
         }

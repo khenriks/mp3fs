@@ -1,7 +1,7 @@
 /*
- * METADATA_BLOCK_PICTURE handler class header for mp3fs
+ * FLAC-format PICTURE handler class header for mp3fs
  *
- * Copyright (C) 2015 Thomas Schwarzenberger
+ * Copyright (C) 2017 K. Henriksson
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,45 +18,39 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef METADATA_BLOCK_PICTURE_H
-#define METADATA_BLOCK_PICTURE_H
-
-#include <b64/decode.h>
+#ifndef PICTURE_H
+#define PICTURE_H
 
 #include <string>
+#include <vector>
 
 class Picture {
-
 public:
-    Picture();
-    ~Picture();
+    Picture(std::vector<char> data): data_(data), data_off_(0) {}
 
-    int decode(const std::string* encoded);
-    int get_type();
-    const char* get_mime_type();
-    const char* get_description();
-    int get_data_length();
-    const uint8_t* get_data();
+    bool decode();
+
+    int get_type() const { return type; }
+    const char* get_mime_type() const { return mime_type.c_str(); }
+    const char* get_description() const { return description.c_str(); }
+    int get_data_length() const { return (int)picture_data.size(); }
+    const uint8_t* get_data() const { return picture_data.data(); }
 
 private:
-    base64::decoder* b64_decoder = NULL;
-    char* plaintext = NULL;
-    int length = 0;
+    bool consume_decode_uint32(uint32_t& out);
+    bool consume_decode_string(std::string& out);
 
-    typedef struct meta {
-        int start = 0;
-        int length = 0;
-        union block_data {
-            unsigned int number;
-            char* string = NULL;
-        } data;
-    } metadata;
+    bool consume_no_decode(size_t size) {
+        data_off_ += size;
+        return true;
+    }
 
-    metadata type, mime_type, description, picture;
+    std::vector<char> data_;
+    size_t data_off_;
 
-    unsigned int sequence_to_uint(int start);
-    void sequence_to_str(metadata* m, bool is_cstr);
+    uint32_t type;
+    std::string mime_type, description;
+    std::vector<uint8_t> picture_data;
 };
-
 
 #endif

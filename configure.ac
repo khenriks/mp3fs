@@ -42,23 +42,6 @@ AS_IF([test "x$with_vorbis" != xno],
 
 AM_CONDITIONAL([HAVE_VORBIS], [test "x$with_vorbis" != xno])
 
-# Ogg Vorbis picture support checks
-AC_ARG_WITH([vorbis-picture],
-    [AS_HELP_STRING([--without-vorbis-picture],
-        [disable support for Ogg Vorbis picture])],
-    [], [with_vorbis_picture=yes])
-
-AS_IF([test "x$with_vorbis" != xno -a "x$with_vorbis_picture" != xno],
-    [AC_LANG_PUSH([C++])
-     AC_CHECK_LIB([b64], [base64_decode_block],, [AC_MSG_ERROR([libb64-dev must be installed for Ogg Vorbis picture support.])])
-     AC_CHECK_HEADER([b64/decode.h],, [AC_MSG_ERROR([libb64-dev must be installed for Ogg Vorbis picture support.])])
-     AC_LANG_POP([C++])
-     AC_DEFINE([HAVE_VORBIS_PICTURE], [1], [Enable support for Ogg Vorbis picture.])])
-
-
-AM_CONDITIONAL([HAVE_VORBIS_PICTURE],
-    [test "x$with_vorbis" != xno -a "x$with_vorbis_picture" != xno])
-
 # MP3 support checks
 AC_ARG_WITH([mp3],
     [AS_HELP_STRING([--without-mp3],

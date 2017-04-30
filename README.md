@@ -72,7 +72,6 @@ mp3fs is written in a mixture of C and C++ and uses the following libraries:
 * [FUSE](http://fuse.sourceforge.net/)
 * [FLAC](http://flac.sourceforge.net/)
 * [libvorbis](http://www.xiph.org/vorbis/)
-* [libb64](http://libb64.sourceforge.net/)
 * [LAME](http://lame.sourceforge.net/)
 * [libid3tag](http://www.underbit.com/products/mad/)
 

@@ -4,5 +4,5 @@ compiler:
   - gcc
 before_install:
   - sudo apt-get update -qq
-  - sudo apt-get install -qq --no-install-recommends libfuse-dev libflac++-dev libvorbis-dev libb64-dev libmp3lame-dev libid3tag0-dev asciidoc xmlto
+  - sudo apt-get install -qq --no-install-recommends libfuse-dev libflac++-dev libvorbis-dev libmp3lame-dev libid3tag0-dev asciidoc xmlto
 script: ./autogen.sh && ./configure && make
