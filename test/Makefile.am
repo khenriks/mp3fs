@@ -6,4 +6,4 @@ CLEANFILES = $(patsubst %,%.builtin.log,$(TESTS))
 
 check_PROGRAMS = fpcompare
 fpcompare_SOURCES = fpcompare.c
-fpcompare_LDADD = -lchromaprint -lavcodec -lavformat -lavutil
+fpcompare_LDADD = -lchromaprint -lavcodec -lavformat -lavutil -lswresample

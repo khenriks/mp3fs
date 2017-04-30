@@ -2,6 +2,7 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
+#include <libswresample/swresample.h>
 #include <chromaprint.h>
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
@@ -15,7 +16,11 @@ int decode_audio_file(ChromaprintContext *chromaprint_ctx, const char *file_name
     AVCodec *codec = NULL;
     AVStream *stream = NULL;
     AVFrame *frame = NULL;
+    SwrContext *swr_ctx = NULL;
+    int max_dst_nb_samples = 0;
+    uint8_t *dst_data = NULL ;
     AVPacket packet;
+    int16_t* samples;
 
     if (!strcmp(file_name, "-")) {
         file_name = "pipe:0";
@@ -63,8 +68,18 @@ int decode_audio_file(ChromaprintContext *chromaprint_ctx, const char *file_name
     }
 
     if (codec_ctx->sample_fmt != AV_SAMPLE_FMT_S16) {
-        fprintf(stderr, "ERROR: unsupported audio format\n");
-        goto done;
+        swr_ctx = swr_alloc_set_opts(NULL,
+                                     codec_ctx->channel_layout, AV_SAMPLE_FMT_S16, codec_ctx->sample_rate,
+                                     codec_ctx->channel_layout, codec_ctx->sample_fmt, codec_ctx->sample_rate,
+                                     0, NULL);
+        if (!swr_ctx) {
+            fprintf(stderr, "ERROR: couldn't allocate audio resampler\n");
+            goto done;
+        }
+        if (swr_init(swr_ctx) < 0) {
+            fprintf(stderr, "ERROR: couldn't initialize the audio resampler\n");
+            goto done;
+        }
     }
 
     *duration = (int)(stream->time_base.num * stream->duration / stream->time_base.den);
@@ -94,9 +109,29 @@ int decode_audio_file(ChromaprintContext *chromaprint_ctx, const char *file_name
                     break;
                 }
 
+                if (swr_ctx) {
+                    if (frame->nb_samples > max_dst_nb_samples) {
+                        max_dst_nb_samples = frame->nb_samples;
+                        av_freep(&dst_data);
+                        if (av_samples_alloc(&dst_data, NULL,
+                                             codec_ctx->channels, max_dst_nb_samples,
+                                             AV_SAMPLE_FMT_S16, 0) < 0) {
+                            fprintf(stderr, "ERROR: couldn't allocate audio converter buffer\n");
+                            goto done;
+                        }
+                    }
+                    if (swr_convert(swr_ctx, &dst_data, frame->nb_samples,
+                                    (const uint8_t**)frame->data, frame->nb_samples) < 0) {
+                        fprintf(stderr, "ERROR: couldn't convert the audio\n");
+                        goto done;
+                    }
+                    samples = (int16_t*)dst_data;
+                } else {
+                    samples = (int16_t*)frame->data[0];
+                }
 
                 length = MIN(remaining, frame->nb_samples * codec_ctx->channels);
-                if (!chromaprint_feed(chromaprint_ctx, frame->data[0], length)) {
+                if (!chromaprint_feed(chromaprint_ctx, samples, length)) {
                     goto done;
                 }
 
@@ -123,6 +158,12 @@ finish:
 done:
     if (frame) {
         av_frame_unref(frame);
+    }
+    if (dst_data) {
+        av_freep(&dst_data);
+    }
+    if (swr_ctx) {
+        swr_free(&swr_ctx);
     }
     if (codec_ctx_opened) {
         avcodec_close(codec_ctx);
