@@ -1,0 +1,14 @@
+#!/bin/bash
+
+. "${BASH_SOURCE%/*}/funcs.sh"
+
+hash_image() {
+    python <<END
+import hashlib, mutagen
+file = mutagen.File('$1')
+artwork = file.tags['APIC:'].data
+print hashlib.sha1(artwork).hexdigest()
+END
+}
+
+[ "$(hash_image "$DIRNAME/obama.mp3")" = 794865299f4fac10ba5719b203f0c71b5b524e95 ]

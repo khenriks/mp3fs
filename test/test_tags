@@ -5,6 +5,7 @@
 METADATA=$(mutagen-inspect "$DIRNAME/obama.mp3" | fgrep = | sort)
 
 cmp -s - <(echo "$METADATA") <<END
+APIC= (image/jpeg, 9833 bytes)
 TALB=US State of the Union 2011
 TCON=Spoken
 TCOP=Public Domain

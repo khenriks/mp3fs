@@ -5,4 +5,4 @@
 # Ensure log contains file size, predicted and actual
 cat "$DIRNAME/obama.mp3" > /dev/null
 
-[ $(stat -c %s "$DIRNAME/obama.mp3") -eq 96924 ]
+[ $(stat -c %s "$DIRNAME/obama.mp3") -eq 106781 ]
