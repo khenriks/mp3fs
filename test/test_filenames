@@ -2,4 +2,4 @@
 
 . "${BASH_SOURCE%/*}/funcs.sh"
 
-[ "$(ls -m "$DIRNAME")" = "dir.flac, obama.mp3" ]
+[ "$(ls -m "$DIRNAME")" = "dir.flac, obama.mp3, raven.mp3" ]

@@ -1,6 +1,6 @@
 TESTS = test_filenames test_tags test_audio test_filesize test_picture
 
-EXTRA_DIST = $(TESTS) funcs.sh flac
+EXTRA_DIST = $(TESTS) funcs.sh srcdir
 
 CLEANFILES = $(patsubst %,%.builtin.log,$(TESTS))
 
