@@ -179,8 +179,9 @@ done:
 
 int main(int argc, char **argv)
 {
-    int i, j, max_length = 120, num_file_names = 0, raw = 0, raw_fingerprint_size, duration;
-    int32_t *raw_fingerprints[2];
+    int i, j, max_length = 120, num_file_names = 0, raw = 0, duration;
+    int raw_fingerprint_size[2];
+    uint32_t *raw_fingerprints[2] = {0};
     char *file_name, **file_names;
     ChromaprintContext *chromaprint_ctx;
     int algo = CHROMAPRINT_ALGORITHM_DEFAULT, num_failed = 0;
@@ -247,20 +248,31 @@ int main(int argc, char **argv)
             num_failed++;
             continue;
         }
-        if (!chromaprint_get_raw_fingerprint(chromaprint_ctx, (void **)&raw_fingerprints[i], &raw_fingerprint_size)) {
+        if (!chromaprint_get_raw_fingerprint(chromaprint_ctx, &raw_fingerprints[i], &raw_fingerprint_size[i])) {
             fprintf(stderr, "ERROR: unable to calculate fingerprint for file %s, skipping\n", file_name);
             num_failed++;
             continue;
         }
     }
 
-    for (j = 0; j < raw_fingerprint_size; j++) {
-        thisdiff = raw_fingerprints[0][j]^raw_fingerprints[1][j];
-        setbits += __builtin_popcount(thisdiff);
+    if (num_failed == 0) {
+        int min_raw_fingerprint_size = MIN(raw_fingerprint_size[0],
+                                           raw_fingerprint_size[1]);
+        int max_raw_fingerprint_size = MAX(raw_fingerprint_size[0],
+                                           raw_fingerprint_size[1]);
+
+        for (j = 0; j < min_raw_fingerprint_size; j++) {
+            thisdiff = raw_fingerprints[0][j]^raw_fingerprints[1][j];
+            setbits += __builtin_popcount(thisdiff);
+        }
+        setbits += (max_raw_fingerprint_size-min_raw_fingerprint_size)*32.0;
+        printf("%f\n", setbits/(max_raw_fingerprint_size*32.0));
+    } else {
+        fprintf(stderr, "ERROR: Couldn't calculate both fingerprints; can't compare.\n");
     }
-    printf("%f\n", setbits/(raw_fingerprint_size*sizeof(int32_t)*8.0));
-    chromaprint_dealloc(raw_fingerprints[0]);
-    chromaprint_dealloc(raw_fingerprints[1]);
+
+    if (raw_fingerprints[0]) chromaprint_dealloc(raw_fingerprints[0]);
+    if (raw_fingerprints[1]) chromaprint_dealloc(raw_fingerprints[1]);
 
     chromaprint_free(chromaprint_ctx);
     free(file_names);
