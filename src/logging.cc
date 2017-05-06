@@ -20,6 +20,7 @@
 
 #include "logging.h"
 
+#include <cstdarg>
 #include <ctime>
 #include <iostream>
 
@@ -79,4 +80,24 @@ bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr,
                  bool to_syslog) {
     logging = new Logging(logfile, max_level, to_stderr, to_syslog);
     return !logging->GetFail();
+}
+
+void log_with_level(Logging::level level, const char* format, va_list ap) {
+    log_with_level(level, "", format, ap);
+}
+
+void log_with_level(Logging::level level, const char* prefix,
+                    const char* format, va_list ap) {
+    // This copy is because we call vsnprintf twice, and ap is undefined after
+    // the first call.
+    va_list ap2;
+    va_copy(ap2, ap);
+
+    int size = vsnprintf(nullptr, 0, format, ap);
+    std::string buffer(size, '\0');
+    vsnprintf(&buffer[0], buffer.size() + 1, format, ap2);
+
+    va_end(ap2);
+
+    Log(level) << prefix << buffer;
 }

@@ -77,4 +77,9 @@ constexpr auto ERROR = Logging::level::ERROR;
 constexpr auto INFO = Logging::level::INFO;
 constexpr auto DEBUG = Logging::level::DEBUG;
 
+void log_with_level(Logging::level level, const char* format, va_list ap);
+
+void log_with_level(Logging::level level, const char* prefix,
+                    const char* format, va_list ap);
+
 #endif

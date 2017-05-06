@@ -252,23 +252,17 @@ size_t transcoder_get_size(struct transcoder* trans) {
 }
 
 void mp3fs_debug(const char* format, ...) {
-    char buffer[1024];
     va_list args;
     va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
+    log_with_level(DEBUG, format, args);
     va_end(args);
-
-    Log(DEBUG) << buffer;
 }
 
 void mp3fs_error(const char* format, ...) {
-    char buffer[1024];
     va_list args;
     va_start(args, format);
-    vsnprintf(buffer, sizeof(buffer), format, args);
+    log_with_level(ERROR, format, args);
     va_end(args);
-
-    Log(ERROR) << buffer;
 }
 
 int init_logging(const char* logfile, const char* max_level, int to_stderr,

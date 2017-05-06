@@ -27,6 +27,7 @@
 #include <sstream>
 #include <vector>
 
+#include "logging.h"
 #include "transcode.h"
 
 /* Copied from lame */
@@ -35,27 +36,15 @@
 /* Keep these items in static scope. */
 namespace  {
 
-/*
- * Print messages from lame. We cannot easily prepend a string to indicate
- * that the message comes from lame, so we need to render it ourselves.
- */
-static void lame_print(int priority, const char *fmt, va_list list) {
-    char* msg;
-    if (vasprintf(&msg, fmt, list) != -1) {
-        syslog(priority, "LAME: %s", msg);
-        free(msg);
-    }
-}
-
 /* Callback functions for each type of lame message callback */
 static void lame_error(const char *fmt, va_list list) {
-    lame_print(LOG_ERR, fmt, list);
+    log_with_level(ERROR, "LAME: ", fmt, list);
 }
 static void lame_msg(const char *fmt, va_list list) {
-    lame_print(LOG_INFO, fmt, list);
+    log_with_level(ERROR, "LAME: ", fmt, list);
 }
 static void lame_debug(const char *fmt, va_list list) {
-    lame_print(LOG_DEBUG, fmt, list);
+    log_with_level(DEBUG, "LAME: ", fmt, list);
 }
 
 }
