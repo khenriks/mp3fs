@@ -68,6 +68,9 @@ PKG_CHECK_MODULES([fuse], [fuse >= 2.6.0])
 # Large file support
 AC_SYS_LARGEFILE
 
+# Define POSIX standard conformance
+AC_DEFINE([_POSIX_C_SOURCE], [200809L], [Define the POSIX version])
+
 # Outputs resulting files.
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
