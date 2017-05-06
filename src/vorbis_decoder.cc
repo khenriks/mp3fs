@@ -130,21 +130,20 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
          * Get the tagname - tagvalue pairs
          */
         std::string comment(vc->user_comments[i], vc->comment_lengths[i]);
-        unsigned long delimiter_pos = comment.find_first_of('=');
+        size_t delimiter_pos = comment.find_first_of('=');
 
-        if ((delimiter_pos == 0) || (delimiter_pos >= comment.length() - 1)) {
+        if (delimiter_pos == 0 || delimiter_pos == std::string::npos) {
             continue;
         }
 
         std::string tagname = comment.substr(0, delimiter_pos);
-        std::string tagvalue = comment.substr(
-                delimiter_pos + 1, comment.length() - delimiter_pos);
+        std::string tagvalue = comment.substr(delimiter_pos + 1);
 
         /*
          * Normalize tag name to uppercase.
          */
         std::transform(tagname.begin(), tagname.end(),
-                tagname.begin(), ::toupper);
+                       tagname.begin(), ::toupper);
 
         /*
          * Set the encoder's text tag if it's in the metatag_map, or else,
@@ -209,27 +208,15 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
  * result going into the given Buffer.
  */
 int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
-    const int bigendian = 0;
-    const int word = sizeof(short);
-    const int signed_pcm = 1;
-    const int decode_buf_size = 2 * word * 1024;
+    std::vector<int16_t> decode_buffer(2048);
 
-    union combining_buf {
-        short as_short[decode_buf_size / sizeof(short)];
-        char as_char[decode_buf_size];
-    } decode_buffer;
+    long read_bytes = ov_read(&vf, (char*)decode_buffer.data(),
+                              (int)(2 * decode_buffer.size()),
+                              0, 2, 1, &current_section);
 
-    long read_bytes = ov_read(&vf, decode_buffer.as_char, decode_buf_size,
-            bigendian, word, signed_pcm, &current_section);
+    long total_samples = read_bytes / 2;
 
-    if (read_bytes > 0) {
-        long total_samples = read_bytes / word;
-
-        if (total_samples < 1) {
-            mp3fs_debug("Ogg Vorbis decoder: Byte buffer contains less than word size.");
-            return -1;
-        }
-
+    if (total_samples > 0) {
         long samples_per_channel = total_samples / vi->channels;
 
         if (samples_per_channel < 1) {
@@ -237,41 +224,28 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
             return -1;
         }
 
-        int32_t *encode_buffer[vi->channels];
+        std::vector<std::vector<int32_t>>
+            encode_buffer(vi->channels, std::vector<int32_t>(samples_per_channel));
+        int32_t* encode_buffer_ptr[vi->channels];
 
-        /* Mono/Stereo: 0 = left, 1 = right */
         for (int channel = 0; channel < vi->channels; ++channel) {
-            encode_buffer[channel] = new int32_t[samples_per_channel];
-        }
-
-        for (long i = 0; i < samples_per_channel; ++i) {
-            for (int channel = 0; channel < vi->channels; ++channel) {
-                encode_buffer[channel][i] = decode_buffer.as_short[i * vi->channels + channel];
+            encode_buffer_ptr[channel] = encode_buffer[channel].data();
+            for (long i = 0; i < samples_per_channel; ++i) {
+                encode_buffer[channel][i] = decode_buffer[i * vi->channels + channel];
             }
         }
 
         /* Send integer buffer to encoder */
-        if (encoder->encode_pcm_data(encode_buffer, (int)samples_per_channel,
-                                 8 * word, *buffer) < 0) {
-
+        if (encoder->encode_pcm_data(encode_buffer_ptr,
+                                     (int)samples_per_channel, 16, *buffer) < 0) {
             mp3fs_debug("Ogg Vorbis decoder: Failed to encode integer buffer.");
-
-            for (int channel = 0; channel < vi->channels; ++channel) {
-                delete[] encode_buffer[channel];
-                encode_buffer[channel] = NULL;
-            }
 
             return -1;
         }
 
-        for (int channel = 0; channel < vi->channels; ++channel) {
-            delete[] encode_buffer[channel];
-            encode_buffer[channel] = NULL;
-        }
-
         return 0;
     }
-    else if (read_bytes == 0) {
+    else if (total_samples == 0) {
         mp3fs_debug("Ogg Vorbis decoder: Reached end of file.");
         return 1;
     }
