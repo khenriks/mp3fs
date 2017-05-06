@@ -1,7 +1,7 @@
 # Definitions for sub-makes
 export WARNINGS = -Wall -Wextra -Wconversion -Wno-sign-conversion
-export AM_CFLAGS = -std=gnu99 $(INCLUDES) $(WARNINGS)
-export AM_CXXFLAGS = -std=c++0x $(INCLUDES) $(WARNINGS)
+export AM_CFLAGS = -std=c11 $(INCLUDES) $(WARNINGS)
+export AM_CXXFLAGS = -std=c++11 $(INCLUDES) $(WARNINGS)
 
 SUBDIRS = lib src test
 
