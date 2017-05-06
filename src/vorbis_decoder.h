@@ -40,7 +40,6 @@ private:
     vorbis_info *vi;
     int current_section;
     typedef std::map<std::string,int> meta_map_t;
-    static const meta_map_t create_meta_map();
     static const meta_map_t metatag_map;
 };
 

@@ -228,33 +228,25 @@ void FlacDecoder::error_callback(FLAC__StreamDecoderErrorStatus status) {
 }
 
 /*
- * This function creates the metadata tag map from FLAC values to the standard
- * values in the enum in coders.h. It will be called only once to set the
- * metatag_map static variable.
+ * This map associates FLAC values to the standard values in the enum in
+ * coders.h.
  */
-const FlacDecoder::meta_map_t FlacDecoder::create_meta_map() {
-    meta_map_t m;
-
-    m["TITLE"] = METATAG_TITLE;
-    m["ARTIST"] = METATAG_ARTIST;
-    m["ALBUM"] = METATAG_ALBUM;
-    m["GENRE"] = METATAG_GENRE;
-    m["DATE"] = METATAG_DATE;
-    m["COMPOSER"] = METATAG_COMPOSER;
-    m["PERFORMER"] = METATAG_PERFORMER;
-    m["COPYRIGHT"] = METATAG_COPYRIGHT;
-    m["ENCODED_BY"] = METATAG_ENCODEDBY;
-    m["ORGANIZATION"] = METATAG_ORGANIZATION;
-    m["CONDUCTOR"] = METATAG_CONDUCTOR;
-    m["ALBUMARTIST"] = METATAG_ALBUMARTIST;
-    m["ALBUM ARTIST"] = METATAG_ALBUMARTIST;
-    m["TRACKNUMBER"] = METATAG_TRACKNUMBER;
-    m["TRACKTOTAL"] = METATAG_TRACKTOTAL;
-    m["DISCNUMBER"] = METATAG_DISCNUMBER;
-    m["DISCTOTAL"] = METATAG_DISCTOTAL;
-
-    return m;
-}
-
-const FlacDecoder::meta_map_t FlacDecoder::metatag_map
-    = FlacDecoder::create_meta_map();
+const FlacDecoder::meta_map_t FlacDecoder::metatag_map = {
+    {"TITLE", METATAG_TITLE},
+    {"ARTIST", METATAG_ARTIST},
+    {"ALBUM", METATAG_ALBUM},
+    {"GENRE", METATAG_GENRE},
+    {"DATE", METATAG_DATE},
+    {"COMPOSER", METATAG_COMPOSER},
+    {"PERFORMER", METATAG_PERFORMER},
+    {"COPYRIGHT", METATAG_COPYRIGHT},
+    {"ENCODED_BY", METATAG_ENCODEDBY},
+    {"ORGANIZATION", METATAG_ORGANIZATION},
+    {"CONDUCTOR", METATAG_CONDUCTOR},
+    {"ALBUMARTIST", METATAG_ALBUMARTIST},
+    {"ALBUM ARTIST", METATAG_ALBUMARTIST},
+    {"TRACKNUMBER", METATAG_TRACKNUMBER},
+    {"TRACKTOTAL", METATAG_TRACKTOTAL},
+    {"DISCNUMBER", METATAG_DISCNUMBER},
+    {"DISCTOTAL", METATAG_DISCTOTAL},
+};

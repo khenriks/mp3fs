@@ -55,7 +55,6 @@ private:
     struct id3_tag* id3tag;
     size_t id3size;
     typedef std::map<int,const char*> meta_map_t;
-    static const meta_map_t create_meta_map();
     static const meta_map_t metatag_map;
 };
 

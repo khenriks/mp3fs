@@ -384,30 +384,22 @@ int Mp3Encoder::encode_finish(Buffer& buffer) {
 }
 
 /*
- * This function creates the metadata tag map from the standard values in the
- * enum in coders.h to ID3 values. It will be called only once to set the
- * metatag_map static variable.
+ * This map contains the association from the standard values in the enum in
+ * coders.h to ID3 values.
  */
-const Mp3Encoder::meta_map_t Mp3Encoder::create_meta_map() {
-    meta_map_t m;
-
-    m[METATAG_TITLE] = "TIT2";
-    m[METATAG_ARTIST] = "TPE1";
-    m[METATAG_ALBUM] = "TALB";
-    m[METATAG_GENRE] = "TCON";
-    m[METATAG_DATE] = "TDRC";
-    m[METATAG_COMPOSER] = "TCOM";
-    m[METATAG_PERFORMER] = "TOPE";
-    m[METATAG_COPYRIGHT] = "TCOP";
-    m[METATAG_ENCODEDBY] = "TENC";
-    m[METATAG_ORGANIZATION] = "TPUB";
-    m[METATAG_CONDUCTOR] = "TPE3";
-    m[METATAG_ALBUMARTIST] = "TPE2";
-    m[METATAG_ENCODER] = "TSSE";
-    m[METATAG_TRACKLENGTH] = "TLEN";
-
-    return m;
-}
-
-const Mp3Encoder::meta_map_t Mp3Encoder::metatag_map
-    = Mp3Encoder::create_meta_map();
+const Mp3Encoder::meta_map_t Mp3Encoder::metatag_map {
+    {METATAG_TITLE, "TIT2"},
+    {METATAG_ARTIST, "TPE1"},
+    {METATAG_ALBUM, "TALB"},
+    {METATAG_GENRE, "TCON"},
+    {METATAG_DATE, "TDRC"},
+    {METATAG_COMPOSER, "TCOM"},
+    {METATAG_PERFORMER, "TOPE"},
+    {METATAG_COPYRIGHT, "TCOP"},
+    {METATAG_ENCODEDBY, "TENC"},
+    {METATAG_ORGANIZATION, "TPUB"},
+    {METATAG_CONDUCTOR, "TPE3"},
+    {METATAG_ALBUMARTIST, "TPE2"},
+    {METATAG_ENCODER, "TSSE"},
+    {METATAG_TRACKLENGTH, "TLEN"},
+};
