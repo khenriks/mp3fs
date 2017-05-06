@@ -267,19 +267,19 @@ void mp3fs_error(const char* format, ...) {
 
 int init_logging(const char* logfile, const char* max_level, int to_stderr,
                  int to_syslog) {
-    std::string max_level_str = max_level;
-    Logging::level lev;
-    if (max_level_str == "DEBUG") {
-        lev = DEBUG;
-    } else if (max_level_str == "INFO") {
-        lev = INFO;
-    } else if (max_level_str == "ERROR") {
-        lev = ERROR;
-    } else {
+    static const std::map<std::string, Logging::level> level_map = {
+        {"DEBUG", DEBUG},
+        {"INFO", INFO},
+        {"ERROR", ERROR},
+    };
+    auto it = level_map.find(max_level);
+
+    if (it == level_map.end()) {
         fprintf(stderr, "Invalid logging level string: %s\n", max_level);
         return false;
     }
-    return InitLogging(logfile, lev, to_stderr, to_syslog);
+
+    return InitLogging(logfile, it->second, to_stderr, to_syslog);
 }
 
 }
