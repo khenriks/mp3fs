@@ -29,12 +29,6 @@
 #include "picture.h"
 #include "transcode.h"
 
-namespace {
-
-    /* Define invalid value for gain in decibels, to be used later. */
-    const double INVALID_DB_GAIN = 1000.0;
-}
-
 /* Free the OggVorbis_File data structure and close the open Ogg Vorbis file
  * after the decoding process has finished.
  */
@@ -121,8 +115,9 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         return -1;
     }
 
-    double filegainref = 89.0;
-    double dbgain = INVALID_DB_GAIN;
+    double gainref = Encoder::invalid_db,
+        album_gain = Encoder::invalid_db,
+        track_gain = Encoder::invalid_db;
 
     for (int i = 0; i < vc->comments; ++i) {
 
@@ -177,27 +172,17 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
             }
         }
         else if (tagname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
-            filegainref = atof(tagvalue.c_str());
+            gainref = atof(tagvalue.c_str());
         }
-        else if (params.gainmode == 1
-                && tagname == "REPLAYGAIN_ALBUM_GAIN") {
-            dbgain = atof(tagvalue.c_str());
+        else if (tagname == "REPLAYGAIN_ALBUM_GAIN") {
+            album_gain = atof(tagvalue.c_str());
         }
-        else if ((params.gainmode == 1 || params.gainmode == 2)
-                && dbgain == INVALID_DB_GAIN
-                && tagname == "REPLAYGAIN_TRACK_GAIN") {
-            dbgain = atof(tagvalue.c_str());
+        else if (tagname == "REPLAYGAIN_TRACK_GAIN") {
+            track_gain = atof(tagvalue.c_str());
         }
     }
 
-    /*
-     * Use the Replay Gain tag to set volume scaling. The appropriate
-     * value for dbgain is set in the above if statements according to
-     * the value of gainmode. Obey the gainref option here.
-     */
-    if (dbgain != INVALID_DB_GAIN) {
-        encoder->set_gain_db(params.gainref - filegainref + dbgain);
-    }
+    encoder->set_gain(gainref, album_gain, track_gain);
 
     return 0;
 }

@@ -36,6 +36,29 @@
 #include "vorbis_decoder.h"
 #endif
 
+void Encoder::set_gain(double gainref, double album_gain, double track_gain) {
+    if (gainref == invalid_db) {
+        gainref = 89.0;
+    }
+
+    double dbgain = invalid_db;
+    if (params.gainmode == 1 && album_gain != invalid_db) {
+        dbgain = album_gain;
+    } else if ((params.gainmode == 1 || params.gainmode == 2) &&
+               track_gain != invalid_db) {
+        dbgain = track_gain;
+    }
+
+    /*
+     * Use the Replay Gain tag to set volume scaling. The appropriate
+     * value for dbgain is set in the above if statements according to
+     * the value of gainmode. Obey the gainref option here.
+     */
+    if (dbgain != invalid_db) {
+        set_gain_db(params.gainref - gainref + dbgain);
+    }
+}
+
 /* Create instance of class derived from Encoder. */
 Encoder* Encoder::CreateEncoder(std::string file_type, size_t actual_size) {
 #ifdef HAVE_MP3

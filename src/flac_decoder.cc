@@ -25,11 +25,6 @@
 
 #include "transcode.h"
 
-namespace {
-    /* Define invalid value for gain in decibels, to be used later. */
-    const double INVALID_DB_GAIN = 1000.0;
-}
-
 /*
  * Open the given FLAC file and prepare for decoding. After this function,
  * the other methods can be used to process the file.
@@ -147,8 +142,9 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
         case FLAC__METADATA_TYPE_VORBIS_COMMENT:
         {
             const FLAC::Metadata::VorbisComment vc(metadata);
-            double filegainref = 89.0;
-            double dbgain = INVALID_DB_GAIN;
+            double gainref = Encoder::invalid_db,
+                album_gain = Encoder::invalid_db,
+                track_gain = Encoder::invalid_db;
 
             mp3fs_debug("FLAC processing VORBIS_COMMENT");
 
@@ -162,25 +158,15 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
                 if (it != metatag_map.end()) {
                     encoder_c->set_text_tag(it->second, comment.get_field_value());
                 } else if (fname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
-                    filegainref = atof(comment.get_field_value());
-                } else if (params.gainmode == 1
-                           && fname == "REPLAYGAIN_ALBUM_GAIN") {
-                    dbgain = atof(comment.get_field_value());
-                } else if ((params.gainmode == 1 || params.gainmode == 2)
-                           && dbgain == INVALID_DB_GAIN
-                           && fname == "REPLAYGAIN_TRACK_GAIN") {
-                    dbgain = atof(comment.get_field_value());
+                    gainref = atof(comment.get_field_value());
+                } else if (fname == "REPLAYGAIN_ALBUM_GAIN") {
+                    album_gain = atof(comment.get_field_value());
+                } else if (fname == "REPLAYGAIN_TRACK_GAIN") {
+                    track_gain = atof(comment.get_field_value());
                 }
             }
 
-            /*
-             * Use the Replay Gain tag to set volume scaling. The appropriate
-             * value for dbgain is set in the above if statements according to
-             * the value of gainmode. Obey the gainref option here.
-             */
-            if (dbgain != INVALID_DB_GAIN) {
-                encoder_c->set_gain_db(params.gainref - filegainref + dbgain);
-            }
+            encoder_c->set_gain(gainref, album_gain, track_gain);
 
             break;
         }
