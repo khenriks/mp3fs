@@ -1,9 +1,9 @@
 MP3FS(1)
 ========
-:doctype:	   	manpage
-:man source:   	mp3fs
-:man version:  	{revnumber}
-:man manual:   	User Commands
+:doctype:       manpage
+:man source:    mp3fs
+:man version:   {revnumber}
+:man manual:    User Commands
 
 NAME
 ----
