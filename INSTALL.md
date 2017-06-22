@@ -24,32 +24,46 @@ If building from git, you'll also need:
 * xmllint
 * xmlto
 
-The commands to install just the first four prerequisites follow.
+The commands to install the prerequisites follow...
 
-On Debian:
+### **Debian**:
 
     aptitude install libfuse-dev libflac++-dev libvorbis-dev libmp3lame-dev libid3tag0-dev
 
-On Ubuntu use the same command with `apt-get` in place of `aptitude`.
+... *additionally if building from git:*
 
-On OS X with Homebrew:
+    aptitude install autoconf automake asciidoc
+
+### **Ubuntu**:
+
+    apt install libfuse-dev libflac++-dev libvorbis-dev libmp3lame-dev libid3tag0-dev
+
+... *additionally if building from git:*
+
+    apt install autoconf automake asciidoc
+
+### **macOS** *with Homebrew*:
 
     brew install osxfuse flac libvorbis lame libid3tag
 
-On a RedHat-type systems, with the right repositories:
+... *additionally if building from git:*
+
+    brew install autoconf automake asciidoc xmlto
+
+### **RedHat**-type systems, with the right repositories:
 
     yum install fuse-devel flac-devel libvorbis-devel lame-devel libid3tag-devel
 
 Installation
 ------------
 
-mp3fs uses the GNU build system. If you are installing from git, you'll
-need to first run:
+**mp3fs** uses the GNU build system.\
+If you are installing from git, you'll need to first run:
 
     ./autogen.sh
 
-If you are downloading a release, this has already been done for you. To
-build and install, run:
+If you are downloading a release, this has already been done for you.\
+To build and install, run:
 
     ./configure
     make
