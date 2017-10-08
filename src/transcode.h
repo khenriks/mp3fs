@@ -38,6 +38,9 @@ extern struct mp3fs_params {
     const char* logfile;
     unsigned int quality;
     unsigned int statcachesize;
+#if defined(HAVE_FFMPEG)
+    unsigned int maxsamplerate;
+#endif
     int vbr;
 } params;
 
@@ -60,8 +63,11 @@ extern const size_t decoder_list_len;
 extern "C" {
 #endif
 
+// Simply get encoded file size (do not create the whole encoder/decoder objects)
+int transcoder_cached_filesize(const char *filename, struct stat *stbuf);
+
 /* Functions for doing transcoding, called by main program body */
-struct transcoder* transcoder_new(char* filename);
+struct transcoder* transcoder_new(const char *filename);
 ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
                         size_t len);
 int transcoder_finish(struct transcoder* trans);

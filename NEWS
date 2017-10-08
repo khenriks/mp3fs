@@ -1,5 +1,25 @@
 mp3fs NEWS
 
+Important changes in 0.91-FFMPEG (2017-09-19)
+
+Added FFMPEG for decoding and encoding. The next version will also support video conversion. The current version will recode video files, but only the sound track. No video playback possible yet.
+
+Changes in this release:
+* Replaced decoding and encoding by FFMPEG.
+* Supports a huge number of file formats now (run "mp3fs --codecs" for 
+  a list)
+* The standard target format is mp4 now (use "-o mp3" or "--output mp3" to 
+  change back to mp3)
+* If desired any other format is possible, e.g. "-o ogg"
+* See manual or run "mp3fs -h" for even more new options.
+* TODO: Caching of file attributes is now the default as if "--statcachesize=500" 
+  was given. Add "--statcachesize=0" to turn off.
+* TODO: Files will now be decoded to /tmp/ instead of memory if large than 100MB.
+  Add "--maxmemcache=X" to change. Examples for X: 80000, 80MB or 1GB. Do not set
+  to a too large value.
+
+nschlia@oblivion-software.de
+
 Important changes in 0.91 (2014-05-14)
 
 This is mainly bug fixes.

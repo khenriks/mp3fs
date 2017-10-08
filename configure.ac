@@ -18,13 +18,59 @@ AC_CHECK_SIZEOF(int)
 AS_IF([test "$ac_cv_sizeof_int" -lt 4],
     AC_MSG_ERROR([Integer type 'int' must be at least 4 bytes in size.]))
 
+# FFMPEG support checks
+AC_ARG_WITH([ffmpeg],
+    [AS_HELP_STRING([--without-ffmpeg],
+        [disable support for FFMPEG libraries])],
+    [], [with_ffmpeg=yes])
+
+# Tested with...    	
+#
+# libavutil      55. 58.100		54.3.0 (required)
+# libavcodec     57. 89.100		56.1.0 (required)
+# libavformat    57. 71.100		56.1.0 (required)
+# libavdevice    57.  6.100
+# libavfilter     6. 82.100
+# libavresample   3.  5.  0		2.1.0 (required)
+# libswscale      4.  6.100		3.0.0 
+# libswresample   2.  7.100
+# libpostproc    54.  5.100        
+#
+# May work with older versions but this is not guaranteed.
+
+AS_IF([test "x$with_ffmpeg" != xno],
+    [PKG_CHECK_MODULES([libavutil], [libavutil >= 54.3.0],
+		[PKG_CHECK_MODULES([libavcodec], [libavcodec >= 56.1.0],
+			[PKG_CHECK_MODULES([libavformat], [libavformat >= 56.1.0],
+				[PKG_CHECK_MODULES([libavresample], [libavresample >= 2.1.0],
+#					[PKG_CHECK_MODULES([libswscale], [libswscale >= 3.0.0],
+						[AC_DEFINE([HAVE_FFMPEG], [1], [Use FFMPEG libraries.])]
+#					)
+#					]
+				)
+				]
+			)
+			]
+        )
+		]
+	)
+	]
+)
+
+AM_CONDITIONAL([HAVE_FFMPEG], [test "x$with_ffmpeg" != xno])
+
+AS_IF([test "x$with_ffmpeg" != xno],
+     [AC_SUBST(with_flac, [no])
+      AC_SUBST(with_vorbis, [no])])
+#TODO: AC_SUBST(with_mp3, [no])
+
 # FLAC support checks
 AC_ARG_WITH([flac],
     [AS_HELP_STRING([--without-flac],
         [disable support for FLAC decoding])],
     [], [with_flac=yes])
 
-AS_IF([test "x$with_flac" != xno ],
+AS_IF([test "x$with_flac" != xno],
     [PKG_CHECK_MODULES([flac], [flac, flac++ >= 1.1.4],
         [AC_DEFINE([HAVE_FLAC], [1], [Use FLAC library.])])])
 
@@ -56,11 +102,12 @@ AS_IF([test "x$with_mp3" != xno ],
 
 AM_CONDITIONAL([HAVE_MP3], [test "x$with_mp3" != xno])
 
-AS_IF([test "$with_mp3" = no],
+# Error checks
+AS_IF([test "$with_mp3" = no -a "x$with_flac" = no],
     AC_MSG_ERROR([No encoders enabled. Ensure --with-mp3 is given.]))
 
-AS_IF([test "$with_flac" = no -a "$with_vorbis" = no],
-    AC_MSG_ERROR([No decoders enabled. Ensure --with-flac or --with-vorbis is given.]))
+AS_IF([test "$with_flac" = no -a "$with_vorbis" = no -a "x$with_flac" = no],
+    AC_MSG_ERROR([No decoders enabled. Ensure --with-flac or --with-vorbis or --with-ffmpeg is given.]))
 
 # Checks for packages which use pkg-config.
 PKG_CHECK_MODULES([fuse], [fuse >= 2.6.0])

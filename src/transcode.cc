@@ -55,6 +55,12 @@ bool transcode_until(struct transcoder* trans, size_t end) {
     while (trans->encoder && trans->buffer.tell() < end) {
         int stat = trans->decoder->process_single_fr(trans->encoder,
                                                      &trans->buffer);
+
+        if (stat == 1)
+        {
+            printf("XXX");
+        }
+
         if (stat == -1 || (stat == 1 && transcoder_finish(trans) == -1)) {
             errno = EIO;
             return false;
@@ -68,9 +74,23 @@ bool transcode_until(struct transcoder* trans, size_t end) {
 /* Use "C" linkage to allow access from C code. */
 extern "C" {
 
+int transcoder_cached_filesize(const char* filename, struct stat *stbuf) {
+    mp3fs_debug("Retrieving encoded size for %s", filename);
+
+    size_t encoded_filesize;
+    if (stats_cache.get_filesize(filename, stbuf->st_mtime, encoded_filesize)) {
+            stbuf->st_size = encoded_filesize;
+            stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
+            return true;
+    }
+    else {
+        return false;
+    }
+}
+
 /* Allocate and initialize the transcoder */
 
-struct transcoder* transcoder_new(char* filename) {
+struct transcoder* transcoder_new(const char* filename) {
     mp3fs_debug("Creating transcoder object for %s", filename);
 
     /* Allocate transcoder structure */

@@ -178,8 +178,7 @@ translate_fail:
 
 static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     char* origpath;
-    struct transcoder* trans;
-    
+
     mp3fs_debug("getattr %s", path);
     
     errno = 0;
@@ -207,17 +206,22 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
      * Get size for resulting mp3 from regular file, otherwise it's a
      * symbolic link. */
     if (S_ISREG(stbuf->st_mode)) {
-        trans = transcoder_new(origpath);
-        if (!trans) {
-            goto transcoder_fail;
+
+        if (!transcoder_cached_filesize(origpath, stbuf)) {
+            struct transcoder* trans;
+
+            trans = transcoder_new(origpath);
+            if (!trans) {
+                goto transcoder_fail;
+            }
+
+            stbuf->st_size = transcoder_get_size(trans);
+            stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
+
+            transcoder_delete(trans);
         }
-        
-        stbuf->st_size = transcoder_get_size(trans);
-        stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
-        
-        transcoder_delete(trans);
     }
-    
+
 transcoder_fail:
 stat_fail:
 passthrough:

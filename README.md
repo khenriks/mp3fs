@@ -65,11 +65,19 @@ Development
 mp3fs uses Git for revision control. You can obtain the full repository
 with:
 
-    git clone https://github.com/khenriks/mp3fs.git
+    git clone https://github.com/khenriks/mp3fs.git (original version)
+    git clone https://github.com/nschlia/mp3fs.git (FFMPEG enabled version)
 
 mp3fs is written in a mixture of C and C++ and uses the following libraries:
 
 * [FUSE](http://fuse.sourceforge.net/)
+
+If using the FFMPEG support:
+
+* [FFMPEG](https://www.ffmpeg.org/) or [LIBAV](https://www.libav.org/)
+
+These are only required if not using FFMPEG (configure with --with-ffmpeg=no or do not install the FFMPEG libraries):
+
 * [FLAC](http://flac.sourceforge.net/)
 * [libvorbis](http://www.xiph.org/vorbis/)
 * [LAME](http://lame.sourceforge.net/)
@@ -83,6 +91,8 @@ from 2008 to present.
 
 The original maintainer and author was David Collett from 2006 to 2008.
 Much thanks to him for his original work.
+
+FFMPEG support added 2017 by Norbert Schlia (nschlia@oblivion-software.de)
 
 License
 -------

@@ -35,6 +35,11 @@
 #ifdef HAVE_FLAC
 #include <FLAC/format.h>
 #endif
+#ifdef HAVE_FFMPEG
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include "ffmpeg_utils.h"
+#endif
 
 struct mp3fs_params params = {
     .basepath        = NULL,
@@ -47,9 +52,17 @@ struct mp3fs_params params = {
     .log_syslog      = 0,
     .logfile         = "",
     .quality         = 5,
-    .statcachesize   = 0,
     .vbr             = 0,
-#ifdef HAVE_MP3
+#if defined(HAVE_FFMPEG)
+    .statcachesize   = 500,
+    .maxsamplerate   = 441000,
+#else
+    .statcachesize   = 0,
+#endif
+#if defined(HAVE_FFMPEG)
+//    .desttype  = "mp4",
+    .desttype  = "mp3",
+#elif defined(HAVE_MP3)
     .desttype  = "mp3",
 #endif
 };
@@ -83,6 +96,10 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("logfile=%s",           logfile, 0),
     MP3FS_OPT("--quality=%u",         quality, 0),
     MP3FS_OPT("quality=%u",           quality, 0),
+#if defined(HAVE_FFMPEG)
+    MP3FS_OPT("--maxsamplerate=%u",   maxsamplerate, 0),
+    MP3FS_OPT("maxsamplerate=%u",     maxsamplerate, 0),
+#endif
     MP3FS_OPT("--statcachesize=%u",   statcachesize, 0),
     MP3FS_OPT("statcachesize=%u",     statcachesize, 0),
     MP3FS_OPT("--vbr",                vbr, 1),
@@ -97,10 +114,16 @@ static struct fuse_opt mp3fs_opts[] = {
     FUSE_OPT_END
 };
 
+#if defined(HAVE_FFMPEG)
+#define INFO
+#define INFO "Mount IN_DIR on OUT_DIR, converting audio/video files to MP4 upon access."
+#else
+#define INFO "Mount IN_DIR on OUT_DIR, converting FLAC/Ogg Vorbis files to MP3 upon access."
+#endif
+
 void usage(char *name) {
     printf("Usage: %s [OPTION]... IN_DIR OUT_DIR\n", name);
-    fputs("\
-Mount IN_DIR on OUT_DIR, converting FLAC/Ogg Vorbis files to MP3 upon access.\n\
+    fputs(INFO "\n\
 \n\
 Encoding options:\n\
     -b RATE, -obitrate=RATE\n\
@@ -130,6 +153,10 @@ Encoding options:\n\
     --quality=<0..9>, -oquality=<0..9>\n\
                            encoding quality: 0 is slowest, 9 is fastest;\n\
                            5 is the default\n\
+    --maxsamplerate=Hz, -omaxsamplerate=Hz\n\
+                           Limits the output sample rate to Hz. The default\n\
+                           is 44100 (44.1 Khz). If the source file sample rate\n\
+                           is more it will be downsampled automatically.\n\
     --statcachesize=SIZE, -ostatcachesize=SIZE\n\
                            Set the number of entries for the file stats\n\
                            cache.  Necessary for decent performance when\n\
@@ -172,6 +199,11 @@ static int mp3fs_opt_proc(void* data, const char* arg, int key,
 #ifdef HAVE_FLAC
             printf("FLAC library version: %s\n", FLAC__VERSION_STRING);
 #endif
+#ifdef HAVE_FFMPEG
+            char buffer[1024];
+            ffmpeg_libinfo(buffer, sizeof(buffer));
+            printf("%s", buffer);
+#endif
             fuse_opt_add_arg(outargs, "--version");
             fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
             exit(0);
@@ -184,6 +216,16 @@ int main(int argc, char *argv[]) {
     int ret;
 
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+
+#ifdef HAVE_FFMPEG
+    // Configure FFMPEG
+    /* register all the codecs */
+    avcodec_register_all();
+    av_register_all();
+    //show_formats_devices(0);
+#endif
+
+//    init_coders();
 
     if (fuse_opt_parse(&args, &params, mp3fs_opts, mp3fs_opt_proc)) {
         fprintf(stderr, "Error parsing options.\n\n");

@@ -35,6 +35,9 @@
 #ifdef HAVE_VORBIS
 #include "vorbis_decoder.h"
 #endif
+#ifdef HAVE_FFMPEG
+#include "ffmpeg_decoder.h"
+#endif
 
 void Encoder::set_gain(double gainref, double album_gain, double track_gain) {
     if (gainref == invalid_db) {
@@ -69,6 +72,12 @@ Encoder* Encoder::CreateEncoder(std::string file_type, size_t actual_size) {
 
 /* Create instance of class derived from Decoder. */
 Decoder* Decoder::CreateDecoder(std::string file_type) {
+#ifdef HAVE_FFMPEG
+
+    for (size_t i=0; i<decoder_list_len; ++i) {
+        if (file_type == decoder_list[i]) return new FfmpegDecoder();
+    }
+#endif
 #ifdef HAVE_FLAC
     if (file_type == "flac") return new FlacDecoder();
 #endif
@@ -89,6 +98,19 @@ const size_t encoder_list_len = sizeof(encoder_list)/sizeof(const char*);
 
 /* Define list of available decoder extensions. */
 const char* decoder_list[] = {
+#ifdef HAVE_FFMPEG
+    "flac",
+    "ogg",
+    "oga",
+    "ogv",
+    "mp4",
+    "m4a",
+    "m4v",
+    "webm",
+    "flv",
+    "mpg",
+    "ts",
+#else
 #ifdef HAVE_FLAC
     "flac",
 #endif
@@ -96,12 +118,46 @@ const char* decoder_list[] = {
     "ogg",
     "oga",
 #endif
+#endif
 };
 
 const size_t decoder_list_len = sizeof(decoder_list)/sizeof(const char*);
 
 /* Use "C" linkage to allow access from C code. */
 extern "C" {
+
+/* Init en/decoder lists. */
+ void init_coders() {
+
+//     /* Define list of available encoder extensions. */
+//     #ifdef HAVE_MP3
+//         encoder_list.push_back("mp3");
+//     #endif
+
+//     /* Define list of available decoder extensions. */
+//     #ifdef HAVE_FFMPEG
+//         decoder_list.push_back("flac");
+//         decoder_list.push_back("ogg");
+//         decoder_list.push_back("oga");
+//         decoder_list.push_back("ogv");
+//         decoder_list.push_back("mp4");
+//         decoder_list.push_back("m4a");
+//         decoder_list.push_back("m4v");
+//         decoder_list.push_back("webm");
+//         decoder_list.push_back("flv");
+//         decoder_list.push_back("mpg");
+//         decoder_list.push_back("ts");
+//     #else
+//     #ifdef HAVE_FLAC
+//         decoder_list.push_back("flac");
+//     #endif
+//     #ifdef HAVE_VORBIS
+//         decoder_list.push_back("ogg");
+//         decoder_list.push_back("oga");
+//     #endif
+//     #endif
+ }
+
 
     /* Check if an encoder is available to encode to the specified type. */
     int check_encoder(const char* type) {

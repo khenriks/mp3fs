@@ -25,3 +25,9 @@ mp3fs_SOURCES += mp3_encoder.cc mp3_encoder.h
 mp3fs_LDADD += $(id3tag_LIBS)
 INCLUDES += $(id3tag_CFLAGS)
 endif
+
+if HAVE_FFMPEG
+mp3fs_SOURCES += ffmpeg_decoder.cc ffmpeg_decoder.h ffmpeg_encoder.cc ffmpeg_encoder.h ffmpeg_utils.cc ffmpeg_utils.h
+mp3fs_LDADD += $(libavcodec_LIBS) $(libavutil_LIBS) $(libavformat_LIBS) $(libavresample_LIBS) $(libswscale_LIBS)
+INCLUDES += $(libavcodec_CFLAGS) $(libavutil_CFLAGS) $(libavformat_CFLAGS) $(libavresample_CFLAGS) $(libswscale_CFLAGS)
+endif
