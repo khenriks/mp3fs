@@ -23,11 +23,18 @@
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <assert.h>
 
 #include "transcode.h"
 
 /* Initially Buffer is empty. It will be allocated as needed. */
-Buffer::Buffer() : buffer_data(0), buffer_pos(0), buffer_size(0) { }
+Buffer::Buffer() :
+    buffer_data(NULL),
+    buffer_pos(0),
+    buffer_size(0),
+    filled_size(0)
+{
+}
 
 /* If buffer_data was never allocated, this is a no-op. */
 Buffer::~Buffer() {
@@ -73,6 +80,9 @@ size_t Buffer::write(const uint8_t* data, size_t length, size_t offset) {
  */
 uint8_t* Buffer::write_prepare(size_t length) {
     if (reallocate(buffer_pos + length)) {
+        if (filled_size < buffer_pos + length) {
+            filled_size = buffer_pos + length;
+        }
         return buffer_data + buffer_pos;
     } else {
         return NULL;
@@ -86,6 +96,9 @@ uint8_t* Buffer::write_prepare(size_t length) {
  */
 uint8_t* Buffer::write_prepare(size_t length, size_t offset) {
     if (reallocate(offset + length)) {
+        if (filled_size < offset + length) {
+            filled_size = offset + length;
+        }
         return buffer_data + offset;
     } else {
         return NULL;
@@ -101,13 +114,45 @@ void Buffer::increment_pos(ptrdiff_t increment) {
     buffer_pos += increment;
 }
 
+bool Buffer::seek(size_t pos) {
+    if (pos <= buffer_size) {
+        buffer_pos = pos;
+        return true;
+    }
+    else {
+        buffer_pos = buffer_size;
+        return false;
+    }
+}
+
 /* Give the value of the internal position pointer. */
 size_t Buffer::tell() const {
     return buffer_pos;
 }
 
+/* Give the value of the internal position pointer. */
+size_t Buffer::size() const {
+    return buffer_size;
+}
+
+/* Number of bytes written to buffer so far */
+size_t Buffer::actual_size() const {
+    return filled_size;
+}
+
 /* Copy buffered data into output buffer. */
 void Buffer::copy_into(uint8_t* out_data, size_t offset, size_t size) const {
+    //assert(buffer_size > offset + size);
+    assert(buffer_data != NULL);
+    if (buffer_size < offset)
+    {
+        return;
+    }
+
+    if (buffer_size < offset + size)
+    {
+        size = buffer_size - offset - 1;
+    }
     memcpy(out_data, buffer_data + offset, size);
 }
 

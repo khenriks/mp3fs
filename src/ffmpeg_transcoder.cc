@@ -1102,8 +1102,6 @@ int FfmpegTranscoder::writePacket(void * pOpaque, unsigned char * pBuffer, int n
 {
     Buffer * buffer = (Buffer *)pOpaque;
 
-    fprintf(stderr, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX writePacket %10zu %10zu\r", buffer->tell(), buffer->size());
-
     if (buffer == NULL)
     {
         return -1;

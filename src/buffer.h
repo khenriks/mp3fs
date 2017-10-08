@@ -35,13 +35,17 @@ public:
     uint8_t* write_prepare(size_t length);
     uint8_t* write_prepare(size_t length, size_t offset);
     void increment_pos(ptrdiff_t increment);
+    bool seek(size_t pos);
     size_t tell() const;
+    size_t size() const;
+    size_t actual_size() const;
     void copy_into(uint8_t* out_data, size_t offset, size_t size) const;
 private:
     bool reallocate(size_t size);
     uint8_t* buffer_data;
     size_t buffer_pos;
     size_t buffer_size;
+    size_t filled_size;
 };
 
 #endif

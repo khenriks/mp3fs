@@ -4,15 +4,22 @@ mp3fs
 [![Build Status](https://travis-ci.org/khenriks/mp3fs.svg?branch=master)](https://travis-ci.org/khenriks/mp3fs)
 
 Web site: http://khenriks.github.io/mp3fs/
+FFMPEG Version: https://github.com/nschlia/mp3fs
 
 mp3fs is a read-only FUSE filesystem which transcodes between audio formats
-(currently FLAC and Ogg Vorbis to MP3) on the fly when opened and read.
+(many formats that FFMPEG can decode to MP3 or MP4) on the fly when opened
+and read.
 
-This can let you use a FLAC or Ogg Vorbis collection with software and/or
-hardware which only understands the MP3 format, or transcode files through
-simple drag-and-drop in a file browser.
+This can let you use a multi media file collection with software and/or
+hardware which only understands the MP3 or MP4 format, or transcode files 
+through simple drag-and-drop in a file browser.
 
 For installation instructions see the [install](INSTALL.md) file.
+
+NOTE THAT THIS IS AN ALPHA VERSION FOR TESTING ONLY!
+
+mp4 support is highly experimental, video transcoding is not implemented
+yet.
 
 Usage
 -----
@@ -30,7 +37,7 @@ following entry in `/etc/fstab`:
 
     mp3fs#/mnt/music /mnt/mp3 fuse allow_other,ro,bitrate=128 0 0
 
-At this point the files `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
+At this point files like `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
 show up as `/mnt/mp3/**.mp3`.
 
 How it Works
@@ -38,7 +45,8 @@ How it Works
 
 When a file is opened, the decoder and encoder are initialised and
 the file metadata is read. At this time the final filesize can be
-determined as we only support constant bitrate (CBR) MP3 files.
+determined approximately. This works well for mp3 output files,
+but only fair to good for mp4.
 
 As the file is read, it is transcoded into an internal per-file
 buffer. This buffer continues to grow while the file is being read
@@ -51,13 +59,37 @@ since most programs will read a file from start to finish. Future
 enhancements may provide true random seeking.
 
 ID3 version 2.4 and 1.1 tags are created from the vorbis comments in
-the FLAC or Ogg Vorbis file. They are located at the start and end of
-the file respectively.
+the FLAC, Ogg Vorbis file or equivalent informaton. They are located at 
+the start and end of the file respectively.
 
 A special optimisation is made so that applicatins which scan for
 id3v1 tags do not have to wait for the whole file to be transcoded
 before reading the tag. This *dramatically* speeds up such
 applications.
+
+Supported Output Formats
+------------------------
+
+A few words to the supported output formats which are mp3 and mp4 
+currently. There is not much to say about the mp3 output as these 
+are regular mp3 files with no strings attached. They should play 
+well in any modern player.
+
+The mp4 files created are special, though, as mp4 is not quite suited
+for live streaming. To get around the restriction several extensions
+have been developed where isml (smooth live streaming) is one of them.
+
+By default isml files will be created so that the file can be started
+to be written out at once instead of decoding it as a whole before
+this is possible. That would mean it would take some time before
+playback can start. Alas not all players support the format. VLC 
+obviusly does while for example Dragon Player, the Debian stock player, 
+does not. Firefox's HTML5 audio tag only plays the first segment
+which set to 10 seconds at the moment.
+
+So there is a lot of work to be put into mp4 support, still.
+
+Video support is missing completely as of the time of writing this.
 
 Development
 -----------
@@ -72,11 +104,11 @@ mp3fs is written in a mixture of C and C++ and uses the following libraries:
 
 * [FUSE](http://fuse.sourceforge.net/)
 
-If using the FFMPEG support:
+If using the FFMPEG support (Libav works as well):
 
 * [FFMPEG](https://www.ffmpeg.org/) or [LIBAV](https://www.libav.org/)
 
-These are only required if not using FFMPEG (configure with --with-ffmpeg=no or do not install the FFMPEG libraries):
+These are only required if not using FFMPEG:
 
 * [FLAC](http://flac.sourceforge.net/)
 * [libvorbis](http://www.xiph.org/vorbis/)
@@ -104,3 +136,14 @@ or in the COPYING file.
 This file and other documentation files can be distributed under the terms of
 the GNU Free Documentation License 1.3 or later. It can be found
 [online](http://www.gnu.org/licenses/fdl-1.3.html) or in the COPYING.DOC file.
+
+FFmpeg License
+--------------
+
+FFmpeg is licensed under the GNU Lesser General Public License (LGPL) 
+version 2.1 or later. However, FFmpeg incorporates several optional 
+parts and optimizations that are covered by the GNU General Public 
+License (GPL) version 2 or later. If those parts get used the GPL 
+applies to all of FFmpeg. 
+
+See https://www.ffmpeg.org/legal.html for details.

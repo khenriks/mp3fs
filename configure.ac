@@ -59,55 +59,9 @@ AS_IF([test "x$with_ffmpeg" != xno],
 
 AM_CONDITIONAL([HAVE_FFMPEG], [test "x$with_ffmpeg" != xno])
 
-AS_IF([test "x$with_ffmpeg" != xno],
-     [AC_SUBST(with_flac, [no])
-      AC_SUBST(with_vorbis, [no])])
-#TODO: AC_SUBST(with_mp3, [no])
-
-# FLAC support checks
-AC_ARG_WITH([flac],
-    [AS_HELP_STRING([--without-flac],
-        [disable support for FLAC decoding])],
-    [], [with_flac=yes])
-
-AS_IF([test "x$with_flac" != xno],
-    [PKG_CHECK_MODULES([flac], [flac, flac++ >= 1.1.4],
-        [AC_DEFINE([HAVE_FLAC], [1], [Use FLAC library.])])])
-
-AM_CONDITIONAL([HAVE_FLAC], [test "x$with_flac" != xno])
-
-# Ogg Vorbis support checks
-AC_ARG_WITH([vorbis],
-    [AS_HELP_STRING([--without-vorbis],
-        [disable support for Ogg Vorbis decoding])],
-    [], [with_vorbis=yes])
-
-AS_IF([test "x$with_vorbis" != xno],
-    [PKG_CHECK_MODULES([vorbis], [vorbisfile >= 1.3.0],
-        [AC_DEFINE([HAVE_VORBIS], [1], [Use Ogg Vorbis libraries.])])])
-
-AM_CONDITIONAL([HAVE_VORBIS], [test "x$with_vorbis" != xno])
-
-# MP3 support checks
-AC_ARG_WITH([mp3],
-    [AS_HELP_STRING([--without-mp3],
-        [disable support for MP3 encoding])],
-    [], [with_mp3=yes])
-
-AS_IF([test "x$with_mp3" != xno ],
-    [PKG_CHECK_MODULES([id3tag], [id3tag])
-     AC_CHECK_LIB([mp3lame], [lame_init],, [AC_MSG_ERROR([You must have liblame-dev installed to build mp3fs.])])
-     AC_CHECK_HEADER([lame/lame.h],, [AC_MSG_ERROR([You must have liblame-dev installed to build mp3fs.])])
-     AC_DEFINE([HAVE_MP3], [1], [Use LAME and id3tag libraries.])])
-
-AM_CONDITIONAL([HAVE_MP3], [test "x$with_mp3" != xno])
-
 # Error checks
-AS_IF([test "$with_mp3" = no -a "x$with_flac" = no],
-    AC_MSG_ERROR([No encoders enabled. Ensure --with-mp3 is given.]))
-
-AS_IF([test "$with_flac" = no -a "$with_vorbis" = no -a "x$with_flac" = no],
-    AC_MSG_ERROR([No decoders enabled. Ensure --with-flac or --with-vorbis or --with-ffmpeg is given.]))
+AS_IF([test "x$with_flac" = no],
+    AC_MSG_ERROR([FFMPEG library not enabled or not found. Please make sure --with-ffmpeg is given.]))
 
 # Checks for packages which use pkg-config.
 PKG_CHECK_MODULES([fuse], [fuse >= 2.6.0])

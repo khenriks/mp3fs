@@ -9,26 +9,17 @@ FFMPEG support 2017 by Norbert Schllia (nschlia@oblivion-software.de)
 Prerequisites
 -------------
 
-mp3fs can be installed with FFMEG for decoding/encoding or with flac++/libvorbis/lame/id3tag.
-It requires the following libraries:
+mp3fs uses FFMEG lib for decoding/encoding. It requires the following 
+libraries:
 
-In any case:
+* gcc and g++
 
 * fuse (>= 2.6.0)
-
-If using the FFMPEG support:
 
 * libavutil     (>= 54.3.0)
 * libavcodec    (>= 56.1.0)
 * libavformat   (>= 56.1.0)
 * libavresample (>= 2.1.0)
-
-These are only required if not using FFMPEG (configure with --with-ffmpeg=no or do not install the FFMPEG libraries):
-
-* flac++ (>= 1.1.4)
-* libvorbis (>= 1.3.0)
-* lame
-* libid3tag
 
 If building from git, you'll also need:
 
@@ -38,35 +29,23 @@ If building from git, you'll also need:
 * xmllint
 * xmlto
 
-The commands to install just the first four prerequisites follow.
+The commands to install just the first prerequisites follow.
 
-On Debian (FFMPEG):
+On Debian:
 
-	aptitude install libavcodec56
+    aptitude install gcc g++
 
-or
+    aptitude install libfuse-dev libavcodec-dev libavformat-dev libavresample-dev libavutil-dev
+	
+To build the docs succesfully you may need
 
-	aptitude install libavcodec-extra-56
- 
-and
-
-	aptitude install libavformat56 libavresample2 libavutil54 
-
+	apt-get install asciidoc
+	
 Note that for Debian 8 the LIBAV clone of FFMPEG will be installed. From Debian 9 on the original FFMPEG comes with the distribution. Both libraries work.
-
-On Debian (no FFMPEG):
-
-    aptitude install libfuse-dev libflac++-dev libvorbis-dev libmp3lame-dev libid3tag0-dev
 
 On Ubuntu use the same command with `apt-get` in place of `aptitude`.
 
-On OS X with Homebrew (FFMPEG may work, but untested):
-
-    brew install osxfuse flac libvorbis lame libid3tag
-
-On a RedHat-type systems, with the right repositories (FFMPEG may work, but untested):
-
-    yum install fuse-devel flac-devel libvorbis-devel lame-devel libid3tag-devel
+* Tips on other OSes and distributions like Mac or Red-Hat are welcome.
 
 Installation
 ------------
@@ -82,3 +61,20 @@ build and install, run:
     ./configure
     make
     make install
+
+Trouble Shooting
+----------------
+
+If you get this error:
+    
+    Running autoreconf --install
+    configure.ac:46: error: possibly undefined macro: AC_DEFINE
+      If this token and others are legitimate, please use m4_pattern_allow.
+      See the Autoconf documentation.
+    autoreconf: /usr/bin/autoconf failed with exit status: 1
+
+You are probabibly missing out on pkg-config, either it is not installed or
+not in path. "apt-get install pkg-config" shoud help.
+
+    
+    

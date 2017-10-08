@@ -1,22 +1,36 @@
 mp3fs NEWS
 
-Important changes in 0.91-FFMPEG (2017-09-19)
+Important changes in 0.91-FFMPEG (2017-10-04)
 
-Added FFMPEG for decoding and encoding. The next version will also support video conversion. The current version will recode video files, but only the sound track. No video playback possible yet.
+Added FFMPEG for decoding and encoding. The next version will also
+support video conversion. The current version will recode video files,
+but only the sound track. No video playback possible yet.
 
 Changes in this release:
 * Replaced decoding and encoding by FFMPEG.
-* Supports a huge number of file formats now (run "mp3fs --codecs" for 
-  a list)
-* The standard target format is mp4 now (use "-o mp3" or "--output mp3" to 
-  change back to mp3)
-* If desired any other format is possible, e.g. "-o ogg"
+* Removed discrete FLAC/Ogg/MP3 libraries. FFMPEG supports a wide range of
+  formats, including these, so they are no longer required.
+* TODO: Supports a huge number of file formats now (run "mp3fs --codecs" for 
+  a list).
+* The standard target format is mp4 now (use "-o mp3" or "--output mp3"
+  to change back to mp3).
+* Many other formats are possible, e.g. "-o ogg", they will be added later
+  because due to the manner in which Fuse requires access to the files they
+  need to be implemented with care.
 * See manual or run "mp3fs -h" for even more new options.
-* TODO: Caching of file attributes is now the default as if "--statcachesize=500" 
-  was given. Add "--statcachesize=0" to turn off.
-* TODO: Files will now be decoded to /tmp/ instead of memory if large than 100MB.
-  Add "--maxmemcache=X" to change. Examples for X: 80000, 80MB or 1GB. Do not set
-  to a too large value.
+* Run "mp3fs -f" to get a list of all supported input formats.
+* Caching of file attributes is now the default as if
+  "--statcachesize=500" was given. Add "--statcachesize=0" to turn off
+  (not really a bright idea, though).
+* TODO: Files will now be decoded to /tmp/ instead of memory if large
+  than 100MB. Add "--maxmemcache=X" to change. Examples for X: 80000,
+  80MB or 1GB. Do not set to a too large value as you may run out of
+  memory.
+* TODO: Support for video files.
+* TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
+  that already represents a H264 video stream it would be possible to 
+  simply repackage it to a mp4 container without recoding.
+* TODO: Add mp3 IDv1 tag at end.  
 
 nschlia@oblivion-software.de
 
@@ -90,6 +104,7 @@ Changes in this release:
 ========================================================================
 
 Copyright (C) 2010-2014 K. Henriksson
+Copyright (C) 2017 Norbert Schlia (FFMPEG support)
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or

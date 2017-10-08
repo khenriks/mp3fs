@@ -203,14 +203,14 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     }
     
     /*
-     * Get size for resulting mp3 from regular file, otherwise it's a
+     * Get size for resulting output file from regular file, otherwise it's a
      * symbolic link. */
     if (S_ISREG(stbuf->st_mode)) {
 
         if (!transcoder_cached_filesize(origpath, stbuf)) {
             struct transcoder* trans;
 
-            trans = transcoder_new(origpath);
+            trans = transcoder_new(origpath, 0);
             if (!trans) {
                 goto transcoder_fail;
             }
@@ -262,14 +262,17 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     
     find_original(origpath);
     
-    trans = transcoder_new(origpath);
+    trans = transcoder_new(origpath, 1);
     if (!trans) {
         goto transcoder_fail;
     }
     
     /* Store transcoder in the fuse_file_info structure. */
     fi->fh = (uint64_t)trans;
-    
+
+    // Clear errors
+    errno = 0;
+
 transcoder_fail:
 passthrough:
 open_fail:
@@ -284,8 +287,8 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     int fd;
     ssize_t read = 0;
     struct transcoder* trans;
-    
-    mp3fs_debug("read %s: %zu bytes from %jd", path, size, (intmax_t)offset);
+
+    //mp3fs_debug("read %s: %zu bytes from %jd", path, size, (intmax_t)offset);
     
     errno = 0;
     
@@ -293,7 +296,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     if (!origpath) {
         goto translate_fail;
     }
-    
+
     /* If this is a real file, pass the call through. */
     fd = open(origpath, O_RDONLY);
     if (fd != -1) {
@@ -314,9 +317,11 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
         mp3fs_error("Tried to read from unopen file: %s", origpath);
         goto transcoder_fail;
     }
-    
+
+    mp3fs_debug("read %s: %zu bytes from %jd", path, size, (intmax_t)offset);
+
     read = transcoder_read(trans, buf, offset, size);
-    
+
 transcoder_fail:
 passthrough:
 open_fail:

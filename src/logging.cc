@@ -99,5 +99,6 @@ void log_with_level(Logging::level level, const char* prefix,
 
     va_end(ap2);
 
+    //std::cout << buffer << std::endl;
     Log(level) << prefix << buffer;
 }

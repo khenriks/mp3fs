@@ -8,26 +8,8 @@ mp3fs_LDADD	= $(fuse_LIBS)
 mp3fs_LDADD += ../lib/libbase64.a
 INCLUDES += -I../lib
 
-if HAVE_FLAC
-mp3fs_SOURCES += flac_decoder.cc flac_decoder.h
-mp3fs_LDADD += $(flac_LIBS)
-INCLUDES += $(flac_CFLAGS)
-endif
-
-if HAVE_VORBIS
-mp3fs_SOURCES += vorbis_decoder.cc vorbis_decoder.h picture.cc picture.h
-mp3fs_LDADD += $(vorbis_LIBS)
-INCLUDES += $(vorbis_CFLAGS)
-endif
-
-if HAVE_MP3
-mp3fs_SOURCES += mp3_encoder.cc mp3_encoder.h
-mp3fs_LDADD += $(id3tag_LIBS)
-INCLUDES += $(id3tag_CFLAGS)
-endif
-
 if HAVE_FFMPEG
-mp3fs_SOURCES += ffmpeg_decoder.cc ffmpeg_decoder.h ffmpeg_encoder.cc ffmpeg_encoder.h ffmpeg_utils.cc ffmpeg_utils.h
+mp3fs_SOURCES += ffmpeg_transcoder.cc ffmpeg_transcoder.h ffmpeg_utils.cc ffmpeg_utils.h
 mp3fs_LDADD += $(libavcodec_LIBS) $(libavutil_LIBS) $(libavformat_LIBS) $(libavresample_LIBS) $(libswscale_LIBS)
 INCLUDES += $(libavcodec_CFLAGS) $(libavutil_CFLAGS) $(libavformat_CFLAGS) $(libavresample_CFLAGS) $(libswscale_CFLAGS)
 endif

@@ -7,7 +7,8 @@ MP3FS(1)
 
 NAME
 ----
-mp3fs - mounts and transcodes FLACs and OGGs to MP3s on the fly
+mp3fs - mounts and transcodes a multitude of formats like FLACs or OGGs 
+to MP3s or MP4s on the fly
 
 
 SYNOPSIS
@@ -19,7 +20,7 @@ DESCRIPTION
 -----------
 The mp3fs(1) command will mount the directory 'IN_DIR' on 'OUT_DIR'.
 Thereafter, accessing 'OUT_DIR' will show the contents of 'IN_DIR', with
-all FLAC/Ogg Vorbis files transparently renamed and transcoded to MP3
+all supported media files transparently renamed and transcoded to MP3/MP4
 format upon access.
 
 
@@ -82,5 +83,9 @@ Copyright \(C) 2006-2008 David Collett and 2008-2013 K. Henriksson.
 This is free software: you are free to change and redistribute it under
 the terms of the GNU General Public License (GPL) version 3 or later.
 
+FFMPEG support copyright \(C) 2017 Norbert Schlia.
+
 This manual is copyright \(C) 2010-2011 K. Henriksson and may be
 distributed under GNU Free Documentation License 1.3 or later.
+
+

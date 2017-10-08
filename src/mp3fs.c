@@ -29,17 +29,14 @@
 #include "transcode.h"
 
 // TODO: Move this elsewehere, so this file can be library agnostic
-#ifdef HAVE_MP3
-#include <lame/lame.h>
-#endif
-#ifdef HAVE_FLAC
-#include <FLAC/format.h>
-#endif
-#ifdef HAVE_FFMPEG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wfloat-conversion"
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#pragma GCC diagnostic pop
+
 #include "ffmpeg_utils.h"
-#endif
 
 struct mp3fs_params params = {
     .basepath        = NULL,
@@ -53,18 +50,10 @@ struct mp3fs_params params = {
     .logfile         = "",
     .quality         = 5,
     .vbr             = 0,
-#if defined(HAVE_FFMPEG)
     .statcachesize   = 500,
-    .maxsamplerate   = 441000,
-#else
-    .statcachesize   = 0,
-#endif
-#if defined(HAVE_FFMPEG)
-//    .desttype  = "mp4",
-    .desttype  = "mp3",
-#elif defined(HAVE_MP3)
-    .desttype  = "mp3",
-#endif
+    .maxsamplerate   = 44100,
+    .desttype        = "mp4",
+//    .desttype        = "mp3",
 };
 
 enum {
@@ -96,10 +85,8 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("logfile=%s",           logfile, 0),
     MP3FS_OPT("--quality=%u",         quality, 0),
     MP3FS_OPT("quality=%u",           quality, 0),
-#if defined(HAVE_FFMPEG)
     MP3FS_OPT("--maxsamplerate=%u",   maxsamplerate, 0),
     MP3FS_OPT("maxsamplerate=%u",     maxsamplerate, 0),
-#endif
     MP3FS_OPT("--statcachesize=%u",   statcachesize, 0),
     MP3FS_OPT("statcachesize=%u",     statcachesize, 0),
     MP3FS_OPT("--vbr",                vbr, 1),
@@ -114,12 +101,7 @@ static struct fuse_opt mp3fs_opts[] = {
     FUSE_OPT_END
 };
 
-#if defined(HAVE_FFMPEG)
-#define INFO
 #define INFO "Mount IN_DIR on OUT_DIR, converting audio/video files to MP4 upon access."
-#else
-#define INFO "Mount IN_DIR on OUT_DIR, converting FLAC/Ogg Vorbis files to MP3 upon access."
-#endif
 
 void usage(char *name) {
     printf("Usage: %s [OPTION]... IN_DIR OUT_DIR\n", name);
@@ -193,17 +175,11 @@ static int mp3fs_opt_proc(void* data, const char* arg, int key,
         case KEY_VERSION:
             // TODO: Also output this information in debug mode
             printf("mp3fs version: %s\n", PACKAGE_VERSION);
-#ifdef HAVE_MP3
-            printf("LAME library version: %s\n", get_lame_version());
-#endif
-#ifdef HAVE_FLAC
-            printf("FLAC library version: %s\n", FLAC__VERSION_STRING);
-#endif
-#ifdef HAVE_FFMPEG
+
             char buffer[1024];
             ffmpeg_libinfo(buffer, sizeof(buffer));
             printf("%s", buffer);
-#endif
+
             fuse_opt_add_arg(outargs, "--version");
             fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
             exit(0);
@@ -217,13 +193,11 @@ int main(int argc, char *argv[]) {
 
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-#ifdef HAVE_FFMPEG
     // Configure FFMPEG
     /* register all the codecs */
     avcodec_register_all();
     av_register_all();
     //show_formats_devices(0);
-#endif
 
 //    init_coders();
 
