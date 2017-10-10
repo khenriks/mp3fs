@@ -74,7 +74,6 @@ AC_DEFINE([_POSIX_C_SOURCE], [200809L], [Define the POSIX version])
 
 # Outputs resulting files.
 AC_CONFIG_FILES([Makefile
-                 lib/Makefile
                  src/Makefile
                  test/Makefile])
 AC_OUTPUT
