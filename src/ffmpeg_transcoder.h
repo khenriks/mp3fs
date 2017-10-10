@@ -89,27 +89,31 @@ protected:
 
 private:
     time_t                      m_mtime;
-    size_t                      m_nActual_size;             // Use this as the size instead of computing it.
+    size_t                      m_nActual_size;         // Use this as the size instead of computing it.
 
+    // Input file
     AVFormatContext *           m_pInput_format_context;
-    AVFormatContext *           m_pOutput_format_context;
     AVCodecContext *            m_pAudio_dec_ctx;
     AVCodecContext *            m_pVideo_dec_ctx;
     AVStream *                  m_pAudio_stream;
     AVStream *                  m_pVideo_stream;
     int                         m_nAudio_stream_idx;
     int                         m_nVideo_stream_idx;
+
+    // Output file
+    AVFormatContext *           m_pOutput_format_context;
     AVCodecContext *            m_pOutput_codec_context;
+
+    //    uint8_t *                   m_pVideo_dst_data[4];
+    //    int                         m_nVideo_dst_linesize[4];
+    //    int                         m_nVideo_dst_bufsize;
+
+    int64_t                     m_pts;                  // Global timestamp for the audio frames
+    OUTPUTTYPE                  m_eOutputType;
+
+    // Conversion
     AVAudioResampleContext *    m_pResample_context;
     AVAudioFifo *               m_pFifo;
-
-//    uint8_t *                   m_pVideo_dst_data[4];
-//    int                         m_nVideo_dst_linesize[4];
-//    int                         m_nVideo_dst_bufsize;
-
-    /** Global timestamp for the audio frames */
-    int64_t                     m_pts;
-    OUTPUTTYPE                  m_eOutputType;
 
     ID3v1                       m_id3v1;
 };

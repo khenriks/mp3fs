@@ -34,8 +34,6 @@
 #include <string.h>
 #include <assert.h>
 
-#include "base64.h"
-//#include "picture.h"
 #include "transcode.h"
 #include "buffer.h"
 
@@ -45,18 +43,18 @@
 FfmpegTranscoder::FfmpegTranscoder()
     : m_nActual_size(0)
     , m_pInput_format_context(NULL)
-    , m_pOutput_format_context(NULL)
     , m_pAudio_dec_ctx(NULL)
     , m_pVideo_dec_ctx(NULL)
     , m_pAudio_stream(NULL)
     , m_pVideo_stream(NULL)
     , m_nAudio_stream_idx(0)
     , m_nVideo_stream_idx(0)
+    , m_pOutput_format_context(NULL)
     , m_pOutput_codec_context(NULL)
-    , m_pResample_context(NULL)
-    , m_pFifo(NULL)
     , m_pts(0)
     , m_eOutputType(TYPE_UNKNOWN)
+    , m_pResample_context(NULL)
+    , m_pFifo(NULL)
 {
     mp3fs_debug("FFMPEG trancoder: ready to initialise.");
 
@@ -561,28 +559,28 @@ int FfmpegTranscoder::write_output_file_header()
     AVDictionary* dict = nullptr;
 
     if (m_pOutput_codec_context->codec_id == AV_CODEC_ID_AAC) {
-        //        av_dict_set(&dict, "movflags", "faststart", 0);
-        //        av_dict_set(&dict, "movflags", "frag_keyframe+empty_moov", 0);
+        // Settings for fast playback start in HTML5
+        av_dict_set(&dict, "movflags", "faststart", 0);
+        av_dict_set(&dict, "movflags", "empty_moov", 0);
+        av_dict_set(&dict, "frag_duration", "10000000", 0);
 
-
+#if 0
         // Geht (empty_moov+empty_moov automatisch mit isml)
-        //	av_dict_set(&dict, "movflags", "isml+frag_keyframe+separate_moof", 0);
+        //av_dict_set(&dict, "movflags", "isml+frag_keyframe+separate_moof", 0);
         av_dict_set(&dict, "movflags", "isml", 0);
         // spielt nicht in FF (spielt 10 Sekunden...)
         av_dict_set(&dict, "frag_duration", "10000000", 0);
+#endif
         // spielt 50 Sekunden...
-        // ISMV NICHT         av_dict_set(&dict, "frag_duration", "50000000", 0);
+        // ISMV NICHT av_dict_set(&dict, "frag_duration", "50000000", 0);
 
-        //        av_dict_set(&dict, "flags:a", "+global_header", 0);
-        //        av_dict_set(&dict, "flags:v", "+global_header", 0);
-        //        av_dict_set(&dict, "profile:v", "baseline", 0);
-
-        //        av_dict_set(&dict, "segment_time", "2s", 0);
+        av_dict_set(&dict, "flags:a", "+global_header", 0);
+        av_dict_set(&dict, "flags:v", "+global_header", 0);
+        av_dict_set(&dict, "profile:v", "baseline", 0);
     }
 
     if ((error = avformat_write_header(m_pOutput_format_context, &dict)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not write output file header (error '%s')",
-                    ffmpeg_geterror(error).c_str());
+        mp3fs_error("FFMPEG transcoder: Could not write output file header (error '%s')", ffmpeg_geterror(error).c_str());
         return error;
     }
     return 0;
@@ -661,8 +659,7 @@ int FfmpegTranscoder::init_converted_samples(uint8_t ***converted_input_samples,
                                   m_pOutput_codec_context->channels,
                                   frame_size,
                                   m_pOutput_codec_context->sample_fmt, 0)) < 0) {
-        mp3fs_error(
-                    "Could not allocate converted input samples (error '%s')",
+        mp3fs_error("Could not allocate converted input samples (error '%s')",
                     ffmpeg_geterror(error).c_str());
         av_freep(&(*converted_input_samples)[0]);
         free(*converted_input_samples);
@@ -678,26 +675,43 @@ int FfmpegTranscoder::init_converted_samples(uint8_t ***converted_input_samples,
  */
 int FfmpegTranscoder::convert_samples(uint8_t **input_data, uint8_t **converted_data, const int frame_size)
 {
-    int error;
+    if (m_pResample_context != NULL)
+    {
+        int error;
 
-    /** Convert the samples using the resampler. */
-    if ((error = avresample_convert(m_pResample_context, converted_data, 0,
-                                    frame_size, input_data, 0, frame_size)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not convert input samples (error '%s')",
-                    ffmpeg_geterror(error).c_str());
-        return error;
-    }
+        /** Convert the samples using the resampler. */
+        if ((error = avresample_convert(m_pResample_context, converted_data, 0,
+                                        frame_size, input_data, 0, frame_size)) < 0) {
+            mp3fs_error("FFMPEG transcoder: Could not convert input samples (error '%s')",
+                        ffmpeg_geterror(error).c_str());
+            return error;
+        }
 
-    /**
+     /**
      * Perform a sanity check so that the number of converted samples is
      * not greater than the number of samples to be converted.
      * If the sample rates differ, this case has to be handled differently
      */
-    if (avresample_available(m_pResample_context)) {
-        mp3fs_error("FFMPEG transcoder: Converted samples left over");
-        return AVERROR_EXIT;
+        if (avresample_available(m_pResample_context)) {
+            mp3fs_error("FFMPEG transcoder: Converted samples left over");
+            return AVERROR_EXIT;
+        }
     }
-
+    else
+    {
+        // No resampling, just copy samples
+        if (!av_sample_fmt_is_planar(m_pAudio_dec_ctx->sample_fmt))
+        {
+            memcpy(converted_data[0], input_data[0], frame_size * av_get_bytes_per_sample(m_pOutput_codec_context->sample_fmt));
+        }
+        else
+        {
+            for (int n = 0; n < m_pAudio_dec_ctx->channels; n++)
+            {
+                memcpy(converted_data[n], input_data[n], frame_size * av_get_bytes_per_sample(m_pOutput_codec_context->sample_fmt));
+            }
+        }
+    }
     return 0;
 }
 
