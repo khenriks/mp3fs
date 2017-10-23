@@ -29,7 +29,7 @@
 
 class Logging {
 public:
-    enum class level { ERROR = 1, INFO = 2, DEBUG = 3 };
+    enum class level { ERROR = 1, WARNING = 2, INFO = 3, DEBUG = 4 };
 
     /*
      * Arguments:
@@ -74,6 +74,7 @@ bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr,
                  bool to_syslog);
 
 constexpr auto ERROR = Logging::level::ERROR;
+constexpr auto WARNING = Logging::level::WARNING;
 constexpr auto INFO = Logging::level::INFO;
 constexpr auto DEBUG = Logging::level::DEBUG;
 

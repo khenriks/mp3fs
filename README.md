@@ -18,8 +18,10 @@ For installation instructions see the [install](INSTALL.md) file.
 
 NOTE THAT THIS IS AN ALPHA VERSION FOR TESTING ONLY!
 
-mp4 support is highly experimental, video transcoding is not implemented
-yet.
+Restricions:
+
+* mp4 support is highly experimental.
+* Cover arts are also not yet supported.
 
 Usage
 -----
@@ -76,20 +78,42 @@ are regular mp3 files with no strings attached. They should play
 well in any modern player.
 
 The mp4 files created are special, though, as mp4 is not quite suited
-for live streaming. To get around the restriction several extensions
-have been developed where isml (smooth live streaming) is one of them.
+for live streaming. Reason being that the start block of an mp4 
+contains a field with the size of the compressed data section. Suffice
+to say that this field cannot be filled in until the size is known,
+which means that compression must be completed first. 
 
-By default isml files will be created so that the file can be started
-to be written out at once instead of decoding it as a whole before
-this is possible. That would mean it would take some time before
-playback can start. Alas not all players support the format. VLC 
-obviusly does while for example Dragon Player, the Debian stock player, 
-does not. Firefox's HTML5 audio tag only plays the first segment
-which set to 10 seconds at the moment.
+Alas, for a continous live stream, that size will never be known or
+for our transcoded files one would have to wait for the whole file
+to be recoded. If that was not enough some important pieces of 
+information are located at the end of the file, including meta tags
+with artist, album, etc.
+
+To get around the restriction several extensions have been developed,
+one of which is called "faststart" that relocates the afformentioned
+data from the end to the beginning of the mp4. Additonally, the size field 
+can be left empty (0). isml (smooth live streaming) is another extension.
+
+By default faststart files will be created with an empty size field so 
+that the file can be started to be written out at once instead of 
+decoding it as a whole before this is possible. That would mean it would 
+take some time before playback can start.
+
+The data part is divided into chunks of about 1 second length each, 
+this allowing to fill in the size fields early enough.
+
+As a draw back not all players support the format, or play back with 
+strange side effects. VLC plays the file, but updates the time display 
+every second only. When streamed over HTML5 video tags, there will be no
+total time shown, but that is OK, as it is yet unknown. The playback
+cannot be positioned past the current playback position, only backwards.
+
+But that's the price of starting playback, fast.
 
 So there is a lot of work to be put into mp4 support, still.
 
-Video support is missing completely as of the time of writing this.
+The output format must be selectable for the desired audience, for
+streaming or opening the files locally, for example.
 
 Development
 -----------

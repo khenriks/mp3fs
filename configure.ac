@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # Sets up package and initializes build system.
-AC_INIT([MP3FS], [0.91])
+AC_INIT([MP3FS], [0.91-FFMPEG])
 AC_CONFIG_SRCDIR([src/mp3fs.c])
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign])
@@ -24,29 +24,33 @@ AC_ARG_WITH([ffmpeg],
         [disable support for FFMPEG libraries])],
     [], [with_ffmpeg=yes])
 
-# Tested with...    	
+# Tested with...
 #
-# libavutil      55. 58.100		54.3.0 (required)
-# libavcodec     57. 89.100		56.1.0 (required)
-# libavformat    57. 71.100		56.1.0 (required)
+# libavutil      55. 34.101		54.3.0 (required)
+# libavcodec     57. 64.101		56.1.0 (required)
+# libavformat    57. 56.101		56.1.0 (required)
 # libavdevice    57.  6.100
 # libavfilter     6. 82.100
 # libavresample   3.  5.  0		2.1.0 (required)
-# libswscale      4.  6.100		3.0.0 
-# libswresample   2.  7.100
-# libpostproc    54.  5.100        
+# libswscale      4.  2.100		3.0.0 (required)
+# libswresample   2.  3.100             1.2.0 (required) ???
+# libpostproc    54.  5.10
 #
 # May work with older versions but this is not guaranteed.
+
 
 AS_IF([test "x$with_ffmpeg" != xno],
     [PKG_CHECK_MODULES([libavutil], [libavutil >= 54.3.0],
 		[PKG_CHECK_MODULES([libavcodec], [libavcodec >= 56.1.0],
 			[PKG_CHECK_MODULES([libavformat], [libavformat >= 56.1.0],
 				[PKG_CHECK_MODULES([libavresample], [libavresample >= 2.1.0],
-#					[PKG_CHECK_MODULES([libswscale], [libswscale >= 3.0.0],
-						[AC_DEFINE([HAVE_FFMPEG], [1], [Use FFMPEG libraries.])]
-#					)
-#					]
+					[PKG_CHECK_MODULES([libswresample], [libswresample >= 1.2.0],
+						[PKG_CHECK_MODULES([libswscale], [libswscale >= 3.0.0],
+							[AC_DEFINE([HAVE_FFMPEG], [1], [Use FFMPEG libraries.])]
+						)
+						]
+					)
+					]
 				)
 				]
 			)

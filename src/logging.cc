@@ -62,12 +62,14 @@ Logging::Logger::~Logger() {
 
 const std::map<Logging::level,int> Logging::Logger::syslog_level_map_ = {
     {ERROR, LOG_ERR},
+    {WARNING, LOG_WARNING},
     {INFO, LOG_INFO},
     {DEBUG, LOG_DEBUG},
 };
 
 const std::map<Logging::level,std::string> Logging::Logger::level_name_map_ = {
     {ERROR, "ERROR"},
+    {WARNING, "WARNING"},
     {INFO, "INFO"},
     {DEBUG, "DEBUG"},
 };
@@ -99,6 +101,5 @@ void log_with_level(Logging::level level, const char* prefix,
 
     va_end(ap2);
 
-    //std::cout << buffer << std::endl;
     Log(level) << prefix << buffer;
 }

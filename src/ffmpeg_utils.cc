@@ -116,8 +116,8 @@ void ffmpeg_libinfo(char * buffer, size_t maxsize)
 //    info += PRINT_LIB_INFO(avdevice,    AVDEVICE);
 //    info += PRINT_LIB_INFO(avfilter,    AVFILTER);
     info += PRINT_LIB_INFO(avresample,  AVRESAMPLE);
-//    info += PRINT_LIB_INFO(swscale,     SWSCALE);
-//    info += PRINT_LIB_INFO(swresample,  SWRESAMPLE);
+    info += PRINT_LIB_INFO(swscale,     SWSCALE);
+    info += PRINT_LIB_INFO(swresample,  SWRESAMPLE);
 //    info += PRINT_LIB_INFO(postproc,    POSTPROC);
 
     *buffer = '\0';
@@ -191,6 +191,29 @@ int show_formats_devices(int device_only)
                long_name ? long_name:" ");
     }
     return 0;
+}
+
+const char * get_codec_name(enum AVCodecID codec_id)
+{
+    const AVCodecDescriptor * pCodecDescriptor;
+    const char * psz = "";
+
+    pCodecDescriptor = avcodec_descriptor_get(codec_id);
+
+    if (pCodecDescriptor != NULL)
+    {
+        if (pCodecDescriptor->long_name != NULL)
+        {
+            psz = pCodecDescriptor->long_name;
+        }
+
+        else
+        {
+            psz = pCodecDescriptor->name;
+        }
+    }
+
+    return psz;
 }
 
 #pragma GCC diagnostic pop

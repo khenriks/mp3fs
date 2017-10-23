@@ -59,12 +59,14 @@ void Encoder::set_gain(double gainref, double album_gain, double track_gain) {
 const char* encoder_list[] = {
     "mp3",
     "mp4",
+    NULL
 };
 
 const size_t encoder_list_len = sizeof(encoder_list)/sizeof(const char*);
 
 /* Define list of available decoder extensions. */
 const char* decoder_list[] = {
+    "avi",
     "flac",
     "ogg",
     "oga",
@@ -77,6 +79,8 @@ const char* decoder_list[] = {
     "flv",
     "mpg",
     "ts",
+    "mov",
+    NULL
 };
 
 const size_t decoder_list_len = sizeof(decoder_list)/sizeof(const char*);

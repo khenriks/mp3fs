@@ -39,21 +39,24 @@
 #include "ffmpeg_utils.h"
 
 struct mp3fs_params params = {
-    .basepath        = NULL,
-    .bitrate         = 128,
-    .debug           = 0,
-    .gainmode        = 1,
-    .gainref         = 89.0,
-    .log_maxlevel    = "INFO",
-    .log_stderr      = 0,
-    .log_syslog      = 0,
-    .logfile         = "",
-    .quality         = 5,
-    .vbr             = 0,
-    .statcachesize   = 500,
-    .maxsamplerate   = 44100,
-    .desttype        = "mp4",
-//    .desttype        = "mp3",
+    .basepath           = NULL,
+    .width              = 0,
+    .maxwidth           = 0,
+    .height             = 0,
+    .maxheight          = 0,
+    .audiobitrate       = 128,
+    .maxaudiobitrate    = 0,
+    .videobitrate       = 1000,
+    .maxvideobitrate    = 0,
+    .debug              = 0,
+    .log_maxlevel       = "INFO",
+    .log_stderr         = 0,
+    .log_syslog         = 0,
+    .logfile            = "",
+    .statcachesize      = 500,
+    .maxsamplerate      = 44100,
+    .desttype           = "mp4",
+//    .desttype      = "mp3",
 };
 
 enum {
@@ -65,39 +68,35 @@ enum {
 #define MP3FS_OPT(t, p, v) { t, offsetof(struct mp3fs_params, p), v }
 
 static struct fuse_opt mp3fs_opts[] = {
-    MP3FS_OPT("-b %u",                bitrate, 0),
-    MP3FS_OPT("bitrate=%u",           bitrate, 0),
-    MP3FS_OPT("-d",                   debug, 1),
-    MP3FS_OPT("debug",                debug, 1),
-    MP3FS_OPT("--desttype=%s",        desttype, 0),
-    MP3FS_OPT("desttype=%s",          desttype, 0),
-    MP3FS_OPT("--gainmode=%d",        gainmode, 0),
-    MP3FS_OPT("gainmode=%d",          gainmode, 0),
-    MP3FS_OPT("--gainref=%f",         gainref, 0),
-    MP3FS_OPT("gainref=%f",           gainref, 0),
-    MP3FS_OPT("--log_maxlevel=%s",    log_maxlevel, 0),
-    MP3FS_OPT("log_maxlevel=%s",      log_maxlevel, 0),
-    MP3FS_OPT("--log_stderr",         log_stderr, 1),
-    MP3FS_OPT("log_stderr",           log_stderr, 1),
-    MP3FS_OPT("--log_syslog",         log_syslog, 1),
-    MP3FS_OPT("log_syslog",           log_syslog, 1),
-    MP3FS_OPT("--logfile=%s",         logfile, 0),
-    MP3FS_OPT("logfile=%s",           logfile, 0),
-    MP3FS_OPT("--quality=%u",         quality, 0),
-    MP3FS_OPT("quality=%u",           quality, 0),
-    MP3FS_OPT("--maxsamplerate=%u",   maxsamplerate, 0),
-    MP3FS_OPT("maxsamplerate=%u",     maxsamplerate, 0),
-    MP3FS_OPT("--statcachesize=%u",   statcachesize, 0),
-    MP3FS_OPT("statcachesize=%u",     statcachesize, 0),
-    MP3FS_OPT("--vbr",                vbr, 1),
-    MP3FS_OPT("vbr",                  vbr, 1),
+    MP3FS_OPT("-h %u",              width, 0),
+    MP3FS_OPT("height=%u",          width, 0),
+    MP3FS_OPT("-w %u",              height, 0),
+    MP3FS_OPT("width=%u",           height, 0),
+    MP3FS_OPT("-b %u",              audiobitrate, 0),
+    MP3FS_OPT("bitrate=%u",         audiobitrate, 0),
+    MP3FS_OPT("-d",                 debug, 1),
+    MP3FS_OPT("debug",              debug, 1),
+    MP3FS_OPT("--desttype=%s",      desttype, 0),
+    MP3FS_OPT("desttype=%s",        desttype, 0),
+    MP3FS_OPT("--log_maxlevel=%s",  log_maxlevel, 0),
+    MP3FS_OPT("log_maxlevel=%s",    log_maxlevel, 0),
+    MP3FS_OPT("--log_stderr",       log_stderr, 1),
+    MP3FS_OPT("log_stderr",         log_stderr, 1),
+    MP3FS_OPT("--log_syslog",       log_syslog, 1),
+    MP3FS_OPT("log_syslog",         log_syslog, 1),
+    MP3FS_OPT("--logfile=%s",       logfile, 0),
+    MP3FS_OPT("logfile=%s",         logfile, 0),
+    MP3FS_OPT("--maxsamplerate=%u", maxsamplerate, 0),
+    MP3FS_OPT("maxsamplerate=%u",   maxsamplerate, 0),
+    MP3FS_OPT("--statcachesize=%u", statcachesize, 0),
+    MP3FS_OPT("statcachesize=%u",   statcachesize, 0),
 
-    FUSE_OPT_KEY("-h",                KEY_HELP),
-    FUSE_OPT_KEY("--help",            KEY_HELP),
-    FUSE_OPT_KEY("-V",                KEY_VERSION),
-    FUSE_OPT_KEY("--version",         KEY_VERSION),
-    FUSE_OPT_KEY("-d",                KEY_KEEP_OPT),
-    FUSE_OPT_KEY("debug",             KEY_KEEP_OPT),
+    FUSE_OPT_KEY("-h",               KEY_HELP),
+    FUSE_OPT_KEY("--help",           KEY_HELP),
+    FUSE_OPT_KEY("-V",               KEY_VERSION),
+    FUSE_OPT_KEY("--version",        KEY_VERSION),
+    FUSE_OPT_KEY("-d",               KEY_KEEP_OPT),
+    FUSE_OPT_KEY("debug",            KEY_KEEP_OPT),
     FUSE_OPT_END
 };
 
@@ -112,13 +111,6 @@ Encoding options:\n\
                            encoding bitrate: Acceptable values for RATE\n\
                            include 96, 112, 128, 160, 192, 224, 256, and\n\
                            320; 128 is the default\n\
-    --gainmode=<0,1,2>, -ogainmode=<0,1,2>\n\
-                           what to do with ReplayGain tags:\n\
-                           0 - ignore, 1 - prefer album gain (default),\n\
-                           2 - prefer track gain\n\
-    --gainref=REF, -ogainref=REF\n\
-                           reference value to use for ReplayGain in \n\
-                           decibels: defaults to 89 dB\n\
     --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL\n\
                            maximum level of messages to log, either ERROR,\n\
                            INFO, or DEBUG. Defaults to INFO, and always set\n\
@@ -132,9 +124,6 @@ Encoding options:\n\
     --logfile=FILE, -ologfile=FILE\n\
                            file to output log messages to. By default, no\n\
                            file will be written.\n\
-    --quality=<0..9>, -oquality=<0..9>\n\
-                           encoding quality: 0 is slowest, 9 is fastest;\n\
-                           5 is the default\n\
     --maxsamplerate=Hz, -omaxsamplerate=Hz\n\
                            Limits the output sample rate to Hz. The default\n\
                            is 44100 (44.1 Khz). If the source file sample rate\n\
@@ -143,10 +132,6 @@ Encoding options:\n\
                            Set the number of entries for the file stats\n\
                            cache.  Necessary for decent performance when\n\
                            VBR is enabled.  Each entry takes 100-200 bytes.\n\
-    --vbr, -ovbr           Use variable bit rate encoding.  When set, the\n\
-                           bit rate set with '-b' sets the maximum bit rate.\n\
-                           Performance will be terrible unless the\n\
-                           statcachesize is enabled.\n\
 \n\
 General options:\n\
     -h, --help             display this help and exit\n\
@@ -242,13 +227,6 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (params.quality > 9) {
-        fprintf(stderr, "Invalid encoding quality value: %u\n\n",
-                params.quality);
-        usage(argv[0]);
-        return 1;
-    }
-
     /* Check for valid destination type. */
     if (!check_encoder(params.desttype)) {
         fprintf(stderr, "No encoder available for desttype: %s\n\n",
@@ -258,31 +236,29 @@ int main(int argc, char *argv[]) {
     }
 
     mp3fs_debug("MP3FS options:\n"
-                "basepath:       %s\n"
-                "bitrate:        %u\n"
-                "desttype:       %s\n"
-                "gainmode:       %d\n"
-                "gainref:        %f\n"
-                "log_maxlevel:   %s\n"
-                "log_stderr:     %u\n"
-                "log_syslog:     %u\n"
-                "logfile:        %s\n"
-                "quality:        %u\n"
-                "statcachesize:  %u\n"
-                "vbr:            %u\n"
+                "basepath:        %s\n"
+                "video width:   %2s%u\n"
+                "video height:  %2s%u\n"
+                "audio bitrate: %2s%u\n"
+                "video bitrate: %2s%u\n"
+                "desttype:        %s\n"
+                "log_maxlevel:    %s\n"
+                "log_stderr:      %u\n"
+                "log_syslog:      %u\n"
+                "logfile:         %s\n"
+                "statcachesize:   %u\n"
                 ,
                 params.basepath,
-                params.bitrate,
+                params.maxwidth ? "<=" : " =", params.width,
+                params.maxheight ? "<=" : " =", params.height,
+                params.maxaudiobitrate ? "<=" : "", params.audiobitrate,
+                params.maxvideobitrate ? "<=" : "", params.videobitrate,
                 params.desttype,
-                params.gainmode,
-                params.gainref,
                 params.log_maxlevel,
                 params.log_stderr,
                 params.log_syslog,
                 params.logfile,
-                params.quality,
-                params.statcachesize,
-                params.vbr);
+                params.statcachesize);
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);

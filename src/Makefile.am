@@ -6,6 +6,6 @@ mp3fs_LDADD	= $(fuse_LIBS)
 
 if HAVE_FFMPEG
 mp3fs_SOURCES += ffmpeg_transcoder.cc ffmpeg_transcoder.h ffmpeg_utils.cc ffmpeg_utils.h
-mp3fs_LDADD += $(libavcodec_LIBS) $(libavutil_LIBS) $(libavformat_LIBS) $(libavresample_LIBS) $(libswscale_LIBS)
-AM_CPPFLAGS += $(libavcodec_CFLAGS) $(libavutil_CFLAGS) $(libavformat_CFLAGS) $(libavresample_CFLAGS) $(libswscale_CFLAGS)
+mp3fs_LDADD += $(libavcodec_LIBS) $(libavutil_LIBS) $(libavformat_LIBS) $(libavresample_LIBS) $(libswresample_LIBS) $(libswscale_LIBS)
+AM_CPPFLAGS += $(libavcodec_CFLAGS) $(libavutil_CFLAGS) $(libavformat_CFLAGS) $(libavresample_CFLAGS) $(libswresample_CFLAGS) $(libswscale_CFLAGS)
 endif

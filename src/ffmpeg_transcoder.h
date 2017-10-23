@@ -24,6 +24,8 @@
 
 #include "ffmpeg_utils.h"
 
+#include <queue>
+
 class Buffer;
 
 struct ID3v1
@@ -57,7 +59,7 @@ public:
     int open_out_file(Buffer* buffer, const char* type);
     time_t mtime();
     int process_metadata();
-    int process_single_fr(Buffer* buffer);
+    int process_single_fr();
 
     size_t get_actual_size() const;
     size_t calculate_size() const;
@@ -65,22 +67,27 @@ public:
     int encode_finish(Buffer& buffer);
 
     const ID3v1 * id3v1tag() const;
-
+    
 protected:
+    bool is_video() const;
     int open_codec_context(int *stream_idx, AVCodecContext **avctx, AVFormatContext *fmt_ctx, AVMediaType type, const char *filename);
+    int add_stream(AVCodecID codec_id);
     int open_output_file(Buffer *buffer, const char* type);
     void init_packet(AVPacket *packet);
     int init_input_frame(AVFrame **frame);
     int init_resampler();
     int init_fifo();
     int write_output_file_header();
-    int decode_audio_frame(AVFrame *frame, int *data_present, int *finished);
+    int decode_frame(AVPacket *input_packet, int *data_present);
     int init_converted_samples(uint8_t ***converted_input_samples, int frame_size);
     int convert_samples(uint8_t **input_data, uint8_t **converted_data, const int frame_size);
     int add_samples_to_fifo(uint8_t **converted_input_samples, const int frame_size);
     int read_decode_convert_and_store(int *finished);
-    int init_output_frame(AVFrame **frame, int frame_size);
+    int init_audio_output_frame(AVFrame **frame, int frame_size);
+    AVFrame *alloc_picture(AVPixelFormat pix_fmt, int width, int height);
+    void produce_dts(AVPacket * pkt, int64_t *pts);
     int encode_audio_frame(AVFrame *frame, int *data_present);
+    int encode_video_frame(AVFrame *frame, int *data_present);
     int load_encode_and_write();
     int write_output_file_trailer();
 
@@ -90,32 +97,55 @@ protected:
 private:
     time_t                      m_mtime;
     size_t                      m_nActual_size;         // Use this as the size instead of computing it.
+    bool                        m_bIsVideo;
+
+    // Audio conversion and buffering
+#ifdef _USE_LIBSWRESAMPLE
+    SwrContext *                m_pSwr_ctx;
+#else
+    AVAudioResampleContext *    m_pAudio_resample_ctx;
+#endif	
+    AVAudioFifo *               m_pAudioFifo;
+	
+    // Video conversion and buffering
+    SwsContext *                m_pSws_ctx;
+    std::queue<AVFrame*>        m_VideoFifo;
+    int64_t                     m_pts;
+    int64_t                     m_pos;
+
 
     // Input file
-    AVFormatContext *           m_pInput_format_context;
-    AVCodecContext *            m_pAudio_dec_ctx;
-    AVCodecContext *            m_pVideo_dec_ctx;
-    AVStream *                  m_pAudio_stream;
-    AVStream *                  m_pVideo_stream;
-    int                         m_nAudio_stream_idx;
-    int                         m_nVideo_stream_idx;
+    struct _tagINPUTFILE
+    {
+        AVFormatContext *       m_pFormat_ctx;
+        AVCodecContext *        m_pAudio_codec_ctx;
+        AVCodecContext *        m_pVideo_codec_ctx;
+        AVStream *              m_pAudio_stream;
+        AVStream *              m_pVideo_stream;
+        int                     m_nAudio_stream_idx;
+        int                     m_nVideo_stream_idx;
+    } m_in;
 
     // Output file
-    AVFormatContext *           m_pOutput_format_context;
-    AVCodecContext *            m_pOutput_codec_context;
+    struct _tagOUTPUTFILE
+    {
+        OUTPUTTYPE              m_output_type;
 
-    //    uint8_t *                   m_pVideo_dst_data[4];
-    //    int                         m_nVideo_dst_linesize[4];
-    //    int                         m_nVideo_dst_bufsize;
+        AVFormatContext *       m_pFormat_ctx;
+        AVCodecContext *        m_pAudio_codec_ctx;
+        AVCodecContext *        m_pVideo_codec_ctx;
+        AVStream *              m_pAudio_stream;
+        AVStream *              m_pVideo_stream;
+        int                     m_nAudio_stream_idx;
+        int                     m_nVideo_stream_idx;
 
-    int64_t                     m_pts;                  // Global timestamp for the audio frames
-    OUTPUTTYPE                  m_eOutputType;
+        int64_t                 m_nAudio_pts;           // Global timestamp for the audio frames
+        int64_t                 m_nVideo_pts;           // Global timestamp for the video frames
 
-    // Conversion
-    AVAudioResampleContext *    m_pResample_context;
-    AVAudioFifo *               m_pFifo;
+        int64_t                 m_nVideo_offset;
 
-    ID3v1                       m_id3v1;
+        ID3v1                   m_id3v1;
+    } m_out;
 };
 
 #endif

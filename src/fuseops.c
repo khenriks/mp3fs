@@ -314,11 +314,11 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     trans = (struct transcoder*)fi->fh;
     
     if (!trans) {
-        mp3fs_error("Tried to read from unopen file: %s", origpath);
+        mp3fs_error("Tried to read from unopen file: %s.", origpath);
         goto transcoder_fail;
     }
 
-    mp3fs_debug("read %s: %zu bytes from %jd", path, size, (intmax_t)offset);
+    mp3fs_debug("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
 
     read = transcoder_read(trans, buf, offset, size);
 

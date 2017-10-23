@@ -31,7 +31,9 @@ extern "C" {
 #endif
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
-#include <libavresample/avresample.h>
+#include <libswscale/swscale.h>
+#include <libswresample/swresample.h> 	// ??? die oder...
+#include <libavresample/avresample.h>	// ??? die?!?
 #include <libavutil/imgutils.h>
 #include <libavutil/opt.h>
 #include <libavutil/error.h>
@@ -96,6 +98,7 @@ extern "C" {
 #endif
 void ffmpeg_libinfo(char * buffer, size_t maxsize);
 int show_formats_devices(int device_only);
+const char * get_codec_name(enum AVCodecID codec_id);
 #ifdef __cplusplus
 }
 #endif

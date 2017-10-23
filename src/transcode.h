@@ -27,19 +27,22 @@
 /* Global program parameters */
 extern struct mp3fs_params {
     const char *basepath;
-    unsigned int bitrate;
+    unsigned int width;
+    int maxwidth;
+    unsigned int height;
+    int maxheight;
+    unsigned int audiobitrate;
+    int maxaudiobitrate;
+    unsigned int videobitrate;
+    int maxvideobitrate;
     int debug;
     const char* desttype;
-    int gainmode;
-    float gainref;
     const char* log_maxlevel;
     int log_stderr;
     int log_syslog;
     const char* logfile;
-    unsigned int quality;
     unsigned int statcachesize;
     unsigned int maxsamplerate;
-    int vbr;
 } params;
 
 /* Fuse operations struct */
@@ -79,11 +82,11 @@ int check_encoder(const char* type);
 int check_decoder(const char* type);
 
 /* Functions to print output until C++ conversion is done. */
-void mp3fs_debug(const char* f, ...) __attribute__ ((format(printf, 1, 2)));;
-void mp3fs_error(const char* f, ...) __attribute__ ((format(printf, 1, 2)));;
+void mp3fs_debug(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
+void mp3fs_warning(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
+void mp3fs_error(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
 
-int init_logging(const char* logfile, const char* max_level, int to_stderr,
-                 int to_syslog);
+int init_logging(const char* logfile, const char* max_level, int to_stderr, int to_syslog);
 
 #ifdef __cplusplus
 }

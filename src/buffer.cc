@@ -178,7 +178,7 @@ bool Buffer::reallocate(size_t size) {
         /* Set new allocation to zero. */
         memset(newdata + buffer_size, 0, size - buffer_size);
 
-        mp3fs_debug("Buffer reallocate: %p -> %p ; %lu -> %lu", buffer_data, newdata, buffer_size, size);
+        //mp3fs_debug("Buffer reallocate: %p -> %p ; %lu -> %lu.", buffer_data, newdata, buffer_size, size);
 
         buffer_data = newdata;
         buffer_size = size;

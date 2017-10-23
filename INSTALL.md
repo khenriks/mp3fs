@@ -19,7 +19,8 @@ libraries:
 * libavutil     (>= 54.3.0)
 * libavcodec    (>= 56.1.0)
 * libavformat   (>= 56.1.0)
-* libavresample (>= 2.1.0)
+* libavresample   (>= 2.1.0)
+* libswscale      (>= 3.0.0)
 
 If building from git, you'll also need:
 
@@ -65,7 +66,7 @@ build and install, run:
 Trouble Shooting
 ----------------
 
-If you get this error:
+If you run into this error:
     
     Running autoreconf --install
     configure.ac:46: error: possibly undefined macro: AC_DEFINE
@@ -74,7 +75,5 @@ If you get this error:
     autoreconf: /usr/bin/autoconf failed with exit status: 1
 
 You are probabibly missing out on pkg-config, either it is not installed or
-not in path. "apt-get install pkg-config" shoud help.
-
-    
-    
+not in path. "apt-get install pkg-config" (on Debian or equivalent on other
+Linux distributions) should help.

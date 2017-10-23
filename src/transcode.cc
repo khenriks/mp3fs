@@ -52,15 +52,18 @@ StatsCache stats_cache;
  * if no errors and false otherwise.
  */
 bool transcode_until(struct transcoder* trans, size_t end) {
+    bool success = true;
+
     while (!trans->finished && trans->buffer.tell() < end) {
-        int stat = trans->transcoder.process_single_fr(&trans->buffer);
+        int stat = trans->transcoder.process_single_fr();
 
         if (stat == -1 || (stat == 1 && transcoder_finish(trans) == -1)) {
             errno = EIO;
-            return false;
+            success = false;
+            break;
         }
     }
-    return true;
+    return success;
 }
 
 }
@@ -69,7 +72,7 @@ bool transcode_until(struct transcoder* trans, size_t end) {
 extern "C" {
 
 int transcoder_cached_filesize(const char* filename, struct stat *stbuf) {
-    mp3fs_debug("Retrieving encoded size for %s", filename);
+    mp3fs_debug("Retrieving encoded size for %s.", filename);
 
     size_t encoded_filesize;
     if (stats_cache.get_filesize(filename, stbuf->st_mtime, encoded_filesize)) {
@@ -85,7 +88,7 @@ int transcoder_cached_filesize(const char* filename, struct stat *stbuf) {
 /* Allocate and initialize the transcoder */
 
 struct transcoder* transcoder_new(const char* filename, int open_out) {
-    mp3fs_debug("Creating transcoder object for %s", filename);
+    mp3fs_debug("Creating transcoder object for %s.", filename);
 
     /* Allocate transcoder structure */
     struct transcoder* trans = new struct transcoder;
@@ -100,7 +103,7 @@ struct transcoder* transcoder_new(const char* filename, int open_out) {
 
     mp3fs_debug("Ready to initialise decoder.");
 
-    if (trans->transcoder.open_file(filename) == -1) {
+    if (trans->transcoder.open_file(filename) < 0) {
         goto init_fail;
     }
 
@@ -222,7 +225,7 @@ int transcoder_finish(struct transcoder* trans) {
     trans->encoded_filesize = trans->transcoder.get_actual_size();
     trans->finished = true;
 
-    mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu",
+    mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu.",
                 trans->transcoder.calculate_size(), trans->encoded_filesize);
 
     if (params.statcachesize > 0 && trans->encoded_filesize != 0) {
@@ -264,6 +267,13 @@ void mp3fs_debug(const char* format, ...) {
     va_end(args);
 }
 
+void mp3fs_warning(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    log_with_level(WARNING, format, args);
+    va_end(args);
+}
+
 void mp3fs_error(const char* format, ...) {
     va_list args;
     va_start(args, format);
@@ -275,6 +285,7 @@ int init_logging(const char* logfile, const char* max_level, int to_stderr,
                  int to_syslog) {
     static const std::map<std::string, Logging::level> level_map = {
         {"DEBUG", DEBUG},
+        {"WARNING", WARNING},
         {"INFO", INFO},
         {"ERROR", ERROR},
     };
