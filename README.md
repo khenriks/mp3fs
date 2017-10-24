@@ -142,13 +142,13 @@ These are only required if not using FFMPEG:
 Authors
 -------
 
-This program is maintained by K. Henriksson, who is the primary author
-from 2008 to present.
+This fork with FFMPEG support is maintained by Norbert Schlia 
+(nschlia@oblivion-software.de) since 2017.
 
-The original maintainer and author was David Collett from 2006 to 2008.
-Much thanks to him for his original work.
+Based on work by K. Henriksson (from 2008 to 2017) and the original author 
+David Collett (from 2006 to 2008).
 
-FFMPEG support added 2017 by Norbert Schlia (nschlia@oblivion-software.de)
+Much thanks to them for the original work!
 
 License
 -------

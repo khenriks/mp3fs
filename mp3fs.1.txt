@@ -96,12 +96,17 @@ When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
 
 COPYRIGHT
 ---------
-Copyright \(C) 2006-2008 David Collett, 2008-2013 K. Henriksson and
-2017 N. Schlia.
+
+This fork with FFMPEG support copyright \(C) 2017 Norbert Schlia
+(nschlia@oblivion-software.de).
+
+Based on work Copyright \(C) 2006-2008 David Collett, 2008-2013 
+K. Henriksson.
+
+Much thanks to them for the original work!
+
 This is free software: you are free to change and redistribute it under
 the terms of the GNU General Public License (GPL) version 3 or later.
-
-FFMPEG support copyright \(C) 2017 Norbert Schlia.
 
 This manual is copyright \(C) 2010-2011 K. Henriksson and 2017 N. Schlia 
 and may be distributed under GNU Free Documentation License 1.3 or later.
