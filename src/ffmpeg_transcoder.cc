@@ -391,6 +391,16 @@ int FfmpegTranscoder::open_out_file(Buffer *buffer, const char* type) {
             return -1;
         }
     }
+
+
+    /*
+     * Process metadata. The Decoder will call the Encoder to set appropriate
+     * tag values for the output file.
+     */
+    if (process_metadata()) {
+        return -1;
+    }
+
     /** Write the header of the output file container. */
     if (write_output_file_header()){
         return -1;
@@ -806,10 +816,13 @@ int FfmpegTranscoder::write_output_file_header()
         av_dict_set(&dict, "frag_duration", "1000000", 0); // 1 sec
     }
 
-    if ((error = avformat_write_header(m_out.m_pFormat_ctx, &dict)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not write output file header (error '%s').", ffmpeg_geterror(error).c_str());
-        return error;
+    if (avformat_init_output(m_out.m_pFormat_ctx, &dict) == AVSTREAM_INIT_IN_WRITE_HEADER) {
+        if ((error = avformat_write_header(m_out.m_pFormat_ctx, &dict)) < 0) {
+            mp3fs_error("FFMPEG transcoder: Could not write output file header (error '%s').", ffmpeg_geterror(error).c_str());
+            return error;
+        }
     }
+
     return 0;
 }
 
@@ -1447,14 +1460,19 @@ time_t FfmpegTranscoder::mtime() {
     for (char *p1 = (dst), *pend = p1 + sizeof(dst), *p2 = (src); *p2 && p1 < pend; p1++, p2++) \
     *p1 = *p2;
 
-int FfmpegTranscoder::process_metadata() {
-
-    mp3fs_debug("FFMPEG transcoder: processing metadata");
-
+void FfmpegTranscoder::copy_metadata(AVDictionary *metadata, AVStream * stream, bool bIsVideo) // TODO: Stream tags
+{
     AVDictionaryEntry *tag = NULL;
 
-    while ((tag = av_dict_get(m_in.m_pFormat_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+    while ((tag = av_dict_get(metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
     {
+        if (stream != NULL && bIsVideo)
+        {
+            // Keep video comments in video stream
+            // TODO
+            continue;
+        }
+
         av_dict_set(&m_out.m_pFormat_ctx->metadata, tag->key, tag->value, 0);
 
         if (m_out.m_output_type == TYPE_MP3)
@@ -1484,6 +1502,24 @@ int FfmpegTranscoder::process_metadata() {
                 m_out.m_id3v1.cTitleNo = (char)atoi(tag->value);
             }
         }
+    }
+}
+
+int FfmpegTranscoder::process_metadata() {
+
+    mp3fs_debug("FFMPEG transcoder: processing metadata");
+
+    copy_metadata(m_in.m_pFormat_ctx->metadata, NULL, false);
+
+    // For some formats (namely ogg) ffmpeg returns the tags, odd enough, with streams...
+    if (m_in.m_pAudio_stream)
+    {
+        copy_metadata(m_in.m_pAudio_stream->metadata, m_in.m_pAudio_stream, false);
+    }
+
+    if (m_in.m_pVideo_stream)
+    {
+        copy_metadata(m_in.m_pVideo_stream->metadata, m_in.m_pVideo_stream, true);
     }
 
     // Pictures later. More complicated...

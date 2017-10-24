@@ -288,7 +288,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     ssize_t read = 0;
     struct transcoder* trans;
 
-    //mp3fs_debug("read %s: %zu bytes from %jd", path, size, (intmax_t)offset);
+    //mp3fs_debug("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
     
     errno = 0;
     

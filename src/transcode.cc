@@ -117,16 +117,7 @@ struct transcoder* transcoder_new(const char* filename, int open_out) {
             goto init_fail;
         }
 
-        /*
-         * Process metadata. The Decoder will call the Encoder to set appropriate
-         * tag values for the output file.
-         */
-        if (trans->transcoder.process_metadata() == -1) {
-            mp3fs_error("Error processing metadata.");
-            goto init_fail;
-        }
-
-        mp3fs_debug("Metadata processing finished.");
+        mp3fs_debug("Output file opened.");
     }
 
     return trans;
