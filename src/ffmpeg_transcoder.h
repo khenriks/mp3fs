@@ -60,10 +60,9 @@ public:
     time_t mtime();
     int process_single_fr();
 
-    size_t get_actual_size() const;
-    size_t calculate_size() const;
+    size_t calculate_size();
 
-    int encode_finish(Buffer& buffer);
+    int encode_finish();
 
     const ID3v1 * id3v1tag() const;
     
@@ -95,6 +94,8 @@ protected:
     static int writePacket(void * pOpaque, unsigned char * pBuffer, int nBufSize);
     static int64_t seek(void * pOpaque, int64_t i4Offset, int nWhence);
 
+    int64_t get_output_bit_rate(AVStream *in_stream, int64_t bit_rate) const;
+    
 private:
     time_t                      m_mtime;
     size_t                      m_nActual_size;         // Use this as the size instead of computing it.

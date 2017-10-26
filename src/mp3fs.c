@@ -184,8 +184,6 @@ int main(int argc, char *argv[]) {
     av_register_all();
     //show_formats_devices(0);
 
-//    init_coders();
-
     if (fuse_opt_parse(&args, &params, mp3fs_opts, mp3fs_opt_proc)) {
         fprintf(stderr, "Error parsing options.\n\n");
         usage(argv[0]);

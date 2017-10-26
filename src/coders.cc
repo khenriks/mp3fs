@@ -83,27 +83,8 @@ const char* decoder_list[] = {
     NULL
 };
 
-const size_t decoder_list_len = sizeof(decoder_list)/sizeof(const char*);
-
 /* Use "C" linkage to allow access from C code. */
 extern "C" {
-
-/* Init en/decoder lists. */
-void init_coders() {
-
-    //     /* Define list of available decoder extensions. */
-    //         decoder_list.push_back("flac");
-    //         decoder_list.push_back("ogg");
-    //         decoder_list.push_back("oga");
-    //         decoder_list.push_back("ogv");
-    //         decoder_list.push_back("mp4");
-    //         decoder_list.push_back("m4a");
-    //         decoder_list.push_back("m4v");
-    //         decoder_list.push_back("webm");
-    //         decoder_list.push_back("flv");
-    //         decoder_list.push_back("mpg");
-    //         decoder_list.push_back("ts");
-}
 
 /* Check if an encoder is available to encode to the specified type. */
 int check_encoder(const char* type) {

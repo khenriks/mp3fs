@@ -32,14 +32,14 @@
 #include "stats_cache.h"
 #include "ffmpeg_transcoder.h"
 
-/* Transcoder parameters for open mp3 */
+/* Transcoder parameters */
 struct transcoder {
     Buffer buffer;
     std::string filename;
     size_t encoded_filesize;
     bool finished;
 
-    FfmpegTranscoder transcoder;
+    FfmpegTranscoder ffmpeg_transcoder;
 };
 
 namespace {
@@ -55,7 +55,7 @@ bool transcode_until(struct transcoder* trans, size_t end) {
     bool success = true;
 
     while (!trans->finished && trans->buffer.tell() < end) {
-        int stat = trans->transcoder.process_single_fr();
+        int stat = trans->ffmpeg_transcoder.process_single_fr();
 
         if (stat == -1 || (stat == 1 && transcoder_finish(trans) == -1)) {
             errno = EIO;
@@ -103,17 +103,17 @@ struct transcoder* transcoder_new(const char* filename, int open_out) {
 
     mp3fs_debug("Ready to initialise decoder.");
 
-    if (trans->transcoder.open_file(filename) < 0) {
+    if (trans->ffmpeg_transcoder.open_file(filename) < 0) {
         goto init_fail;
     }
 
     mp3fs_debug("Transcoder initialised successfully.");
 
-    stats_cache.get_filesize(trans->filename, trans->transcoder.mtime(), trans->encoded_filesize);
+    stats_cache.get_filesize(trans->filename, trans->ffmpeg_transcoder.mtime(), trans->encoded_filesize);
 
     if (open_out)
     {
-        if (trans->transcoder.open_out_file(&trans->buffer, params.desttype) == -1) {
+        if (trans->ffmpeg_transcoder.open_out_file(&trans->buffer, params.desttype) == -1) {
             goto init_fail;
         }
 
@@ -131,33 +131,15 @@ trans_fail:
 
 /* Read some bytes into the internal buffer and into the given buffer. */
 
-ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
-                        size_t len) {
+ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset, size_t len) {
     mp3fs_debug("Reading %zu bytes from offset %jd.", len, (intmax_t)offset);
-    if ((size_t)offset > transcoder_get_size(trans)) {
-        return -1;
-    }
-    if (offset + len > transcoder_get_size(trans)) {
-        len = transcoder_get_size(trans) - offset;
-    }
 
-#ifndef HAVE_FFMPEG
-    // TODO: Avoid favoring MP3 in program structure.
-    /*
-     * If we are encoding to MP3 and the requested data overlaps the ID3v1 tag
-     * at the end of the file, do not encode data first up to that position.
-     * This optimizes the case where applications read the end of the file
-     * first to read the ID3v1 tag.
-     */
-    if (strcmp(params.desttype, "mp3") == 0 &&
-            (size_t)offset > trans->buffer.tell()
-            && offset + len >
-            (transcoder_get_size(trans) - Mp3Encoder::id3v1_tag_length)) {
-        trans->buffer.copy_into((uint8_t*)buff, offset, len);
-
-        return len;
-    }
-#endif
+//    if ((size_t)offset > transcoder_get_size(trans)) {
+//        return -1;
+//    }
+//    if (offset + len > transcoder_get_size(trans)) {
+//        len = transcoder_get_size(trans) - offset;
+//    }
 
     // TODO: Avoid favoring MP3 in program structure.
     /*
@@ -172,13 +154,12 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
             && offset + len >
             (transcoder_get_size(trans) - id3v1_tag_length)) {
 
-        memcpy(buff, trans->transcoder.id3v1tag(), id3v1_tag_length);
+        memcpy(buff, trans->ffmpeg_transcoder.id3v1tag(), id3v1_tag_length);
 
         return len;
     }
 
-    bool success = true;
-    success = transcode_until(trans, offset + len);
+    bool success = transcode_until(trans, offset + len);
 
     if (!success) {
         return -1;
@@ -191,7 +172,7 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
         len = trans->buffer.tell() - offset;
     }
 
-    trans->buffer.copy_into((uint8_t*)buff, offset, len);
+    trans->buffer.copy((uint8_t*)buff, offset, len);
 
     return len;
 }
@@ -202,22 +183,20 @@ int transcoder_finish(struct transcoder* trans) {
     // decoder cleanup
     time_t decoded_file_mtime = 0;
 
-    fprintf(stderr, "FINISH FILE\n");
-
-    decoded_file_mtime = trans->transcoder.mtime();
+    decoded_file_mtime = trans->ffmpeg_transcoder.mtime();
 
     // encoder cleanup
-    int len = trans->transcoder.encode_finish(trans->buffer);
+    int len = trans->ffmpeg_transcoder.encode_finish();
     if (len == -1) {
         return -1;
     }
 
     /* Check encoded buffer size. */
-    trans->encoded_filesize = trans->transcoder.get_actual_size();
+    trans->encoded_filesize = trans->buffer.actual_size();
     trans->finished = true;
 
-    mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu.",
-                trans->transcoder.calculate_size(), trans->encoded_filesize);
+    mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu, diff: %zi.",
+                trans->ffmpeg_transcoder.calculate_size(), trans->encoded_filesize, trans->encoded_filesize - trans->ffmpeg_transcoder.calculate_size());
 
     if (params.statcachesize > 0 && trans->encoded_filesize != 0) {
         stats_cache.put_filesize(trans->filename, trans->encoded_filesize,
@@ -230,7 +209,6 @@ int transcoder_finish(struct transcoder* trans) {
 /* Free the transcoder structure. */
 
 void transcoder_delete(struct transcoder* trans) {
-    fprintf(stderr, "CLOSE FILES/DELETE TRANSCODER\n");
     delete trans;
 }
 
@@ -239,7 +217,7 @@ size_t transcoder_get_size(struct transcoder* trans) {
     if (trans->encoded_filesize != 0) {
         return trans->encoded_filesize;
     } else
-        return trans->transcoder.calculate_size();
+        return trans->ffmpeg_transcoder.calculate_size();
 }
 }
 

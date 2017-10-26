@@ -74,7 +74,7 @@ void find_original(char* path) {
     char* ext = strrchr(path, '.');
 
     if (ext && strcmp(ext + 1, params.desttype) == 0) {
-        for (size_t i=0; i<decoder_list_len; ++i) {
+        for (size_t i=0; decoder_list[i]; ++i) {
             strcpy(ext + 1, decoder_list[i]);
             if (access(path, F_OK) == 0) {
                 /* File exists with this extension */
@@ -230,6 +230,60 @@ translate_fail:
     return -errno;
 }
 
+int mp3fs_fgetattr(const char *filename, struct stat * stbuf, struct fuse_file_info *fi)
+{
+    char* origpath;
+
+    mp3fs_debug("fgetattr %s", filename);
+
+    errno = 0;
+
+    origpath = translate_path(filename);
+    if (!origpath) {
+        goto translate_fail;
+    }
+
+    /* pass-through for regular files */
+    if (lstat(origpath, stbuf) == 0) {
+        goto passthrough;
+    } else {
+        /* Not really an error. */
+        errno = 0;
+    }
+
+    find_original(origpath);
+
+    if (lstat(origpath, stbuf) == -1) {
+        goto stat_fail;
+    }
+
+    /*
+     * Get size for resulting output file from regular file, otherwise it's a
+     * symbolic link. */
+    if (S_ISREG(stbuf->st_mode)) {
+
+        struct transcoder* trans;
+
+        trans = (struct transcoder*)fi->fh;
+
+        if (!trans) {
+            mp3fs_error("Tried to stat unopen file: %s.", filename);
+            errno = EBADF;
+            goto transcoder_fail;
+        }
+
+        stbuf->st_size = transcoder_tell(trans);
+        stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
+    }
+
+transcoder_fail:
+stat_fail:
+passthrough:
+    free(origpath);
+translate_fail:
+    return -errno;
+}
+
 static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     char* origpath;
     struct transcoder* trans;
@@ -281,8 +335,7 @@ translate_fail:
     return -errno;
 }
 
-static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
-                      struct fuse_file_info *fi) {
+static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
     char* origpath;
     int fd;
     ssize_t read = 0;
@@ -386,6 +439,7 @@ static void *mp3fs_init(struct fuse_conn_info *conn) {
 
 struct fuse_operations mp3fs_ops = {
     .getattr  = mp3fs_getattr,
+    .fgetattr = mp3fs_fgetattr,
     .readlink = mp3fs_readlink,
     .readdir  = mp3fs_readdir,
     .open     = mp3fs_open,
