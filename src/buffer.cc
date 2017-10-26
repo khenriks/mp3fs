@@ -125,23 +125,23 @@ bool Buffer::seek(size_t pos) {
     }
 }
 
-/* Give the value of the internal position pointer. */
+/* Give the value of the internal read position pointer. */
 size_t Buffer::tell() const {
     return buffer_pos;
 }
 
-/* Give the value of the internal position pointer. */
+/* Give the value of the internal buffer size pointer. */
 size_t Buffer::size() const {
     return buffer_size;
 }
 
-/* Number of bytes written to buffer so far */
+/* Number of bytes written to buffer so far (may be less than m_buffer_size) */
 size_t Buffer::actual_size() const {
     return filled_size;
 }
 
 /* Copy buffered data into output buffer. */
-void Buffer::copy_into(uint8_t* out_data, size_t offset, size_t size) const {
+void Buffer::copy(uint8_t* out_data, size_t offset, size_t size) const {
     //assert(buffer_size > offset + size);
     assert(buffer_data != NULL);
     if (buffer_size < offset)
