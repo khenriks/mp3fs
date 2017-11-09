@@ -15,3 +15,4 @@ mp3fs.1
 /test/fpcompare
 /test/*.log
 /test/*.trs
+src/.directory
