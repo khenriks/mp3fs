@@ -1,14 +1,13 @@
 mp3fs
 =====
 
-[![Build Status](https://travis-ci.org/khenriks/mp3fs.svg?branch=master)](https://travis-ci.org/khenriks/mp3fs)
-
-Web site: http://khenriks.github.io/mp3fs/
+Web site: 
+Original Version: http://khenriks.github.io/mp3fs/
 FFMPEG Version: https://github.com/nschlia/mp3fs
 
-mp3fs is a read-only FUSE filesystem which transcodes between audio formats
-(many formats that FFMPEG can decode to MP3 or MP4) on the fly when opened
-and read.
+mp3fs is a read-only FUSE filesystem which transcodes between audio and 
+video formats (many formats that FFMPEG can decode to MP3 or MP4) on the 
+fly when opened and read.
 
 This can let you use a multi media file collection with software and/or
 hardware which only understands the MP3 or MP4 format, or transcode files 
@@ -32,15 +31,22 @@ Mount your filesystem like this:
 
 For example,
 
-    mp3fs -b 128 /mnt/music /mnt/mp3 -o allow_other,ro
+    mp3fs -b 128 /mnt/music /mnt/mp3fs -o allow_other,ro
 
 In recent versions of FUSE and mp3fs, the same can be achieved with the
 following entry in `/etc/fstab`:
 
-    mp3fs#/mnt/music /mnt/mp3 fuse allow_other,ro,bitrate=128 0 0
+    mp3fs#/mnt/music /mnt/mp3fs fuse allow_other,ro,bitrate=128 0 0
 
 At this point files like `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
-show up as `/mnt/mp3/**.mp3`.
+show up as `/mnt/mp3fs/**.mp4`.
+
+Note that the "allow_other" option by default can only be used by root.
+You must either run mp3fs as root or add a "user_allow_other" key to
+/etc/fuse.conf.
+
+"allow_other" is required to allow any user access to the mount, by
+default this is only possible for the user who launched mp3fs.
 
 How it Works
 ------------
@@ -142,13 +148,13 @@ These are only required if not using FFMPEG:
 Authors
 -------
 
-This program is maintained by K. Henriksson, who is the primary author
-from 2008 to present.
+This fork with FFMPEG support is maintained by Norbert Schlia 
+(nschlia@oblivion-software.de) since 2017.
 
-The original maintainer and author was David Collett from 2006 to 2008.
-Much thanks to him for his original work.
+Based on work by K. Henriksson (from 2008 to 2017) and the original author 
+David Collett (from 2006 to 2008).
 
-FFMPEG support added 2017 by Norbert Schlia (nschlia@oblivion-software.de)
+Much thanks to them for the original work!
 
 License
 -------

@@ -7,7 +7,7 @@ support video conversion. The current version will recode video files,
 but only the sound track. No video playback possible yet.
 
 Changes in this release:
-* Replaced decoding and encoding by FFMPEG.
+* Replaced decoding and encoding with FFMPEG.
 * Removed discrete FLAC/Ogg/MP3 libraries. FFMPEG supports a wide range of
   formats, including these, so they are no longer required.
 * TODO: Supports a huge number of file formats now (run "mp3fs --codecs" for 
@@ -22,7 +22,7 @@ Changes in this release:
 * Caching of file attributes is now the default as if
   "--statcachesize=500" was given. Add "--statcachesize=0" to turn off
   (not really a bright idea, though).
-* TODO: Files will now be decoded to /tmp/ instead of memory if large
+* TODO: Files will now be decoded to /tmp/ instead of memory if larger
   than 100MB. Add "--maxmemcache=X" to change. Examples for X: 80000,
   80MB or 1GB. Do not set to a too large value as you may run out of
   memory.
@@ -30,7 +30,6 @@ Changes in this release:
 * TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
   that already represents a H264 video stream it would be possible to 
   simply repackage it to a mp4 container without recoding.
-* TODO: Add mp3 IDv1 tag at end.  
 
 nschlia@oblivion-software.de
 

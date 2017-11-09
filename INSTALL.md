@@ -1,10 +1,11 @@
 Installation Instructions for mp3fs
 ===================================
 
-This file is copyright (C) 2013-2014 K. Henriksson. It can be distributed
-under the terms of the GFDL 1.3 or later. See README.md for more
-information.
-FFMPEG support 2017 by Norbert Schllia (nschlia@oblivion-software.de)
+Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
+This file was originally copyright (C) 2013-2014 K. Henriksson. 
+
+It can be distributed under the terms of the GFDL 1.3 or later. 
+See README.md for more information.
 
 Prerequisites
 -------------
@@ -12,15 +13,16 @@ Prerequisites
 mp3fs uses FFMEG lib for decoding/encoding. It requires the following 
 libraries:
 
-* gcc and g++
+* gcc and g++ compilers
 
 * fuse (>= 2.6.0)
 
-* libavutil     (>= 54.3.0)
-* libavcodec    (>= 56.1.0)
-* libavformat   (>= 56.1.0)
-* libavresample   (>= 2.1.0)
-* libswscale      (>= 3.0.0)
+* libavutil      (>= 54.3.0)
+* libavcodec     (>= 56.1.0)
+* libavformat    (>= 56.1.0)
+* libavfilter     6. 82.100
+* libavresample  (>= 2.1.0)
+* libswscale     (>= 3.0.0)
 
 If building from git, you'll also need:
 
@@ -40,9 +42,10 @@ On Debian:
 	
 To build the docs succesfully you may need
 
-	apt-get install asciidoc
+    apt-get install asciidoc
 	
-Note that for Debian 8 the LIBAV clone of FFMPEG will be installed. From Debian 9 on the original FFMPEG comes with the distribution. Both libraries work.
+Note that for Debian 8 the LIBAV clone of FFMPEG will be installed. From Debian 9 
+on the original FFMPEG comes with the distribution. Both libraries work.
 
 On Ubuntu use the same command with `apt-get` in place of `aptitude`.
 
@@ -62,6 +65,15 @@ build and install, run:
     ./configure
     make
     make install
+    
+To build and run the check suite, do:    
+
+    make checks
+    
+This will test audio conversion, tagging, size prediction and image embedding.
+
+NOTE: Size prediction is not working properly at the moment, image embedding
+is not yet implemented. Both tests will currently fail.
 
 Trouble Shooting
 ----------------
