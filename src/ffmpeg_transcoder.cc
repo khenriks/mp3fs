@@ -2,10 +2,7 @@
  * FFMPEG decoder class source for mp3fs
  *
  * Copyright (C) 2015 Thomas Schwarzenberger
- * FFMPEG supplementals by Norbert Schlia (nschlia@oblivon-software.de)
- *
- * Transcoder derived from this example:
- * https://fossies.org/linux/libav/doc/examples/transcode_aac.c
+ * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,7 +28,7 @@
 
 #include <unistd.h>
 
-#include <vector>
+//#include <vector>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -51,8 +48,8 @@ int64_t video_start_pts;
 
 #define INVALID_STREAM  -1
 
-FfmpegTranscoder::FfmpegTranscoder()
-    : m_nActual_size(0)
+FFMPEG_Transcoder::FFMPEG_Transcoder()
+    : m_nCalculated_size(0)
     , m_bIsVideo(false)
     #ifdef _USE_LIBSWRESAMPLE
     , m_pSwr_ctx(NULL)
@@ -84,17 +81,17 @@ FfmpegTranscoder::FfmpegTranscoder()
             .m_nAudio_pts = 0,
             .m_nVideo_pts = 0,
             .m_nVideo_offset = 0,
-            .m_id3v1 = {}
-        })
+            .m_id3v1 = { }
+            })
 {
     mp3fs_debug("FFMPEG trancoder: ready to initialise.");
 
     // Initialise ID3v1.1 tag structure
     memset(&m_out.m_id3v1, ' ', sizeof(ID3v1));
-    memcpy(&m_out.m_id3v1.szTAG, "TAG", 3);
-    m_out.m_id3v1.cPad = '\0';
-    m_out.m_id3v1.cTitleNo = 0;
-    m_out.m_id3v1.cGenre = 0;
+    memcpy(&m_out.m_id3v1.m_sTAG, "TAG", 3);
+    m_out.m_id3v1.m_bPad = '\0';
+    m_out.m_id3v1.m_bTitleNo = 0;
+    m_out.m_id3v1.m_bGenre = 0;
 
     audio_start_pts = 0;
     video_start_pts = 0;
@@ -103,7 +100,7 @@ FfmpegTranscoder::FfmpegTranscoder()
 /* Free the FFMPEG en/decoder and close the open FFMPEG file
  * after the transcoding process has finished.
  */
-FfmpegTranscoder::~FfmpegTranscoder() {
+FFMPEG_Transcoder::~FFMPEG_Transcoder() {
 
     // Close fifo and resample context
     if (m_pAudioFifo)
@@ -186,7 +183,7 @@ FfmpegTranscoder::~FfmpegTranscoder() {
  * Open codec context for desired media type
  */
 
-int FfmpegTranscoder::open_codec_context(int *stream_idx, AVCodecContext **avctx, AVFormatContext *fmt_ctx, AVMediaType type, const char *filename)
+int FFMPEG_Transcoder::open_codec_context(int *stream_idx, AVCodecContext **avctx, AVFormatContext *fmt_ctx, AVMediaType type, const char *filename)
 {
     int ret;
 
@@ -258,7 +255,7 @@ int FfmpegTranscoder::open_codec_context(int *stream_idx, AVCodecContext **avctx
  * FFMPEG handles cover arts like video streams.
  * Try to find out if we have a video stream or a cover art.
  */
-bool FfmpegTranscoder::is_video() const
+bool FFMPEG_Transcoder::is_video() const
 {
     bool bIsVideo = false;
 
@@ -266,6 +263,10 @@ bool FfmpegTranscoder::is_video() const
     {
         if ((m_in.m_pVideo_codec_ctx->codec_id == AV_CODEC_ID_PNG) || (m_in.m_pVideo_codec_ctx->codec_id == AV_CODEC_ID_MJPEG))
         {
+#if (LIBAVFORMAT_VERSION_MAJOR < 57)
+#warning "Must be fixed here! (LIBAVFORMAT_VERSION_MAJOR < 57)"
+            bIsVideo = true;
+#else
             bIsVideo = false;
 
             if (m_in.m_pVideo_stream->r_frame_rate.den)
@@ -278,6 +279,7 @@ bool FfmpegTranscoder::is_video() const
                     bIsVideo = true;
                 }
             }
+#endif
         }
         else
         {
@@ -293,7 +295,7 @@ bool FfmpegTranscoder::is_video() const
  * Open the given FFMPEG file and prepare for decoding. After this function,
  * the other methods can be used to process the file.
  */
-int FfmpegTranscoder::open_file(const char* filename) {
+int FFMPEG_Transcoder::open_file(const char* filename) {
     AVDictionary * opt = NULL;
     int ret;
 
@@ -367,10 +369,14 @@ int FfmpegTranscoder::open_file(const char* filename) {
 
         m_bIsVideo = is_video();
 
+#ifdef CODEC_CAP_TRUNCATED
         if(m_in.m_pVideo_codec_ctx->codec->capabilities & CODEC_CAP_TRUNCATED)
         {
             m_in.m_pVideo_codec_ctx->flags|= CODEC_FLAG_TRUNCATED; /* we do not send complete frames */
         }
+#else
+#warning "Need to fix CODEC_CAP_TRUNCATED missing."
+#endif
     }
 
     // Open best match audio codec
@@ -396,7 +402,13 @@ int FfmpegTranscoder::open_file(const char* filename) {
     return 0;
 }
 
-int FfmpegTranscoder::open_out_file(Buffer *buffer, const char* type) {
+int FFMPEG_Transcoder::open_out_file(Buffer *buffer, const char* type) {
+
+    // Pre-allocate the predicted file size to reduce memory reallocations
+    if (!buffer->reserve(calculate_size())) {
+        mp3fs_error("FFMPEG transcoder: Out of memory pre-allocating buffer.");
+        return -1;
+    }
 
     /** Open the output file for writing. */
     if (open_output_file(buffer, type)) {
@@ -432,7 +444,7 @@ int FfmpegTranscoder::open_out_file(Buffer *buffer, const char* type) {
     return 0;
 }
 
-int64_t FfmpegTranscoder::get_output_bit_rate(AVStream *in_stream, int64_t bit_rate) const
+int64_t FFMPEG_Transcoder::get_output_bit_rate(AVStream *in_stream, int64_t bit_rate) const
 {
     int64_t real_bit_rate = in_stream->codec->bit_rate != 0 ? in_stream->codec->bit_rate : m_in.m_pFormat_ctx->bit_rate;
 
@@ -444,7 +456,7 @@ int64_t FfmpegTranscoder::get_output_bit_rate(AVStream *in_stream, int64_t bit_r
     return real_bit_rate;
 }
 
-int FfmpegTranscoder::add_stream(AVCodecID codec_id)
+int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
 {
     AVCodecContext *codec_ctx     = NULL;
     AVStream *      stream        = NULL;
@@ -455,7 +467,12 @@ int FfmpegTranscoder::add_stream(AVCodecID codec_id)
     /* find the encoder */
     output_codec = avcodec_find_encoder(codec_id);
     if (!output_codec) {
+#if (LIBAVFORMAT_VERSION_MAJOR < 57)
+#warning "Must be fixed here! (LIBAVFORMAT_VERSION_MAJOR < 57)"
+        mp3fs_error("FFMPEG transcoder: Could not find encoder");
+#else
         mp3fs_error("FFMPEG transcoder: Could not find encoder for '%s'.", avcodec_get_name(codec_id));
+#endif
         exit(1);
     }
 
@@ -569,10 +586,17 @@ int FfmpegTranscoder::add_stream(AVCodecID codec_id)
 
         codec_ctx->gop_size             = 12;   // emit one intra frame every twelve frames at most
 
+#if (LIBAVFORMAT_VERSION_MAJOR < 57)
+#warning "Must be fixed here! (LIBAVFORMAT_VERSION_MAJOR < 57)"
+#else
         codec_ctx->framerate            = in_video_stream->codec->framerate;
+#endif
         codec_ctx->sample_aspect_ratio  = in_video_stream->codec->sample_aspect_ratio;
         av_opt_set(codec_ctx->priv_data, "profile", "high", AV_OPT_SEARCH_CHILDREN);
         av_opt_set(codec_ctx->priv_data, "preset", "veryfast", AV_OPT_SEARCH_CHILDREN);
+        av_opt_set(codec_ctx->priv_data, "qmin", "0", AV_OPT_SEARCH_CHILDREN);
+        av_opt_set(codec_ctx->priv_data, "qmax", "69", AV_OPT_SEARCH_CHILDREN);
+        av_opt_set(codec_ctx->priv_data, "qdiff", "4", AV_OPT_SEARCH_CHILDREN);
         /** Save the encoder context for easier access later. */
         m_out.m_pVideo_codec_ctx    = codec_ctx;
         // Save the stream index
@@ -585,9 +609,11 @@ int FfmpegTranscoder::add_stream(AVCodecID codec_id)
         break;
     }
 
+#ifdef AV_CODEC_FLAG_GLOBAL_HEADER
     /* Some formats want stream headers to be separate. */
     if (m_out.m_pFormat_ctx->oformat->flags & AVFMT_GLOBALHEADER)
         codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+#endif
 
     /** Open the encoder for the audio stream to use it later. */
     if ((ret = avcodec_open2(codec_ctx, output_codec, &opt)) < 0) {
@@ -615,7 +641,7 @@ int FfmpegTranscoder::add_stream(AVCodecID codec_id)
  * Also set some basic encoder parameters.
  * Some of these parameters are based on the input file's parameters.
  */
-int FfmpegTranscoder::open_output_file(Buffer *buffer, const char* type)
+int FFMPEG_Transcoder::open_output_file(Buffer *buffer, const char* type)
 {
     AVIOContext *   output_io_context   = NULL;
     AVCodecID       audio_codecid;
@@ -654,8 +680,12 @@ int FfmpegTranscoder::open_output_file(Buffer *buffer, const char* type)
     mp3fs_debug("FFMPEG transcoder: Opening format type \"%s\"", type);
 
     /** Create a new format context for the output container format. */
+#if (LIBAVFORMAT_VERSION_MAJOR < 57)
+#warning "Must be fixed here! (LIBAVFORMAT_VERSION_MAJOR < 57)"
+    m_out.m_pFormat_ctx = avformat_alloc_context();
+#else
     avformat_alloc_output_context2(&m_out.m_pFormat_ctx, NULL, ext, NULL);
-    //m_out.m_pFormat_ctx = avformat_alloc_context();
+#endif
     if (!m_out.m_pFormat_ctx) {
         mp3fs_error("FFMPEG transcoder: Could not allocate output format context.");
         return AVERROR(ENOMEM);
@@ -723,7 +753,7 @@ int FfmpegTranscoder::open_output_file(Buffer *buffer, const char* type)
 }
 
 /** Initialize one data packet for reading or writing. */
-void FfmpegTranscoder::init_packet(AVPacket *packet)
+void FFMPEG_Transcoder::init_packet(AVPacket *packet)
 {
     av_init_packet(packet);
     /** Set the packet data and size so that it is recognized as being empty. */
@@ -732,7 +762,7 @@ void FfmpegTranscoder::init_packet(AVPacket *packet)
 }
 
 /** Initialize one audio frame for reading from the input file */
-int FfmpegTranscoder::init_input_frame(AVFrame **frame)
+int FFMPEG_Transcoder::init_input_frame(AVFrame **frame)
 {
     if (!(*frame = av_frame_alloc())) {
         mp3fs_error("FFMPEG transcoder: Could not allocate input frame.");
@@ -746,7 +776,7 @@ int FfmpegTranscoder::init_input_frame(AVFrame **frame)
          * If the input and output sample formats differ, a conversion is required
          * libavresample takes care of this, but requires initialisation.
          */
-int FfmpegTranscoder::init_resampler()
+int FFMPEG_Transcoder::init_resampler()
 {
     /**
       * Only initialise the resampler if it is necessary, i.e.,
@@ -820,7 +850,7 @@ int FfmpegTranscoder::init_resampler()
 }
 
 /** Initialize a FIFO buffer for the audio samples to be encoded. */
-int FfmpegTranscoder::init_fifo()
+int FFMPEG_Transcoder::init_fifo()
 {
     /** Create the FIFO buffer based on the specified output sample format. */
     if (!(m_pAudioFifo = av_audio_fifo_alloc(m_out.m_pAudio_codec_ctx->sample_fmt, m_out.m_pAudio_codec_ctx->channels, 1))) {
@@ -831,7 +861,7 @@ int FfmpegTranscoder::init_fifo()
 }
 
 /** Write the header of the output file container. */
-int FfmpegTranscoder::write_output_file_header()
+int FFMPEG_Transcoder::write_output_file_header()
 {
     int error;
     AVDictionary* dict = nullptr;
@@ -858,7 +888,7 @@ int FfmpegTranscoder::write_output_file_header()
     return 0;
 }
 
-AVFrame *FfmpegTranscoder::alloc_picture(AVPixelFormat pix_fmt, int width, int height)
+AVFrame *FFMPEG_Transcoder::alloc_picture(AVPixelFormat pix_fmt, int width, int height)
 {
     AVFrame *picture;
     int ret;
@@ -883,7 +913,7 @@ AVFrame *FfmpegTranscoder::alloc_picture(AVPixelFormat pix_fmt, int width, int h
 }
 
 /** Decode one audio frame from the input file. */
-int FfmpegTranscoder::decode_frame(AVPacket *input_packet, int *data_present)
+int FFMPEG_Transcoder::decode_frame(AVPacket *input_packet, int *data_present)
 {
     int decoded = 0;
 
@@ -968,6 +998,7 @@ cleanup2:
     {
         AVFrame *input_frame = NULL;
         int ret = 0;
+        int64_t pts;
 
         /** Initialize temporary storage for one input frame. */
         ret = init_input_frame(&input_frame);
@@ -1012,16 +1043,39 @@ cleanup2:
         // TODO: pFrame->opaque unused???
         if (input_packet->dts == AV_NOPTS_VALUE && input_frame->opaque && *(int64_t *)input_frame->opaque != AV_NOPTS_VALUE)
         {
-            m_pts = *(uint64_t *)input_frame->opaque;
+            pts = *(uint64_t *)input_frame->opaque;
+            if (pts > m_pts)
+            {
+                m_pts = pts;
+            }
+            else
+            {
+                *data_present = 0;  // Discard frame with invalid pts
+            }
         }
-
         else if (input_packet->dts != AV_NOPTS_VALUE)
         {
-            m_pts = input_packet->dts;
+            pts = input_packet->dts;
+            if (pts > m_pts)
+            {
+                m_pts = pts;
+            }
+            else
+            {
+                *data_present = 0;  // Discard frame with invalid pts
+            }
         }
         else if (input_packet->pts != AV_NOPTS_VALUE)
         {
-            m_pts = input_packet->pts;
+            pts = input_packet->pts;
+            if (pts > m_pts)
+            {
+                m_pts = pts;
+            }
+            else
+            {
+                *data_present = 0;  // Discard frame with invalid pts
+            }
         }
 
         if (input_packet->pos > -1)
@@ -1097,7 +1151,7 @@ cleanup2:
          * The conversion requires temporary storage due to the different format.
          * The number of audio samples to be allocated is specified in frame_size.
          */
-int FfmpegTranscoder::init_converted_samples(uint8_t ***converted_input_samples, int frame_size)
+int FFMPEG_Transcoder::init_converted_samples(uint8_t ***converted_input_samples, int frame_size)
 {
     int error;
 
@@ -1132,7 +1186,7 @@ int FfmpegTranscoder::init_converted_samples(uint8_t ***converted_input_samples,
          * The conversion happens on a per-frame basis, the size of which is specified
          * by frame_size.
          */
-int FfmpegTranscoder::convert_samples(uint8_t **input_data, uint8_t **converted_data, const int frame_size)
+int FFMPEG_Transcoder::convert_samples(uint8_t **input_data, uint8_t **converted_data, const int frame_size)
 {
 #ifdef _USE_LIBSWRESAMPLE
     if (m_pSwr_ctx != NULL)
@@ -1191,7 +1245,7 @@ int FfmpegTranscoder::convert_samples(uint8_t **input_data, uint8_t **converted_
 }
 
 /** Add converted input audio samples to the FIFO buffer for later processing. */
-int FfmpegTranscoder::add_samples_to_fifo(uint8_t **converted_input_samples, const int frame_size)
+int FFMPEG_Transcoder::add_samples_to_fifo(uint8_t **converted_input_samples, const int frame_size)
 {
     int error;
 
@@ -1217,7 +1271,7 @@ int FfmpegTranscoder::add_samples_to_fifo(uint8_t **converted_input_samples, con
          * Read one audio frame from the input file, decodes, converts and stores
          * it in the FIFO buffer.
          */
-int FfmpegTranscoder::read_decode_convert_and_store(int *finished)
+int FFMPEG_Transcoder::read_decode_convert_and_store(int *finished)
 {
     /** Packet used for temporary storage. */
     AVPacket input_packet;
@@ -1292,7 +1346,7 @@ cleanup:
          * Initialize one input frame for writing to the output file.
          * The frame will be exactly frame_size samples large.
          */
-int FfmpegTranscoder::init_audio_output_frame(AVFrame **frame, int frame_size)
+int FFMPEG_Transcoder::init_audio_output_frame(AVFrame **frame, int frame_size)
 {
     int error;
 
@@ -1327,7 +1381,7 @@ int FfmpegTranscoder::init_audio_output_frame(AVFrame **frame, int frame_size)
     return 0;
 }
 
-void FfmpegTranscoder::produce_dts(AVPacket *pkt, int64_t *pts)
+void FFMPEG_Transcoder::produce_dts(AVPacket *pkt, int64_t *pts)
 {
     //    if ((pkt->pts == 0 || pkt->pts == AV_NOPTS_VALUE) && pkt->dts == AV_NOPTS_VALUE)
     {
@@ -1352,7 +1406,7 @@ void FfmpegTranscoder::produce_dts(AVPacket *pkt, int64_t *pts)
 }
 
 /** Encode one frame worth of audio to the output file. */
-int FfmpegTranscoder::encode_audio_frame(AVFrame *frame, int *data_present)
+int FFMPEG_Transcoder::encode_audio_frame(AVFrame *frame, int *data_present)
 {
     /** Packet used for temporary storage. */
     AVPacket output_packet;
@@ -1388,7 +1442,7 @@ int FfmpegTranscoder::encode_audio_frame(AVFrame *frame, int *data_present)
 }
 
 /** Encode one frame worth of audio to the output file. */
-int FfmpegTranscoder::encode_video_frame(AVFrame *frame, int *data_present)
+int FFMPEG_Transcoder::encode_video_frame(AVFrame *frame, int *data_present)
 {
     /** Packet used for temporary storage. */
     AVPacket output_packet;
@@ -1431,7 +1485,7 @@ int FfmpegTranscoder::encode_video_frame(AVFrame *frame, int *data_present)
          * Load one audio frame from the FIFO buffer, encode and write it to the
          * output file.
          */
-int FfmpegTranscoder::load_encode_and_write()
+int FFMPEG_Transcoder::load_encode_and_write()
 {
     /** Temporary storage of the output samples of the frame written to the file. */
     AVFrame *output_frame;
@@ -1467,7 +1521,7 @@ int FfmpegTranscoder::load_encode_and_write()
 }
 
 /** Write the trailer of the output file container. */
-int FfmpegTranscoder::write_output_file_trailer()
+int FFMPEG_Transcoder::write_output_file_trailer()
 {
     int error;
     if ((error = av_write_trailer(m_out.m_pFormat_ctx)) < 0) {
@@ -1477,7 +1531,7 @@ int FfmpegTranscoder::write_output_file_trailer()
     return 0;
 }
 
-time_t FfmpegTranscoder::mtime() {
+time_t FFMPEG_Transcoder::mtime() const {
     return m_mtime;
 }
 
@@ -1493,7 +1547,7 @@ time_t FfmpegTranscoder::mtime() {
     for (char *p1 = (dst), *pend = p1 + sizeof(dst), *p2 = (src); *p2 && p1 < pend; p1++, p2++) \
     *p1 = *p2;
 
-void FfmpegTranscoder::copy_metadata(AVDictionary *metadata, AVStream * stream, bool bIsVideo) // TODO: Stream tags
+void FFMPEG_Transcoder::copy_metadata(AVDictionary *metadata, AVStream * stream, bool bIsVideo) // TODO: Stream tags
 {
     AVDictionaryEntry *tag = NULL;
 
@@ -1510,35 +1564,36 @@ void FfmpegTranscoder::copy_metadata(AVDictionary *metadata, AVStream * stream, 
 
         if (m_out.m_output_type == TYPE_MP3)
         {
+            // For MP3 fill in ID3v1 structure
             if (!strcasecmp(tag->key, "ARTIST"))
             {
-                tagcpy(m_out.m_id3v1.szSongArtist, tag->value);
+                tagcpy(m_out.m_id3v1.m_sSongArtist, tag->value);
             }
             else if (!strcasecmp(tag->key, "TITLE"))
             {
-                tagcpy(m_out.m_id3v1.szSongTitle, tag->value);
+                tagcpy(m_out.m_id3v1.m_sSongTitle, tag->value);
             }
             else if (!strcasecmp(tag->key, "ALBUM"))
             {
-                tagcpy(m_out.m_id3v1.szAlbumName, tag->value);
+                tagcpy(m_out.m_id3v1.m_sAlbumName, tag->value);
             }
             else if (!strcasecmp(tag->key, "COMMENT"))
             {
-                tagcpy(m_out.m_id3v1.szComment, tag->value);
+                tagcpy(m_out.m_id3v1.m_sComment, tag->value);
             }
             else if (!strcasecmp(tag->key, "YEAR") || !strcasecmp(tag->key, "DATE"))
             {
-                tagcpy(m_out.m_id3v1.szYear, tag->value);
+                tagcpy(m_out.m_id3v1.m_sYear, tag->value);
             }
             else if (!strcasecmp(tag->key, "TRACK"))
             {
-                m_out.m_id3v1.cTitleNo = (char)atoi(tag->value);
+                m_out.m_id3v1.m_bTitleNo = (char)atoi(tag->value);
             }
         }
     }
 }
 
-int FfmpegTranscoder::process_metadata() {
+int FFMPEG_Transcoder::process_metadata() {
 
     mp3fs_debug("FFMPEG transcoder: processing metadata");
 
@@ -1570,7 +1625,7 @@ int FfmpegTranscoder::process_metadata() {
          *  1   if EOF reached
          *  -1  error
          */
-int FfmpegTranscoder::process_single_fr() {
+int FFMPEG_Transcoder::process_single_fr() {
     int ret = 0;
 
     if (m_out.m_nAudio_stream_idx > -1)
@@ -1681,11 +1736,12 @@ cleanup:
          * but in practice gives excellent answers, usually exactly correct.
          * Cast to 64-bit int to avoid overflow.
          */
-size_t FfmpegTranscoder::calculate_size() {
+size_t FFMPEG_Transcoder::calculate_size() {
 
-    if (m_nActual_size == 0 && m_in.m_pFormat_ctx != NULL)
+    if (m_nCalculated_size == 0 && m_in.m_pFormat_ctx != NULL)
     {
         // TODO: check mp3 prediction. AAC/H264 OK now.
+        double duration = ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q);
         size_t size = 0;
 
         if (m_in.m_nAudio_stream_idx > -1)
@@ -1698,20 +1754,22 @@ size_t FfmpegTranscoder::calculate_size() {
             {
             case AV_CODEC_ID_AAC:
             {
-                // Try to predict the size of the AAC stream
-                size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * 1.025 * (double)audiobitrate / 8); // add 2.5% for overhead
+                // Try to predict the size of the AAC stream (this is fairly accurate, sometimes a bit larger, sometimes a bit too small
+                size += (size_t)(duration * 1.025 * (double)audiobitrate / 8); // add 2.5% for overhead
                 break;
             }
             case AV_CODEC_ID_MP3:
+            {
                 // TODO: calculate correct size of mp3
-                // https://audio-rescue.com/file-size/
-                // http://www.audiomountain.com/tech/audio-file-size.html
                 // Kbps = bits per second / 8 = Bytes per second x 60 seconds = Bytes per minute x 60 minutes = Bytes per hour
-                size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * (double)audiobitrate / 8);
+                size += (size_t)(duration * (double)audiobitrate / 8) + ID3V1_TAG_LENGTH;
                 break;
+            }
             default:
+            {
                 mp3fs_error("FFMPEG transcoder: Internal error - unsupported audio codec %s.", get_codec_name(audio_codec_id));
                 break;
+            }
             }
         }
 
@@ -1731,12 +1789,7 @@ size_t FfmpegTranscoder::calculate_size() {
                 case AV_CODEC_ID_H264:
                 {
                     //Math.round(s*parseFloat(document.Calc.RTotal.value)*125);
-                    size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * 1.025  * (double)videobitrate / 8); // add 2.5% for overhead
-                    break;
-                }
-                case AV_CODEC_ID_MJPEG:
-                {
-                    size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * (double)videobitrate / 8);
+                    size += (size_t)(duration * 1.025  * (double)videobitrate / 8); // add 2.5% for overhead
                     break;
                 }
                 default:
@@ -1746,16 +1799,16 @@ size_t FfmpegTranscoder::calculate_size() {
                 }
                 }
             }
-            //else      TODO: Add picture size
-            //{
+            else      // TODO: Add picture size
+            {
 
-            //}
+            }
         }
 
-        m_nActual_size = size;
+        m_nCalculated_size = size;
     }
 
-    return m_nActual_size;
+    return m_nCalculated_size; // * 0.2;
 }
 
 /*
@@ -1763,7 +1816,7 @@ size_t FfmpegTranscoder::calculate_size() {
          * Buffer. This should be called after all input data has already been
          * passed to encode_pcm_data().
          */
-int FfmpegTranscoder::encode_finish() {
+int FFMPEG_Transcoder::encode_finish() {
 
     int ret = 0;
 
@@ -1778,12 +1831,12 @@ int FfmpegTranscoder::encode_finish() {
     return 1;
 }
 
-const ID3v1 * FfmpegTranscoder::id3v1tag() const
+const ID3v1 * FFMPEG_Transcoder::id3v1tag() const
 {
     return &m_out.m_id3v1;
 }
 
-int FfmpegTranscoder::writePacket(void * pOpaque, unsigned char * pBuffer, int nBufSize)
+int FFMPEG_Transcoder::writePacket(void * pOpaque, unsigned char * pBuffer, int nBufSize)
 {
     Buffer * buffer = (Buffer *)pOpaque;
 
@@ -1795,7 +1848,7 @@ int FfmpegTranscoder::writePacket(void * pOpaque, unsigned char * pBuffer, int n
     return (int)buffer->write((const uint8_t*)pBuffer, nBufSize);
 }
 
-int64_t FfmpegTranscoder::seek(void * pOpaque, int64_t i4Offset, int nWhence)
+int64_t FFMPEG_Transcoder::seek(void * pOpaque, int64_t i4Offset, int nWhence)
 {
     Buffer * buffer = (Buffer *)pOpaque;
     int64_t i64ResOffset = 0;

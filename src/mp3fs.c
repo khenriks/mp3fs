@@ -40,6 +40,7 @@
 
 struct mp3fs_params params = {
     .basepath           = NULL,
+    .mountpath          = NULL,
     .width              = 0,
     .maxwidth           = 0,
     .height             = 0,
@@ -56,7 +57,10 @@ struct mp3fs_params params = {
     .statcachesize      = 500,
     .maxsamplerate      = 44100,
     .desttype           = "mp4",
-//    .desttype      = "mp3",
+    //    .desttype      = "mp3",
+    .expiry_time            = (60*60*24 /* d */) * 7,   // default: 1 week
+    .max_inactive_suspend   = (60 /* m */) * 2,         // default: 2 minutes
+    .max_inactive_abort     = (60 /* m */) * 25,         // default: 5 minutes
 };
 
 enum {
@@ -105,12 +109,13 @@ static struct fuse_opt mp3fs_opts[] = {
 void usage(char *name) {
     printf("Usage: %s [OPTION]... IN_DIR OUT_DIR\n", name);
     fputs(INFO "\n\
-\n\
-Encoding options:\n\
-    -b RATE, -obitrate=RATE\n\
-                           encoding bitrate: Acceptable values for RATE\n\
-                           include 96, 112, 128, 160, 192, 224, 256, and\n\
-                           320; 128 is the default\n\
+          Mount IN_DIR on OUT_DIR, converting FLAC/Ogg Vorbis files to MP3 upon access.\n\
+          \n\
+          Encoding options:\n\
+              -b RATE, -obitrate=RATE\n\
+                                     encoding bitrate: Acceptable values for RATE\n\
+                                     include 96, 112, 128, 160, 192, 224, 256, and\n\
+                                     320; 128 is the default\n\
     --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL\n\
                            maximum level of messages to log, either ERROR,\n\
                            INFO, or DEBUG. Defaults to INFO, and always set\n\
@@ -139,35 +144,42 @@ General options:\n\
 \n", stdout);
 }
 
-static int mp3fs_opt_proc(void* data, const char* arg, int key,
-                          struct fuse_args *outargs) {
+static int mp3fs_opt_proc(void* data, const char* arg, int key, struct fuse_args *outargs) {
+    static int n;
     (void)data;
     switch(key) {
-        case FUSE_OPT_KEY_NONOPT:
-            // check for flacdir and bitrate parameters
-            if (!params.basepath) {
-                params.basepath = arg;
-                return 0;
-            }
-            break;
+    case FUSE_OPT_KEY_NONOPT:
+        // check for basepath and bitrate parameters
+        if (n == 0 && !params.basepath) {
+            params.basepath = arg;
+            n++;
+            return 0;
+        }
+        else if (n == 1 && !params.mountpath) {
+            params.mountpath = arg;
+            n++;
+            return 1;
+        }
 
-        case KEY_HELP:
-            usage(outargs->argv[0]);
-            fuse_opt_add_arg(outargs, "-ho");
-            fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
-            exit(1);
+        break;
 
-        case KEY_VERSION:
-            // TODO: Also output this information in debug mode
-            printf("mp3fs version: %s\n", PACKAGE_VERSION);
+    case KEY_HELP:
+        usage(outargs->argv[0]);
+        fuse_opt_add_arg(outargs, "-ho");
+        fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
+        exit(1);
 
-            char buffer[1024];
-            ffmpeg_libinfo(buffer, sizeof(buffer));
-            printf("%s", buffer);
+    case KEY_VERSION:
+        // TODO: Also output this information in debug mode
+        printf("mp3fs version: %s\n", PACKAGE_VERSION);
 
-            fuse_opt_add_arg(outargs, "--version");
-            fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
-            exit(0);
+        char buffer[1024];
+        ffmpeg_libinfo(buffer, sizeof(buffer));
+        printf("%s", buffer);
+
+        fuse_opt_add_arg(outargs, "--version");
+        fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
+        exit(0);
     }
 
     return 1;
@@ -183,6 +195,10 @@ int main(int argc, char *argv[]) {
     avcodec_register_all();
     av_register_all();
     //show_formats_devices(0);
+    #ifndef USING_LIBAV
+	// Redirect FFMPEG logs
+    av_log_set_callback(ffmpeg_log);
+#endif
 
     if (fuse_opt_parse(&args, &params, mp3fs_opts, mp3fs_opt_proc)) {
         fprintf(stderr, "Error parsing options.\n\n");
@@ -194,47 +210,67 @@ int main(int argc, char *argv[]) {
     if (params.debug) {
         params.log_stderr = 1;
         params.log_maxlevel = "DEBUG";
+        //        av_log_set_level(AV_LOG_DEBUG);
+        av_log_set_level(AV_LOG_INFO);
+    }
+    else
+    {
+        av_log_set_level(AV_LOG_QUIET);
     }
 
-    if (!init_logging(params.logfile, params.log_maxlevel, params.log_stderr,
-                      params.log_syslog)) {
+    if (!init_logging(params.logfile, params.log_maxlevel, params.log_stderr, params.log_syslog)) {
         fprintf(stderr, "Failed to initialize logging module.\n");
         fprintf(stderr, "Maybe log file couldn't be opened for writing?\n");
         return 1;
     }
 
     if (!params.basepath) {
-        fprintf(stderr, "No valid flacdir specified.\n\n");
+        fprintf(stderr, "No valid basepath specified.\n\n");
         usage(argv[0]);
         return 1;
     }
 
     if (params.basepath[0] != '/') {
-        fprintf(stderr, "flacdir must be an absolute path.\n\n");
+        fprintf(stderr, "basepath must be an absolute path.\n\n");
         usage(argv[0]);
         return 1;
     }
 
     struct stat st;
     if (stat(params.basepath, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        fprintf(stderr, "flacdir is not a valid directory: %s\n",
-                params.basepath);
-        fprintf(stderr, "Hint: Did you specify bitrate using the old "
-                "syntax instead of the new -b?\n\n");
+        fprintf(stderr, "basepath is not a valid directory: %s\n", params.basepath);
+        usage(argv[0]);
+        return 1;
+    }
+
+    if (!params.mountpath) {
+        fprintf(stderr, "No valid mountpath specified.\n\n");
+        usage(argv[0]);
+        return 1;
+    }
+
+    if (params.mountpath[0] != '/') {
+        fprintf(stderr, "mountpath must be an absolute path.\n\n");
+        usage(argv[0]);
+        return 1;
+    }
+
+    if (stat(params.mountpath, &st) != 0 || !S_ISDIR(st.st_mode)) {
+        fprintf(stderr, "mountpath is not a valid directory: %s\n", params.mountpath);
         usage(argv[0]);
         return 1;
     }
 
     /* Check for valid destination type. */
     if (!check_encoder(params.desttype)) {
-        fprintf(stderr, "No encoder available for desttype: %s\n\n",
-                params.desttype);
+        fprintf(stderr, "No encoder available for desttype: %s\n\n", params.desttype);
         usage(argv[0]);
         return 1;
     }
 
     mp3fs_debug("MP3FS options:\n"
                 "basepath:        %s\n"
+                "mountpath:       %s\n"
                 "video width:   %2s%u\n"
                 "video height:  %2s%u\n"
                 "audio bitrate: %2s%u\n"
@@ -244,9 +280,9 @@ int main(int argc, char *argv[]) {
                 "log_stderr:      %u\n"
                 "log_syslog:      %u\n"
                 "logfile:         %s\n"
-                "statcachesize:   %u\n"
-                ,
+                "statcachesize:   %u\n",
                 params.basepath,
+                params.mountpath,
                 params.maxwidth ? "<=" : " =", params.width,
                 params.maxheight ? "<=" : " =", params.height,
                 params.maxaudiobitrate ? "<=" : "", params.audiobitrate,

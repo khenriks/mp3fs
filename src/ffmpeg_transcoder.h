@@ -1,8 +1,10 @@
 /*
  * FFMPEG decoder class header for mp3fs
  *
+ * Copyright (C) 2017 Norbert Schlia (nschlia@oblivon-software.de)
  * Copyright (C) 2015 Thomas Schwarzenberger
- * FFMPEG supplementals by Norbert Schlia (nschlia@oblivon-software.de)
+ * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
+ 
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +24,8 @@
 #ifndef FFMPEG_TRANSCODER_H
 #define FFMPEG_TRANSCODER_H
 
+#pragma once
+
 #include "ffmpeg_utils.h"
 
 #include <queue>
@@ -30,18 +34,18 @@ class Buffer;
 
 struct ID3v1
 {
-    char szTAG[3];          // Contains "TAG"
-    char szSongTitle[30];   // Title of sound track
-    char szSongArtist[30];  // Artist Name
-    char szAlbumName[30];   // Album Name
-    char szYear[4];         // Year of publishing
-    char szComment[28];     // Any user comments
-    char cPad;
-    char cTitleNo;
-    char cGenre;            // Type of music
+    char m_sTAG[3];         // Contains "TAG"
+    char m_sSongTitle[30];  // Title of sound track
+    char m_sSongArtist[30]; // Artist Name
+    char m_sAlbumName[30];  // Album Name
+    char m_sYear[4];        // Year of publishing
+    char m_sComment[28];    // Any user comments
+    char m_bPad;            // Must be '\0'
+    char m_bTitleNo;
+    char m_bGenre;          // Type of music
 };
 
-#define id3v1_tag_length sizeof(ID3v1)  // 128 bytes
+#define ID3V1_TAG_LENGTH sizeof(ID3v1)  // 128 bytes
 
 typedef enum _tagOUTPUTTYPE
 {
@@ -51,18 +55,17 @@ typedef enum _tagOUTPUTTYPE
     TYPE_ISMV
 } OUTPUTTYPE;
 
-class FfmpegTranscoder {
+class FFMPEG_Transcoder {
 public:
-    FfmpegTranscoder();
-    ~FfmpegTranscoder();
+    FFMPEG_Transcoder();
+    ~FFMPEG_Transcoder();
     int open_file(const char* filename);
     int open_out_file(Buffer* buffer, const char* type);
-    time_t mtime();
     int process_single_fr();
-
-    size_t calculate_size();
-
     int encode_finish();
+
+    time_t mtime() const;
+    size_t calculate_size();
 
     const ID3v1 * id3v1tag() const;
     
@@ -98,7 +101,7 @@ protected:
     
 private:
     time_t                      m_mtime;
-    size_t                      m_nActual_size;         // Use this as the size instead of computing it.
+    size_t                      m_nCalculated_size;         // Use this as the size instead of computing it.
     bool                        m_bIsVideo;
 
     // Audio conversion and buffering
@@ -114,7 +117,6 @@ private:
     std::queue<AVFrame*>        m_VideoFifo;
     int64_t                     m_pts;
     int64_t                     m_pos;
-
 
     // Input file
     struct _tagINPUTFILE

@@ -1,8 +1,7 @@
 /*
- * FFMPEG decoder class source for mp3fs
+ * FFMPEG utilities for mp3fs
  *
- * Copyright (C) 2015 Thomas Schwarzenberger
- * FFMPEG supplementals by Norbert Schlia (nschlia@oblivon-software.de)
+ * Copyright (C) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,11 +25,11 @@
 
 #include <unistd.h>
 
-#include <vector>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
+#include <sys/stat.h>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -89,11 +88,11 @@ static std::string ffmpeg_libinfo(
         char buffer[1024];
 
         sprintf(buffer,
-                    "lib%-15s: %d.%d.%d\n",
-                    pszLibname,
-                    nVersionMinor,
-                    nVersionMajor,
-                    nVersionMicro);
+                "lib%-15s: %d.%d.%d\n",
+                pszLibname,
+                nVersionMinor,
+                nVersionMajor,
+                nVersionMicro);
         info = buffer;
     }
 
@@ -113,12 +112,15 @@ void ffmpeg_libinfo(char * buffer, size_t maxsize)
     info += PRINT_LIB_INFO(avutil,      AVUTIL);
     info += PRINT_LIB_INFO(avcodec,     AVCODEC);
     info += PRINT_LIB_INFO(avformat,    AVFORMAT);
-//    info += PRINT_LIB_INFO(avdevice,    AVDEVICE);
-//    info += PRINT_LIB_INFO(avfilter,    AVFILTER);
-    info += PRINT_LIB_INFO(avresample,  AVRESAMPLE);
-    info += PRINT_LIB_INFO(swscale,     SWSCALE);
+    //    info += PRINT_LIB_INFO(avdevice,    AVDEVICE);
+    //    info += PRINT_LIB_INFO(avfilter,    AVFILTER);
+#ifdef _USE_LIBSWRESAMPLE
     info += PRINT_LIB_INFO(swresample,  SWRESAMPLE);
-//    info += PRINT_LIB_INFO(postproc,    POSTPROC);
+#else
+    info += PRINT_LIB_INFO(avresample,  AVRESAMPLE);
+#endif
+    info += PRINT_LIB_INFO(swscale,     SWSCALE);
+    //    info += PRINT_LIB_INFO(postproc,    POSTPROC);
 
     *buffer = '\0';
     strncat(buffer, info.c_str(), maxsize - 1);
@@ -136,7 +138,6 @@ static int is_device(const AVClass *avclass)
 int show_formats_devices(int device_only)
 {
     AVInputFormat *ifmt  = NULL;
-//    AVOutputFormat *ofmt = NULL;
     const char *last_name;
     int is_dev;
 
@@ -152,17 +153,7 @@ int show_formats_devices(int device_only)
         const char *long_name = NULL;
         const char *extensions = NULL;
 
-//        while ((ofmt = av_oformat_next(ofmt))) {
-//            is_dev = is_device(ofmt->priv_class);
-//            if (!is_dev && device_only)
-//                continue;
-//            if ((!name || strcmp(ofmt->name, name) < 0) &&
-//                    strcmp(ofmt->name, last_name) > 0) {
-//                name      = ofmt->name;
-//                long_name = ofmt->long_name;
-//                encode    = 1;
-//            }
-//        }
+
         while ((ifmt = av_iformat_next(ifmt))) {
             is_dev = is_device(ifmt->priv_class);
             if (!is_dev && device_only)
@@ -217,3 +208,63 @@ const char * get_codec_name(enum AVCodecID codec_id)
 }
 
 #pragma GCC diagnostic pop
+
+int mktree(const char *path, mode_t mode)
+{
+    char *_path = strdup(path);
+
+    if (_path == NULL)
+    {
+        return ENOMEM;
+    }
+
+    char dir[PATH_MAX] = "\0";
+    char *p = strtok (_path, "/");
+    int status = 0;
+
+    while (p != NULL)
+    {
+        int newstat;
+
+        strcat(dir, "/");
+        strcat(dir, p);
+
+        errno = 0;
+
+        newstat = mkdir(dir, mode);
+
+        if (!status && newstat && errno != EEXIST)
+        {
+            status = -1;
+            break;
+        }
+
+        status = newstat;
+
+        p = strtok (NULL, "/");
+    }
+
+    free(_path);
+    return status;
+}
+
+void tempdir(char *dir, size_t size)
+{
+    *dir = '\0';
+    const char *temp = getenv("TMPDIR");
+
+    if (temp != NULL)
+    {
+        strncpy(dir, temp, size);
+        return;
+    }
+
+    strncpy(dir, P_tmpdir, size);
+
+    if (*dir)
+    {
+        return;
+    }
+
+    strncpy(dir, "/tmp", size);
+}

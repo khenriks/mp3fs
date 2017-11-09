@@ -21,6 +21,8 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
+#pragma once
+
 #include <array>
 #include <fstream>
 #include <map>
@@ -29,7 +31,14 @@
 
 class Logging {
 public:
-    enum class level { ERROR = 1, WARNING = 2, INFO = 3, DEBUG = 4 };
+    enum class level
+    {
+        ERROR = 1,
+        WARNING = 2,
+        INFO = 3,
+        DEBUG = 4,
+        TRACE = 5
+    };
 
     /*
      * Arguments:
@@ -39,8 +48,7 @@ public:
      *   to_stderr: Whether to write log output to stderr.
      *   to_syslog: Whether to write log output to syslog.
      */
-    explicit Logging(std::string logfile, level max_level, bool to_stderr,
-                     bool to_syslog);
+    explicit Logging(std::string logfile, level max_level, bool to_stderr, bool to_syslog);
 
     bool GetFail() const { return logfile_.fail(); }
 
@@ -70,17 +78,16 @@ private:
     const bool to_syslog_;
 };
 
-bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr,
-                 bool to_syslog);
+bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr, bool to_syslog);
 
 constexpr auto ERROR = Logging::level::ERROR;
 constexpr auto WARNING = Logging::level::WARNING;
 constexpr auto INFO = Logging::level::INFO;
 constexpr auto DEBUG = Logging::level::DEBUG;
+constexpr auto TRACE = Logging::level::TRACE;
 
 void log_with_level(Logging::level level, const char* format, va_list ap);
-
-void log_with_level(Logging::level level, const char* prefix,
-                    const char* format, va_list ap);
+void log_with_level(Logging::level level, const char* prefix, const char* format, va_list ap);
+void log_with_level(Logging::level level, const char* prefix, const char* message);
 
 #endif

@@ -5,6 +5,7 @@
  *
  * Copyright (C) 2006-2008 David Collett
  * Copyright (C) 2008-2012 K. Henriksson
+ * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -201,24 +202,24 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     if (lstat(origpath, stbuf) == -1) {
         goto stat_fail;
     }
-    
+
     /*
      * Get size for resulting output file from regular file, otherwise it's a
      * symbolic link. */
     if (S_ISREG(stbuf->st_mode)) {
 
         if (!transcoder_cached_filesize(origpath, stbuf)) {
-            struct transcoder* trans;
+            struct Cache_Entry* cache_entry;
 
-            trans = transcoder_new(origpath, 0);
-            if (!trans) {
+            cache_entry = transcoder_new(origpath, 0);
+            if (!cache_entry) {
                 goto transcoder_fail;
             }
 
-            stbuf->st_size = transcoder_get_size(trans);
+            stbuf->st_size = transcoder_get_size(cache_entry);
             stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
 
-            transcoder_delete(trans);
+            transcoder_delete(cache_entry);
         }
     }
 
@@ -262,17 +263,17 @@ int mp3fs_fgetattr(const char *filename, struct stat * stbuf, struct fuse_file_i
      * symbolic link. */
     if (S_ISREG(stbuf->st_mode)) {
 
-        struct transcoder* trans;
+        struct Cache_Entry* cache_entry;
 
-        trans = (struct transcoder*)fi->fh;
+        cache_entry = (struct Cache_Entry*)fi->fh;
 
-        if (!trans) {
+        if (!cache_entry) {
             mp3fs_error("Tried to stat unopen file: %s.", filename);
             errno = EBADF;
             goto transcoder_fail;
         }
 
-        stbuf->st_size = transcoder_tell(trans);
+        stbuf->st_size = transcoder_buffer_tell(cache_entry);
         stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
     }
 
@@ -286,7 +287,7 @@ translate_fail:
 
 static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     char* origpath;
-    struct transcoder* trans;
+    struct Cache_Entry* cache_entry;
     int fd;
     
     mp3fs_debug("open %s", path);
@@ -316,13 +317,13 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     
     find_original(origpath);
     
-    trans = transcoder_new(origpath, 1);
-    if (!trans) {
+    cache_entry = transcoder_new(origpath, 1);
+    if (!cache_entry) {
         goto transcoder_fail;
     }
     
     /* Store transcoder in the fuse_file_info structure. */
-    fi->fh = (uint64_t)trans;
+    fi->fh = (uint64_t)cache_entry;
 
     // Clear errors
     errno = 0;
@@ -339,9 +340,9 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset, st
     char* origpath;
     int fd;
     ssize_t read = 0;
-    struct transcoder* trans;
+    struct Cache_Entry* cache_entry;
 
-    //mp3fs_debug("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
+    mp3fs_debug("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
     
     errno = 0;
     
@@ -364,16 +365,16 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset, st
         errno = 0;
     }
     
-    trans = (struct transcoder*)fi->fh;
+    cache_entry = (struct Cache_Entry*)fi->fh;
     
-    if (!trans) {
+    if (!cache_entry) {
         mp3fs_error("Tried to read from unopen file: %s.", origpath);
         goto transcoder_fail;
     }
 
     mp3fs_debug("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
 
-    read = transcoder_read(trans, buf, offset, size);
+    read = transcoder_read(cache_entry, buf, offset, size);
 
 transcoder_fail:
 passthrough:
@@ -418,13 +419,13 @@ translate_fail:
 }
 
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
-    struct transcoder* trans;
+    struct Cache_Entry* cache_entry;
     
     mp3fs_debug("release %s", path);
     
-    trans = (struct transcoder*)fi->fh;
-    if (trans) {
-        transcoder_delete(trans);
+    cache_entry = (struct Cache_Entry*)fi->fh;
+    if (cache_entry) {
+        transcoder_delete(cache_entry);
     }
     
     return 0;
@@ -437,6 +438,13 @@ static void *mp3fs_init(struct fuse_conn_info *conn) {
     return NULL;
 }
 
+static void mp3fs_destroy(__attribute__((unused)) void * p)
+{
+    mp3fs_debug("destroy");
+
+    transcoder_exit();
+}
+
 struct fuse_operations mp3fs_ops = {
     .getattr  = mp3fs_getattr,
     .fgetattr = mp3fs_fgetattr,
@@ -447,4 +455,5 @@ struct fuse_operations mp3fs_ops = {
     .statfs   = mp3fs_statfs,
     .release  = mp3fs_release,
     .init     = mp3fs_init,
+    .destroy  = mp3fs_destroy,
 };

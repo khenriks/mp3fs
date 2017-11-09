@@ -2,6 +2,7 @@
  * Logging class source for mp3fs
  *
  * Copyright (C) 2017 K. Henriksson
+ * Extensions (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,25 +62,26 @@ Logging::Logger::~Logger() {
 }
 
 const std::map<Logging::level,int> Logging::Logger::syslog_level_map_ = {
-    {ERROR, LOG_ERR},
-    {WARNING, LOG_WARNING},
-    {INFO, LOG_INFO},
-    {DEBUG, LOG_DEBUG},
+    {ERROR,     LOG_ERR},
+    {WARNING,   LOG_WARNING},
+    {INFO,      LOG_INFO},
+    {DEBUG,     LOG_DEBUG},
+    {TRACE,     LOG_DEBUG},
 };
 
 const std::map<Logging::level,std::string> Logging::Logger::level_name_map_ = {
-    {ERROR, "ERROR"},
-    {WARNING, "WARNING"},
-    {INFO, "INFO"},
-    {DEBUG, "DEBUG"},
+    {ERROR,     "ERROR"},
+    {WARNING,   "WARNING"},
+    {INFO,      "INFO"},
+    {DEBUG,     "DEBUG"},
+    {TRACE,     "TRACE"},
 };
 
 Logging::Logger Log(Logging::level lev) {
     return {lev, logging};
 }
 
-bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr,
-                 bool to_syslog) {
+bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr, bool to_syslog) {
     logging = new Logging(logfile, max_level, to_stderr, to_syslog);
     return !logging->GetFail();
 }
@@ -88,8 +90,7 @@ void log_with_level(Logging::level level, const char* format, va_list ap) {
     log_with_level(level, "", format, ap);
 }
 
-void log_with_level(Logging::level level, const char* prefix,
-                    const char* format, va_list ap) {
+void log_with_level(Logging::level level, const char* prefix, const char* format, va_list ap) {
     // This copy is because we call vsnprintf twice, and ap is undefined after
     // the first call.
     va_list ap2;
@@ -102,4 +103,8 @@ void log_with_level(Logging::level level, const char* prefix,
     va_end(ap2);
 
     Log(level) << prefix << buffer;
+}
+
+void log_with_level(Logging::level level, const char* prefix, const char* message) {
+    Log(level) << prefix << message;
 }

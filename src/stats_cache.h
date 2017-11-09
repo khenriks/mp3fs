@@ -21,6 +21,8 @@
 #ifndef STATS_CACHE_H
 #define STATS_CACHE_H
 
+#pragma once
+
 #include <map>
 #include <pthread.h>
 #include <string>
@@ -58,10 +60,8 @@ public:
     StatsCache(const StatsCache&)            = delete;
     StatsCache& operator=(const StatsCache&) = delete;
 
-    bool get_filesize(const std::string& filename, time_t mtime,
-            size_t& filesize);
-    void put_filesize(const std::string& filename, size_t filesize,
-            time_t mtime);
+    bool get_filesize(const std::string& filename, time_t mtime, size_t& filesize);
+    void put_filesize(const std::string& filename, time_t mtime, size_t filesize);
 private:
     void prune();
     void remove_entry(const std::string& file, const FileStat& file_stat);

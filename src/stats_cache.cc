@@ -55,8 +55,7 @@ bool FileStat::operator==(const FileStat& other) const {
  * Use 'mtime' as the modified time of the file to check for an invalid cache
  * entry. Return true if the file size was found.
  */
-bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
-        size_t& filesize) {
+bool StatsCache::get_filesize(const std::string& filename, time_t mtime, size_t& filesize) {
     bool in_cache = false;
     pthread_mutex_lock(&mutex);
     cache_t::iterator p = cache.find(filename);
@@ -80,8 +79,7 @@ bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
 
 /* Add or update an entry in the stats cache */
 
-void StatsCache::put_filesize(const std::string& filename, size_t filesize,
-        time_t mtime) {
+void StatsCache::put_filesize(const std::string& filename, time_t mtime, size_t filesize) {
     FileStat file_stat(filesize, mtime);
     pthread_mutex_lock(&mutex);
     cache_t::iterator p = cache.find(filename);

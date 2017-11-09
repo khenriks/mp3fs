@@ -2,7 +2,8 @@
  * FFMPEG decoder class header for mp3fs
  *
  * Copyright (C) 2015 Thomas Schwarzenberger
- * FFMPEG supplementals by Norbert Schlia (nschlia@oblivon-software.de)
+ * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
+ 
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +23,8 @@
 #ifndef FFMPEG_UTILS_H
 #define FFMPEG_UTILS_H
 
+#pragma once
+
 // Disable annoying warnings outside our code
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
@@ -32,8 +35,11 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
-#include <libswresample/swresample.h> 	// ??? die oder...
-#include <libavresample/avresample.h>	// ??? die?!?
+#ifdef _USE_LIBSWRESAMPLE
+#include <libswresample/swresample.h>
+#else
+#include <libavresample/avresample.h>	
+#endif
 #include <libavutil/imgutils.h>
 #include <libavutil/opt.h>
 #include <libavutil/error.h>
@@ -86,6 +92,15 @@ extern "C" {
 const char *get_media_type_string(enum AVMediaType media_type);
 #endif
 
+// Ignore if this is missing
+#ifndef AV_ROUND_PASS_MINMAX
+#define AV_ROUND_PASS_MINMAX 0
+#endif
+
+#ifndef FF_INPUT_BUFFER_PADDING_SIZE
+#define FF_INPUT_BUFFER_PADDING_SIZE 256
+#endif
+
 #ifdef __cplusplus
 #include <string>
 #include <libavutil/rational.h>
@@ -102,5 +117,8 @@ const char * get_codec_name(enum AVCodecID codec_id);
 #ifdef __cplusplus
 }
 #endif
+
+int mktree(const char *path, mode_t mode);
+void tempdir(char *dir, size_t size);
 
 #endif

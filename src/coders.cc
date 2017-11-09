@@ -2,6 +2,7 @@
  * Encoder and Decoder class source for mp3fs
  *
  * Copyright (C) 2013 K. Henriksson
+ * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,8 +62,6 @@ const char* encoder_list[] = {
     "mp4",
     NULL
 };
-
-const size_t encoder_list_len = sizeof(encoder_list)/sizeof(const char*);
 
 /* Define list of available decoder extensions. */
 const char* decoder_list[] = {

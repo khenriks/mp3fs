@@ -1,5 +1,5 @@
 /*
- * Encoder and decoder interfaces for mp3fs
+ * data buffer class header for mp3fs
  *
  * Copyright (C) 2013 K. Henriksson
  *
@@ -18,15 +18,32 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef CODERS_H
-#define CODERS_H
+#ifndef CACHE_H
+#define CACHE_H
 
 #pragma once
 
-#include <stdint.h>
+//#include <stdint.h>
 
+#include <cstddef>
 #include <string>
+#include <map>
 
-#include "buffer.h"
+class Cache_Entry;
+
+class Cache {
+    typedef std::map<std::string, Cache_Entry *> cache_t;
+
+public:
+    Cache();
+    ~Cache();
+
+    Cache_Entry *open(const char *filename);
+    void close(Cache_Entry **cache_entry, bool erase_cache = false);
+
+private:
+    cache_t cache;
+    pthread_mutex_t mutex;
+};
 
 #endif

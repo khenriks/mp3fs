@@ -1,7 +1,7 @@
 /*
- * data buffer class header for mp3fs
+ * cache class header for mp3fs
  *
- * Copyright (C) 2013 K. Henriksson
+ * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,31 +21,55 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include <stdint.h>
+#pragma once
 
+//https://www.safaribooksonline.com/library/view/linux-system-programming/0596009585/ch04s03.html
+//https://gist.github.com/marcetcheverry/991042
+#define _USE_DISK
+
+#include <stdint.h>
 #include <cstddef>
+#ifndef _USE_DISK
+#include <vector>
+#else
+#include <string>
+#endif
 
 class Buffer {
 public:
-    Buffer();
-    ~Buffer();
+    explicit Buffer(const std::string & filename, const std::string & cachefile);
+    virtual ~Buffer();
 
+    std::string cache_file() const;
+    bool open();
+    bool close(bool erase_cache = false);
+    bool flush();
+    bool reserve(size_t size);
     size_t write(const uint8_t* data, size_t length);
-    size_t write(const uint8_t* data, size_t length, size_t offset);
-    uint8_t* write_prepare(size_t length);
-    uint8_t* write_prepare(size_t length, size_t offset);
-    void increment_pos(ptrdiff_t increment);
     bool seek(size_t pos);
     size_t tell() const;
     size_t size() const;
-    size_t actual_size() const;
-    void copy(uint8_t* out_data, size_t offset, size_t size) const;
+    size_t buffer_watermark() const;
+    void copy(uint8_t* out_data, size_t offset, size_t bufsize);
+
 private:
-    bool reallocate(size_t size);
-    uint8_t* buffer_data;
-    size_t buffer_pos;
-    size_t buffer_size;
-    size_t filled_size;
+    uint8_t* write_prepare(size_t length);
+    void increment_pos(ptrdiff_t increment);
+    bool reallocate(size_t newsize);
+
+private:
+    pthread_mutex_t         mutex;
+    const std::string &     m_filename;
+    const std::string &     m_cachefile;
+    size_t                  m_buffer_pos;           // Read/write position
+    size_t                  m_buffer_watermark;     // Number of bytes in buffer
+#ifdef _USE_DISK
+    size_t                  m_buffer_size;          // Current buffer size
+    uint8_t *               m_buffer;
+    int                     m_fd;
+#else
+    std::vector<uint8_t>    m_buffer;
+#endif
 };
 
 #endif
