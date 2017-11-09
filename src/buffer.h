@@ -39,7 +39,7 @@ public:
     size_t tell() const;
     size_t size() const;
     size_t actual_size() const;
-    void copy_into(uint8_t* out_data, size_t offset, size_t size) const;
+    void copy(uint8_t* out_data, size_t offset, size_t size) const;
 private:
     bool reallocate(size_t size);
     uint8_t* buffer_data;

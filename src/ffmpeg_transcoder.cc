@@ -137,19 +137,42 @@ FfmpegTranscoder::~FfmpegTranscoder() {
     }
 
     // Close input file
+    if (m_out.m_pAudio_codec_ctx)
+    {
+        avcodec_free_context(&m_out.m_pAudio_codec_ctx);
+    }
+
+    if (m_out.m_pVideo_codec_ctx)
+    {
+        avcodec_free_context(&m_out.m_pVideo_codec_ctx);
+    }
+
     if (m_out.m_pFormat_ctx != NULL)
     {
         AVIOContext *output_io_context  = (AVIOContext *)m_out.m_pFormat_ctx->pb;
 
         //avio_close(output_format_context->pb);
 
-        av_freep(&output_io_context->buffer);
+        if (output_io_context != NULL)
+        {
+            av_freep(&output_io_context->buffer);
+        }
         av_freep(&output_io_context);
 
         avformat_free_context(m_out.m_pFormat_ctx);
     }
 
     // Close output file
+
+    //    if (m_in.m_pAudio_codec_ctx)
+    //    {
+    //        avcodec_free_context(&m_in.m_pAudio_codec_ctx);
+    //    }
+
+    //    if (m_in.m_pVideo_codec_ctx)
+    //    {
+    //        avcodec_free_context(&m_in.m_pVideo_codec_ctx);
+    //    }
 
     if (m_in.m_pFormat_ctx != NULL)
     {
@@ -391,12 +414,34 @@ int FfmpegTranscoder::open_out_file(Buffer *buffer, const char* type) {
             return -1;
         }
     }
+
+
+    /*
+     * Process metadata. The Decoder will call the Encoder to set appropriate
+     * tag values for the output file.
+     */
+    if (process_metadata()) {
+        return -1;
+    }
+
     /** Write the header of the output file container. */
     if (write_output_file_header()){
         return -1;
     }
 
     return 0;
+}
+
+int64_t FfmpegTranscoder::get_output_bit_rate(AVStream *in_stream, int64_t bit_rate) const
+{
+    int64_t real_bit_rate = in_stream->codec->bit_rate != 0 ? in_stream->codec->bit_rate : m_in.m_pFormat_ctx->bit_rate;
+
+    if (real_bit_rate > bit_rate)
+    {
+        real_bit_rate = bit_rate;
+    }
+
+    return real_bit_rate;
 }
 
 int FfmpegTranscoder::add_stream(AVCodecID codec_id)
@@ -439,13 +484,12 @@ int FfmpegTranscoder::add_stream(AVCodecID codec_id)
     {
         /**
          * Set the basic encoder parameters.
-         * The input file's sample rate is used to avoid a sample rate conversion.
          */
+        codec_ctx->bit_rate               = (int)get_output_bit_rate(m_in.m_pAudio_stream, params.audiobitrate * 1000);
         codec_ctx->channels               = 2;
         codec_ctx->channel_layout         = av_get_default_channel_layout(codec_ctx->channels);
         codec_ctx->sample_rate            = m_in.m_pAudio_codec_ctx->sample_rate;
         codec_ctx->sample_fmt             = output_codec->sample_fmts[0];
-        codec_ctx->bit_rate               = params.audiobitrate * 1000;
 
         /** Allow the use of the experimental AAC encoder */
         codec_ctx->strict_std_compliance  = FF_COMPLIANCE_EXPERIMENTAL;
@@ -482,15 +526,8 @@ int FfmpegTranscoder::add_stream(AVCodecID codec_id)
         //            return ret;
         //        }
 
-        int64_t bit_rate = 1000*1000;// params.videobitrate * 1000;
-
-        if (in_video_stream->codec->bit_rate < bit_rate)
-        {
-            bit_rate = in_video_stream->codec->bit_rate;
-        }
-
-        codec_ctx->bit_rate             = bit_rate;
-        codec_ctx->bit_rate_tolerance   = 0;
+        codec_ctx->bit_rate             = (int)get_output_bit_rate(m_in.m_pVideo_stream, params.videobitrate * 1000);
+        //codec_ctx->bit_rate_tolerance   = 0;
         /* Resolution must be a multiple of two. */
         codec_ctx->width                = in_video_stream->codec->width;
         codec_ctx->height               = in_video_stream->codec->height;
@@ -498,7 +535,8 @@ int FfmpegTranscoder::add_stream(AVCodecID codec_id)
          * of which frame timestamps are represented. For fixed-fps content,
          * timebase should be 1/framerate and timestamp increments should be
          * identical to 1. */
-        stream->time_base               = in_video_stream->time_base;
+        //stream->time_base               = in_video_stream->time_base;
+        stream->time_base               = { 1, 90000 }; // ??? Fest setzen für MP4?
         codec_ctx->time_base            = stream->time_base;
         // At this moment the output format must be AV_PIX_FMT_YUV420P;
         codec_ctx->pix_fmt       		= AV_PIX_FMT_YUV420P;
@@ -533,7 +571,7 @@ int FfmpegTranscoder::add_stream(AVCodecID codec_id)
 
         codec_ctx->framerate            = in_video_stream->codec->framerate;
         codec_ctx->sample_aspect_ratio  = in_video_stream->codec->sample_aspect_ratio;
-        av_opt_set(codec_ctx->priv_data, "profile", "baseline", AV_OPT_SEARCH_CHILDREN);
+        av_opt_set(codec_ctx->priv_data, "profile", "high", AV_OPT_SEARCH_CHILDREN);
         av_opt_set(codec_ctx->priv_data, "preset", "veryfast", AV_OPT_SEARCH_CHILDREN);
         /** Save the encoder context for easier access later. */
         m_out.m_pVideo_codec_ctx    = codec_ctx;
@@ -806,10 +844,17 @@ int FfmpegTranscoder::write_output_file_header()
         av_dict_set(&dict, "frag_duration", "1000000", 0); // 1 sec
     }
 
-    if ((error = avformat_write_header(m_out.m_pFormat_ctx, &dict)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not write output file header (error '%s').", ffmpeg_geterror(error).c_str());
-        return error;
+#ifdef AVSTREAM_INIT_IN_WRITE_HEADER
+    if (avformat_init_output(m_out.m_pFormat_ctx, &dict) == AVSTREAM_INIT_IN_WRITE_HEADER) {
+#endif // AVSTREAM_INIT_IN_WRITE_HEADER
+        if ((error = avformat_write_header(m_out.m_pFormat_ctx, &dict)) < 0) {
+            mp3fs_error("FFMPEG transcoder: Could not write output file header (error '%s').", ffmpeg_geterror(error).c_str());
+            return error;
+        }
+#ifdef AVSTREAM_INIT_IN_WRITE_HEADER
     }
+#endif // AVSTREAM_INIT_IN_WRITE_HEADER
+
     return 0;
 }
 
@@ -1305,6 +1350,7 @@ void FfmpegTranscoder::produce_dts(AVPacket *pkt, int64_t *pts)
         *pts += duration;
     }
 }
+
 /** Encode one frame worth of audio to the output file. */
 int FfmpegTranscoder::encode_audio_frame(AVFrame *frame, int *data_present)
 {
@@ -1447,14 +1493,19 @@ time_t FfmpegTranscoder::mtime() {
     for (char *p1 = (dst), *pend = p1 + sizeof(dst), *p2 = (src); *p2 && p1 < pend; p1++, p2++) \
     *p1 = *p2;
 
-int FfmpegTranscoder::process_metadata() {
-
-    mp3fs_debug("FFMPEG transcoder: processing metadata");
-
+void FfmpegTranscoder::copy_metadata(AVDictionary *metadata, AVStream * stream, bool bIsVideo) // TODO: Stream tags
+{
     AVDictionaryEntry *tag = NULL;
 
-    while ((tag = av_dict_get(m_in.m_pFormat_ctx->metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+    while ((tag = av_dict_get(metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
     {
+        if (stream != NULL && bIsVideo)
+        {
+            // Keep video comments in video stream
+            // TODO
+            continue;
+        }
+
         av_dict_set(&m_out.m_pFormat_ctx->metadata, tag->key, tag->value, 0);
 
         if (m_out.m_output_type == TYPE_MP3)
@@ -1484,6 +1535,24 @@ int FfmpegTranscoder::process_metadata() {
                 m_out.m_id3v1.cTitleNo = (char)atoi(tag->value);
             }
         }
+    }
+}
+
+int FfmpegTranscoder::process_metadata() {
+
+    mp3fs_debug("FFMPEG transcoder: processing metadata");
+
+    copy_metadata(m_in.m_pFormat_ctx->metadata, NULL, false);
+
+    // For some formats (namely ogg) ffmpeg returns the tags, odd enough, with streams...
+    if (m_in.m_pAudio_stream)
+    {
+        copy_metadata(m_in.m_pAudio_stream->metadata, m_in.m_pAudio_stream, false);
+    }
+
+    if (m_in.m_pVideo_stream)
+    {
+        copy_metadata(m_in.m_pVideo_stream->metadata, m_in.m_pVideo_stream, true);
     }
 
     // Pictures later. More complicated...
@@ -1607,43 +1676,38 @@ cleanup:
 }
 
 /*
-         * Get the actual number of bytes in the encoded file, i.e. without any
-         * padding. Valid only after encode_finish() has been called.
-         */
-size_t FfmpegTranscoder::get_actual_size() const {
-    return m_nActual_size;
-}
-
-/*
          * Properly calculate final file size. This is the sum of the size of
          * ID3v2, ID3v1, and raw MP3 data. This is theoretically only approximate
          * but in practice gives excellent answers, usually exactly correct.
          * Cast to 64-bit int to avoid overflow.
          */
-size_t FfmpegTranscoder::calculate_size() const {
-    if (m_nActual_size != 0)
+size_t FfmpegTranscoder::calculate_size() {
+
+    if (m_nActual_size == 0 && m_in.m_pFormat_ctx != NULL)
     {
-        // Do not recalculate over, use cached size
-        return m_nActual_size;
-    }
-    else if (m_in.m_pFormat_ctx != NULL)
-    {
-        // TODO: das rechent ne Menge Bleedsinn aus, awer nix Gorregdes...
+        // TODO: check mp3 prediction. AAC/H264 OK now.
         size_t size = 0;
-        AVCodecID audio_codec_id = AV_CODEC_ID_AAC;
-        AVCodecID video_codec_id = AV_CODEC_ID_H264;
 
         if (m_in.m_nAudio_stream_idx > -1)
         {
+            AVCodecID audio_codec_id = AV_CODEC_ID_AAC; // ??? TODO: aus der Kommandozeile...
+            int64_t real_bit_rate = m_in.m_pAudio_stream->codec->bit_rate != 0 ? m_in.m_pAudio_stream->codec->bit_rate : m_in.m_pFormat_ctx->bit_rate;
+            int64_t audiobitrate = get_output_bit_rate(m_in.m_pAudio_stream, params.audiobitrate * 1000);
+
             switch (audio_codec_id)
             {
             case AV_CODEC_ID_AAC:
-                // TODO: calculate correct size of mp3
-                size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * params.audiobitrate / 8);
+            {
+                // Try to predict the size of the AAC stream
+                size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * 1.025 * (double)audiobitrate / 8); // add 2.5% for overhead
                 break;
+            }
             case AV_CODEC_ID_MP3:
                 // TODO: calculate correct size of mp3
-                size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * params.audiobitrate / 8);
+                // https://audio-rescue.com/file-size/
+                // http://www.audiomountain.com/tech/audio-file-size.html
+                // Kbps = bits per second / 8 = Bytes per second x 60 seconds = Bytes per minute x 60 minutes = Bytes per hour
+                size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * (double)audiobitrate / 8);
                 break;
             default:
                 mp3fs_error("FFMPEG transcoder: Internal error - unsupported audio codec %s.", get_codec_name(audio_codec_id));
@@ -1655,32 +1719,43 @@ size_t FfmpegTranscoder::calculate_size() const {
         {
             if (m_bIsVideo)
             {
+                AVCodecID video_codec_id = AV_CODEC_ID_H264; // ??? TODO: aus der Kommandozeile...
+                int64_t real_bit_rate = m_in.m_pVideo_stream->codec->bit_rate != 0 ? m_in.m_pVideo_stream->codec->bit_rate : m_in.m_pFormat_ctx->bit_rate;
+                int64_t videobitrate = get_output_bit_rate(m_in.m_pVideo_stream, params.videobitrate * 1000);
+                int64_t bitrateoverhead = 0;
+
+                videobitrate += bitrateoverhead;
+
                 switch (video_codec_id)
                 {
                 case AV_CODEC_ID_H264:
-                case AV_CODEC_ID_MJPEG:
-                    size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * params.videobitrate);
+                {
+                    //Math.round(s*parseFloat(document.Calc.RTotal.value)*125);
+                    size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * 1.025  * (double)videobitrate / 8); // add 2.5% for overhead
                     break;
+                }
+                case AV_CODEC_ID_MJPEG:
+                {
+                    size += (size_t)(ffmpeg_cvttime(m_in.m_pFormat_ctx->duration, AV_TIME_BASE_Q) * (double)videobitrate / 8);
+                    break;
+                }
                 default:
+                {
                     mp3fs_error("FFMPEG transcoder: Internal error - unsupported video codec %s.", get_codec_name(video_codec_id));
                     break;
                 }
+                }
             }
-            //            else      TODO: Add picture size
-            //            {
+            //else      TODO: Add picture size
+            //{
 
-            //            }
+            //}
         }
 
-        size *= 1250;   // TODO: Magic number
+        m_nActual_size = size;
+    }
 
-        return size;
-    }
-    else
-    {
-        // Unknown...
-        return 0;
-    }
+    return m_nActual_size;
 }
 
 /*
@@ -1688,7 +1763,7 @@ size_t FfmpegTranscoder::calculate_size() const {
          * Buffer. This should be called after all input data has already been
          * passed to encode_pcm_data().
          */
-int FfmpegTranscoder::encode_finish(Buffer& buffer) {
+int FfmpegTranscoder::encode_finish() {
 
     int ret = 0;
 
@@ -1699,8 +1774,6 @@ int FfmpegTranscoder::encode_finish(Buffer& buffer) {
         mp3fs_error("FFMPEG transcoder: Error writing trailer (error '%s').", ffmpeg_geterror(ret).c_str());
         ret = -1;
     }
-
-    m_nActual_size = buffer.actual_size();
 
     return 1;
 }

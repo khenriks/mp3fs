@@ -58,13 +58,11 @@ public:
     int open_file(const char* filename);
     int open_out_file(Buffer* buffer, const char* type);
     time_t mtime();
-    int process_metadata();
     int process_single_fr();
 
-    size_t get_actual_size() const;
-    size_t calculate_size() const;
+    size_t calculate_size();
 
-    int encode_finish(Buffer& buffer);
+    int encode_finish();
 
     const ID3v1 * id3v1tag() const;
     
@@ -73,6 +71,8 @@ protected:
     int open_codec_context(int *stream_idx, AVCodecContext **avctx, AVFormatContext *fmt_ctx, AVMediaType type, const char *filename);
     int add_stream(AVCodecID codec_id);
     int open_output_file(Buffer *buffer, const char* type);
+    void copy_metadata(AVDictionary *metadata, AVStream *stream, bool bIsVideo);
+    int process_metadata();
     void init_packet(AVPacket *packet);
     int init_input_frame(AVFrame **frame);
     int init_resampler();
@@ -94,6 +94,8 @@ protected:
     static int writePacket(void * pOpaque, unsigned char * pBuffer, int nBufSize);
     static int64_t seek(void * pOpaque, int64_t i4Offset, int nWhence);
 
+    int64_t get_output_bit_rate(AVStream *in_stream, int64_t bit_rate) const;
+    
 private:
     time_t                      m_mtime;
     size_t                      m_nActual_size;         // Use this as the size instead of computing it.
