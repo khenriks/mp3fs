@@ -54,7 +54,6 @@ Cache_Entry::Cache_Entry(const char *filename)
     m_buffer = new Buffer(m_filename, m_cachefile);
 
     mp3fs_debug("Created new Cache_Entry.");
-    fprintf(stderr, "Created new Cache_Entry.\n");
 }
 
 Cache_Entry::~Cache_Entry()
@@ -62,7 +61,6 @@ Cache_Entry::~Cache_Entry()
     if (m_thread_id)
     {
         mp3fs_debug("Waiting for thread id %zx to terminate.", m_thread_id);
-        fprintf(stderr, "Waiting for thread id %zx to terminate.\n", m_thread_id);
         int s = pthread_join(m_thread_id, NULL);
         if (s != 0)
         {
@@ -71,14 +69,12 @@ Cache_Entry::~Cache_Entry()
         else
         {
             mp3fs_debug("Thread id %zx has terminated.", m_thread_id);
-            fprintf(stderr, "Thread id %zx has terminated.\n", m_thread_id);
         }
     }
 
     delete m_buffer;
     delete m_transcoder;
     mp3fs_debug("Deleted Cache_Entry.");
-    fprintf(stderr, "Deleted Cache_Entry.\n");
 }
 
 string Cache_Entry::info_file() const
@@ -112,22 +108,11 @@ bool Cache_Entry::read_info()
         input_file.read((char*)&m_access_time, sizeof(m_access_time));
 
         input_file.close();
-
-        std::cerr << "READ" << std::endl;
     }
     catch (std::ifstream::failure e) {
         reset();
-        std::cerr << "RESET" << std::endl;
-                std::cerr << "Caught an ios_base::failure rading file." << endl
-                          << "File: " << info_file()  << endl
-                          << "Explanatory string: " << e.what() << endl
-                          << "Error code: " << e.code() << endl;
         return false;
     }
-
-    std::cerr << "m_encoded_filesize: " << m_encoded_filesize << std::endl;
-    std::cerr << "m_finished: " << m_finished << std::endl;
-    std::cerr << "m_error: " << m_error << std::endl;
 
     return true;
 }
@@ -148,10 +133,6 @@ bool Cache_Entry::write_info()
         output_file.close();
     }
     catch (std::ifstream::failure e) {
-        //        std::cerr << "Caught an ios_base::failure writing file." << endl
-        //                  << "File: " << info_file()  << endl
-        //                  << "Explanatory string: " << e.what() << endl
-        //                  << "Error code: " << e.code() << endl;
         return false;
     }
 
@@ -166,27 +147,15 @@ bool Cache_Entry::open(bool create_cache /*= true*/)
         return false;
     }
 
-    fprintf(stderr, "************************************** CACHE OPEN ------> ref_count = %i\n", m_ref_count);
-
     if (__sync_fetch_and_add(&m_ref_count, 1) > 0)
     {
-        fprintf(stderr, "************************************** CACHE CLOSE DELAYED ref_count = %i\n", m_ref_count);
-        fflush(stderr);
         return true;
     }
-
-    fprintf(stderr, "************************************** CACHE OPEN ======> ref_count = %i\n", m_ref_count);
-    fflush(stderr);
 
     if (!create_cache)
     {
-        fprintf(stderr, "************************************** NOT creating cache\n");
-        fflush(stderr);
         return true;
     }
-
-    fprintf(stderr, "************************************** CREATING CACHE\n");
-    fflush(stderr);
 
     // Open the cache
     if (m_buffer->open())
@@ -208,13 +177,8 @@ bool Cache_Entry::close(bool erase_cache /*= false*/)
         return false;
     }
 
-    fprintf(stderr, "************************************** CACHE CLOSE ------> ref_count = %i\n", m_ref_count);
-    fflush(stderr);
-
     if (!m_ref_count)
     {
-        fprintf(stderr, "************************************** CACHE CLOSE IGNORED\n");
-        fflush(stderr);
         return true;
     }
 
@@ -222,13 +186,8 @@ bool Cache_Entry::close(bool erase_cache /*= false*/)
     {
         // Just flush to disk
         flush();
-        fprintf(stderr, "************************************** CACHE CLOSE DELAYED ref_count = %i\n", m_ref_count);
-        fflush(stderr);
         return true;
     }
-
-    fprintf(stderr, "************************************** CACHE CLOSE ======> ref_count = %i\n", m_ref_count);
-    fflush(stderr);
 
     if (m_buffer->close(erase_cache))
     {
