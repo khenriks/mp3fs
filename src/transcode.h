@@ -78,6 +78,9 @@ extern const char* decoder_list[];
 extern "C" {
 #endif
 
+void cache_new(void);
+void cache_delete(void);
+
 // Simply get encoded file size (do not create the whole encoder/decoder objects)
 int transcoder_cached_filesize(const char *filename, struct stat *stbuf);
 

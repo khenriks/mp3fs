@@ -433,6 +433,9 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
 
 /* We need synchronous reads. */
 static void *mp3fs_init(struct fuse_conn_info *conn) {
+
+    mp3fs_debug("init");
+
     conn->async_read = 0;
     
     return NULL;

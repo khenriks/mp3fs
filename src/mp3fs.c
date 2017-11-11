@@ -5,6 +5,7 @@
  *
  * Copyright (C) 2006-2008 David Collett
  * Copyright (C) 2008-2012 K. Henriksson
+ * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -116,32 +117,32 @@ void usage(char *name) {
                                      encoding bitrate: Acceptable values for RATE\n\
                                      include 96, 112, 128, 160, 192, 224, 256, and\n\
                                      320; 128 is the default\n\
-    --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL\n\
-                           maximum level of messages to log, either ERROR,\n\
-                           INFO, or DEBUG. Defaults to INFO, and always set\n\
-                           to DEBUG in debug mode. Note that the other log\n\
-                           flags must also be set to enable logging\n\
-    --log_stderr, -olog_stderr\n\
-                           enable outputting logging messages to stderr.\n\
-                           Enabled in debug mode.\n\
-    --log_syslog, -olog_syslog\n\
-                           enable outputting logging messages to syslog\n\
-    --logfile=FILE, -ologfile=FILE\n\
-                           file to output log messages to. By default, no\n\
-                           file will be written.\n\
-    --maxsamplerate=Hz, -omaxsamplerate=Hz\n\
+              --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL\n\
+                                     maximum level of messages to log, either ERROR,\n\
+                                     INFO, or DEBUG. Defaults to INFO, and always set\n\
+                                     to DEBUG in debug mode. Note that the other log\n\
+                                     flags must also be set to enable logging\n\
+              --log_stderr, -olog_stderr\n\
+                                     enable outputting logging messages to stderr.\n\
+                                     Enabled in debug mode.\n\
+              --log_syslog, -olog_syslog\n\
+                                     enable outputting logging messages to syslog\n\
+              --logfile=FILE, -ologfile=FILE\n\
+                                     file to output log messages to. By default, no\n\
+                                     file will be written.\n\
+    		  --maxsamplerate=Hz, -omaxsamplerate=Hz\n\
                            Limits the output sample rate to Hz. The default\n\
                            is 44100 (44.1 Khz). If the source file sample rate\n\
                            is more it will be downsampled automatically.\n\
-    --statcachesize=SIZE, -ostatcachesize=SIZE\n\
+              --statcachesize=SIZE, -ostatcachesize=SIZE\n\
                            Set the number of entries for the file stats\n\
                            cache.  Necessary for decent performance when\n\
                            VBR is enabled.  Each entry takes 100-200 bytes.\n\
 \n\
 General options:\n\
-    -h, --help             display this help and exit\n\
-    -V, --version          output version information and exit\n\
-\n", stdout);
+              -h, --help             display this help and exit\n\
+              -V, --version          output version information and exit\n\
+            \n", stdout);
 }
 
 static int mp3fs_opt_proc(void* data, const char* arg, int key, struct fuse_args *outargs) {
@@ -185,10 +186,20 @@ static int mp3fs_opt_proc(void* data, const char* arg, int key, struct fuse_args
     return 1;
 }
 
+void cleanup()
+{
+	cache_delete();
+}
+
 int main(int argc, char *argv[]) {
     int ret;
 
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+
+	cache_new();
+
+	/* register the termination function */
+   	atexit(cleanup);
 
     // Configure FFMPEG
     /* register all the codecs */

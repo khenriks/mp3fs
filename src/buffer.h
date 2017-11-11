@@ -64,8 +64,9 @@ private:
     size_t                  m_buffer_pos;           // Read/write position
     size_t                  m_buffer_watermark;     // Number of bytes in buffer
 #ifdef _USE_DISK
+    volatile bool           m_is_open;
     size_t                  m_buffer_size;          // Current buffer size
-    uint8_t *               m_buffer;
+    uint8_t *      	    m_buffer;
     int                     m_fd;
 #else
     std::vector<uint8_t>    m_buffer;

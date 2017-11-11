@@ -592,11 +592,9 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         codec_ctx->framerate            = in_video_stream->codec->framerate;
 #endif
         codec_ctx->sample_aspect_ratio  = in_video_stream->codec->sample_aspect_ratio;
-        av_opt_set(codec_ctx->priv_data, "profile", "high", AV_OPT_SEARCH_CHILDREN);
+        av_opt_set(codec_ctx->priv_data, "profile", "baseline", AV_OPT_SEARCH_CHILDREN);
+        av_opt_set(codec_ctx->priv_data, "level", "3.0", AV_OPT_SEARCH_CHILDREN);
         av_opt_set(codec_ctx->priv_data, "preset", "veryfast", AV_OPT_SEARCH_CHILDREN);
-        av_opt_set(codec_ctx->priv_data, "qmin", "0", AV_OPT_SEARCH_CHILDREN);
-        av_opt_set(codec_ctx->priv_data, "qmax", "69", AV_OPT_SEARCH_CHILDREN);
-        av_opt_set(codec_ctx->priv_data, "qdiff", "4", AV_OPT_SEARCH_CHILDREN);
         /** Save the encoder context for easier access later. */
         m_out.m_pVideo_codec_ctx    = codec_ctx;
         // Save the stream index
@@ -869,9 +867,11 @@ int FFMPEG_Transcoder::write_output_file_header()
     if (m_out.m_output_type == TYPE_MP4)
     {
         // Settings for fast playback start in HTML5
-        av_dict_set(&dict, "movflags", "faststart", 0);
-        av_dict_set(&dict, "movflags", "empty_moov", 0);
+        av_dict_set(&dict, "movflags", "+faststart", 0);
+        av_dict_set(&dict, "movflags", "+empty_moov", 0);
         av_dict_set(&dict, "frag_duration", "1000000", 0); // 1 sec
+        av_dict_set(&dict, "flags:a", "+global_header", 0);
+        av_dict_set(&dict, "flags:v", "+global_header", 0);
     }
 
 #ifdef AVSTREAM_INIT_IN_WRITE_HEADER
@@ -1747,7 +1747,6 @@ size_t FFMPEG_Transcoder::calculate_size() {
         if (m_in.m_nAudio_stream_idx > -1)
         {
             AVCodecID audio_codec_id = AV_CODEC_ID_AAC; // ??? TODO: aus der Kommandozeile...
-            int64_t real_bit_rate = m_in.m_pAudio_stream->codec->bit_rate != 0 ? m_in.m_pAudio_stream->codec->bit_rate : m_in.m_pFormat_ctx->bit_rate;
             int64_t audiobitrate = get_output_bit_rate(m_in.m_pAudio_stream, params.audiobitrate * 1000);
 
             switch (audio_codec_id)
@@ -1778,7 +1777,6 @@ size_t FFMPEG_Transcoder::calculate_size() {
             if (m_bIsVideo)
             {
                 AVCodecID video_codec_id = AV_CODEC_ID_H264; // ??? TODO: aus der Kommandozeile...
-                int64_t real_bit_rate = m_in.m_pVideo_stream->codec->bit_rate != 0 ? m_in.m_pVideo_stream->codec->bit_rate : m_in.m_pFormat_ctx->bit_rate;
                 int64_t videobitrate = get_output_bit_rate(m_in.m_pVideo_stream, params.videobitrate * 1000);
                 int64_t bitrateoverhead = 0;
 

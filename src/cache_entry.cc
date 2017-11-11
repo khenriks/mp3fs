@@ -35,8 +35,6 @@ Cache_Entry::Cache_Entry(const char *filename)
     , m_ref_count(0)
     , m_transcoder(new FFMPEG_Transcoder)
 {
-    reset();
-
     char dir[PATH_MAX];
 
     tempdir(dir, sizeof(dir));
@@ -44,14 +42,17 @@ Cache_Entry::Cache_Entry(const char *filename)
     m_filename = filename;
 
     m_cachefile = dir;
-    m_cachefile += "/mp3fs/";
+    m_cachefile += "/mp3fs";
     m_cachefile += params.mountpath;
-    m_cachefile += "/";
-    char *p = strdup(filename);
-    m_cachefile += basename(p);
-    free(p);
+    //    m_cachefile += "/";
+    //    char *p = strdup(filename);
+    //    m_cachefile += basename(p);
+    //    free(p);
+    m_cachefile += filename;
 
     m_buffer = new Buffer(m_filename, m_cachefile);
+
+    reset();
 
     mp3fs_debug("Created new Cache_Entry.");
 }
@@ -61,6 +62,7 @@ Cache_Entry::~Cache_Entry()
     if (m_thread_id)
     {
         mp3fs_debug("Waiting for thread id %zx to terminate.", m_thread_id);
+
         int s = pthread_join(m_thread_id, NULL);
         if (s != 0)
         {
@@ -82,13 +84,25 @@ string Cache_Entry::info_file() const
     return (m_cachefile + ".info");
 }
 
-void Cache_Entry::reset()
+void Cache_Entry::reset(int fetch_file_time)
 {
-    m_encoded_filesize = 0;
+    struct stat sb;
+
     m_is_decoding = false;
-    m_finished = false;
-    m_access_time = m_creation_time = time(NULL);
-    m_error = false;
+
+    m_info.m_encoded_filesize = 0;
+    m_info.m_finished = false;
+    m_info.m_access_time = m_info.m_creation_time = time(NULL);
+    m_info.m_error = false;
+
+    if (fetch_file_time) {
+        if (stat(m_filename.c_str(), &sb) == -1) {
+            m_info.m_file_time = 0;
+        }
+        else {
+            m_info.m_file_time = sb.st_mtime;
+        }
+    }
 }
 
 bool Cache_Entry::read_info()
@@ -97,19 +111,36 @@ bool Cache_Entry::read_info()
 
     reset();
 
-    input_file.exceptions ( std::ifstream::failbit | std::ifstream::badbit );
+    input_file.exceptions ( ifstream::failbit | ifstream::badbit );
     try {
+        time_t file_time = m_info.m_file_time;
+
         input_file.open(info_file(), ios::in | ios::binary);
 
-        input_file.read((char*)&m_encoded_filesize, sizeof(m_encoded_filesize));
-        input_file.read((char*)&m_finished, sizeof(m_finished));
-        input_file.read((char*)&m_error, sizeof(m_error));
-        input_file.read((char*)&m_creation_time, sizeof(m_creation_time));
-        input_file.read((char*)&m_access_time, sizeof(m_access_time));
+        input_file.read((char*)&m_info.m_encoded_filesize, sizeof(m_info.m_encoded_filesize));
+        input_file.read((char*)&m_info.m_finished, sizeof(m_info.m_finished));
+        input_file.read((char*)&m_info.m_error, sizeof(m_info.m_error));
+        input_file.read((char*)&m_info.m_creation_time, sizeof(m_info.m_creation_time));
+        input_file.read((char*)&m_info.m_access_time, sizeof(m_info.m_access_time));
+        input_file.read((char*)&m_info.m_file_time, sizeof(m_info.m_file_time));
 
         input_file.close();
+
+        if (file_time != m_info.m_file_time)
+        {
+            reset(false);
+
+            m_info.m_file_time = file_time;
+
+            mp3fs_info("File date changed '%s': rebuilding file.", info_file().c_str());
+        }
     }
-    catch (std::ifstream::failure e) {
+    catch (ifstream::failure e) {
+        mp3fs_warning("Unable to read file '%s': %s", info_file().c_str(), e.what());
+        //        cerr << "Caught an ios_base::failure reading file." << endl
+        //                  << "File: " << info_file()  << endl
+        //                  << "Explanatory string: " << e.what() << endl
+        //                  << "Error code: " << e.code() << endl;
         reset();
         return false;
     }
@@ -120,19 +151,26 @@ bool Cache_Entry::read_info()
 bool Cache_Entry::write_info()
 {
     ofstream output_file;
-    output_file.exceptions ( std::ifstream::failbit | std::ifstream::badbit );
+    output_file.exceptions ( ifstream::failbit | ifstream::badbit );
     try {
         output_file.open(info_file(), ios::out | ios::binary);
 
-        output_file.write((char*)&m_encoded_filesize, sizeof(m_encoded_filesize));
-        output_file.write((char*)&m_finished, sizeof(m_finished));
-        output_file.write((char*)&m_error, sizeof(m_error));
-        output_file.write((char*)&m_creation_time, sizeof(m_creation_time));
-        output_file.write((char*)&m_access_time, sizeof(m_access_time));
+        output_file.write((char*)&m_info.m_encoded_filesize, sizeof(m_info.m_encoded_filesize));
+        output_file.write((char*)&m_info.m_finished, sizeof(m_info.m_finished));
+        output_file.write((char*)&m_info.m_error, sizeof(m_info.m_error));
+        output_file.write((char*)&m_info.m_creation_time, sizeof(m_info.m_creation_time));
+        output_file.write((char*)&m_info.m_access_time, sizeof(m_info.m_access_time));
+        output_file.write((char*)&m_info.m_file_time, sizeof(m_info.m_file_time));
 
         output_file.close();
     }
-    catch (std::ifstream::failure e) {
+    catch (ifstream::failure e) {
+        mp3fs_error("Unable to update file '%s': %s", info_file().c_str(), e.what());
+
+        //        cerr << "Caught an ios_base::failure writing file." << endl
+        //                  << "File: " << info_file()  << endl
+        //                  << "Explanatory string: " << e.what() << endl
+        //                  << "Error code: " << e.code() << endl;
         return false;
     }
 
@@ -239,25 +277,25 @@ const ID3v1 * Cache_Entry::id3v1tag() const
 
 time_t Cache_Entry::age() const
 {
-    return (time(NULL) - m_creation_time);
+    return (time(NULL) - m_info.m_creation_time);
 }
 
 time_t Cache_Entry::last_access() const
 {
-    return m_access_time;
+    return m_info.m_access_time;
 }
 
 bool Cache_Entry::expired() const
 {
-    return ((time(NULL) - m_creation_time) > params.expiry_time);
+    return ((time(NULL) - m_info.m_creation_time) > params.expiry_time);
 }
 
 bool Cache_Entry::suspend_timeout() const
 {
-    return ((time(NULL) - m_access_time) > params.max_inactive_suspend);
+    return ((time(NULL) - m_info.m_access_time) > params.max_inactive_suspend);
 }
 
 bool Cache_Entry::decode_timeout() const
 {
-    return ((time(NULL) - m_access_time) > params.max_inactive_abort);
+    return ((time(NULL) - m_info.m_access_time) > params.max_inactive_abort);
 }

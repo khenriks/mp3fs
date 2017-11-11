@@ -24,7 +24,7 @@ Changes in this release:
   than 100MB. Add "--maxmemcache=X" to change. Examples for X: 80000,
   80MB or 1GB. Do not set to a too large value as you may run out of
   memory.
-* : Support for video files.
+* TODO: Support for video files.
 * TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
   that already represents a H264 video stream it would be possible to 
   simply repackage it to a mp4 container without recoding.

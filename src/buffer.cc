@@ -34,14 +34,17 @@
 #include <sys/mman.h>
 #include <libgen.h>
 
+using namespace std;
+
 /* Initially Buffer is empty. It will be allocated as needed. */
-Buffer::Buffer(const std::string &filename, const std::string &cachefile)
+Buffer::Buffer(const string &filename, const string &cachefile)
     : mutex(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
     , m_filename(filename)
     , m_cachefile(cachefile)
     , m_buffer_pos(0)
     , m_buffer_watermark(0)
     #ifdef _USE_DISK
+    , m_is_open(false)
     , m_buffer(NULL)
     , m_fd(-1)
     #endif
@@ -53,7 +56,7 @@ Buffer::~Buffer() {
     close();
 }
 
-std::string Buffer::cache_file() const
+string Buffer::cache_file() const
 {
     return (m_cachefile + ".cache");
 }
@@ -61,19 +64,22 @@ std::string Buffer::cache_file() const
 bool Buffer::open()
 {
 #ifdef _USE_DISK 
-    if (m_buffer != NULL)
+    if (m_is_open)
     {
         return true;
     }
 
-    struct stat sb;
-    size_t filesize;
-    void *p;
+    m_is_open = true;
+
     bool success = true;
 
     pthread_mutex_lock(&mutex);
     try
     {
+        struct stat sb;
+        size_t filesize;
+        void *p;
+
         // Create the path to the cache file
         char *cachefile = strdup(m_cachefile.c_str());
         if (mktree(dirname(cachefile), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) && errno != EEXIST)
@@ -160,6 +166,7 @@ bool Buffer::open()
 
         if (!success)
         {
+            m_is_open = false;
             if (m_fd != -1)
             {
                 ::close(m_fd);
@@ -177,13 +184,15 @@ bool Buffer::open()
 
 bool Buffer::close(bool erase_cache)
 {
+    bool success = true;
+
 #ifdef _USE_DISK
-    if (m_buffer == NULL)
+    if (!m_is_open)
     {
         return true;
     }
 
-    bool success = true;
+    m_is_open = false;
 
     pthread_mutex_lock(&mutex);
 
@@ -191,24 +200,23 @@ bool Buffer::close(bool erase_cache)
     flush();
 
     void *p = m_buffer;
+    int fd = m_fd;
 
     m_buffer = NULL;
+    m_fd = -1;
 
     if (munmap(p, m_buffer_size) == -1) {
         mp3fs_error("File unmapping failed: %s", strerror(errno));
-        ::close(m_fd);
-        m_fd = -1;
         success = false;
     }
 
-    if (ftruncate(m_fd, m_buffer_watermark) == -1)
+    if (ftruncate(fd, m_buffer_watermark) == -1)
     {
         mp3fs_error("Error calling ftruncate() to 'stretch' the file '%s': %s", cache_file().c_str(), strerror(errno));
         success = false;
     }
 
-    ::close(m_fd);
-    m_fd = -1;
+    ::close(fd);
 
     if (erase_cache)
     {
@@ -227,7 +235,7 @@ bool Buffer::close(bool erase_cache)
 
 bool Buffer::flush()
 {
-    if (m_buffer == NULL)
+    if (!m_is_open)
     {
         return false;
     }
@@ -269,7 +277,7 @@ bool Buffer::reserve(size_t size) {
     {
         m_buffer.reserve(size);
     }
-    catch (std::exception& /*e*/)
+    catch (exception& /*e*/)
     {
         return false;
     }
@@ -397,7 +405,7 @@ bool Buffer::reallocate(size_t newsize) {
         {
             m_buffer.resize(newsize, 0);
         }
-        catch (std::exception& /*e*/)
+        catch (exception& /*e*/)
         {
             return false;
         }

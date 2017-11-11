@@ -34,7 +34,7 @@
 #include <limits>
 #include <unistd.h>
 
-static Cache cache;
+static Cache *cache;
 static volatile bool thread_exit;
 
 static void *decoder_thread(void *arg);
@@ -52,20 +52,18 @@ static bool transcode_until(struct Cache_Entry* cache_entry, off_t offset, size_
     size_t end = offset + len;
     bool success = true;
 
+    if (cache_entry->m_info.m_finished || cache_entry->m_buffer->tell() >= end)
+    {
+        return true;
+    }
+
     // Wait until decoder thread has reached the desired position
     if (cache_entry->m_is_decoding)
     {
-        //        if ((size_t)offset < cache_entry->m_buffer->tell() && cache_entry->m_buffer->tell() < end)
-        //        {
-        //// Return what we've got so far
-        //        }
-        //        else
-        //        {
-        while (!cache_entry->m_finished && !cache_entry->m_error && cache_entry->m_buffer->tell() < end) {
+        while (!cache_entry->m_info.m_finished && !cache_entry->m_info.m_error && cache_entry->m_buffer->tell() < end) {
             sleep(0);
         }
-        //        }
-        success = !cache_entry->m_error;
+        success = !cache_entry->m_info.m_error;
     }
     return success;
 }
@@ -74,6 +72,26 @@ static bool transcode_until(struct Cache_Entry* cache_entry, off_t offset, size_
 
 /* Use "C" linkage to allow access from C code. */
 extern "C" {
+
+void cache_new(void)
+{
+    if (cache == NULL)
+    {
+        mp3fs_debug("Creating media file cache.");
+        cache = new Cache;
+    }
+}
+
+void cache_delete(void)
+{
+    Cache *p = cache;
+    cache = NULL;
+    if ( p!= NULL)
+    {
+        mp3fs_debug("Deleting media file cache.");
+        delete p;
+    }
+}
 
 int transcoder_cached_filesize(const char* filename, struct stat *stbuf) {
     mp3fs_debug("Retrieving encoded size for %s.", filename);
@@ -95,7 +113,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
     mp3fs_debug("Creating transcoder object for %s.", filename);
 
     /* Allocate transcoder structure */
-    struct Cache_Entry* cache_entry = cache.open(filename);
+    struct Cache_Entry* cache_entry = cache->open(filename);
     if (!cache_entry) {
         goto trans_fail;
     }
@@ -105,7 +123,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
         goto init_fail;
     }
 
-    if (!cache_entry->m_is_decoding && !cache_entry->m_finished)
+    if (!cache_entry->m_is_decoding && !cache_entry->m_info.m_finished)
     {
         /* Create transcoder object. */
 
@@ -120,7 +138,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
         //            stats_cache.put_filesize(cache_entry->m_filename, cache_entry->mtime(), cache_entry->m_encoded_filesize);
         //        }
 
-        stats_cache.get_filesize(cache_entry->m_filename, cache_entry->mtime(), cache_entry->m_encoded_filesize);
+        stats_cache.get_filesize(cache_entry->m_filename, cache_entry->mtime(), cache_entry->m_info.m_encoded_filesize);
 
         if (begin_transcode)
         {
@@ -133,7 +151,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
             //                goto init_fail;
             //            }
 
-            if (!cache_entry->m_finished)
+            if (!cache_entry->m_info.m_finished)
             {
                 // Must decode the file, otherwise simply use cache
                 cache_entry->m_is_decoding = true;
@@ -186,7 +204,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
 
 init_fail:
     cache_entry->m_is_decoding = false;
-    cache.close(&cache_entry);
+    cache->close(&cache_entry);
 
 trans_fail:
     return NULL;
@@ -223,7 +241,7 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
     }
 
     // Set last access time
-    cache_entry->m_access_time = time(NULL);
+    cache_entry->m_info.m_access_time = time(NULL);
 
     bool success = transcode_until(cache_entry, offset, len);
 
@@ -258,18 +276,18 @@ static int transcoder_finish(struct Cache_Entry* cache_entry) {
     }
 
     /* Check encoded buffer size. */
-    cache_entry->m_encoded_filesize = cache_entry->m_buffer->buffer_watermark();
-    cache_entry->m_finished = true;
+    cache_entry->m_info.m_encoded_filesize = cache_entry->m_buffer->buffer_watermark();
+    cache_entry->m_info.m_finished = true;
     cache_entry->m_is_decoding = false;
 
-    if (!cache_entry->m_buffer->reserve(cache_entry->m_encoded_filesize)) {
+    if (!cache_entry->m_buffer->reserve(cache_entry->m_info.m_encoded_filesize)) {
         mp3fs_warning("FFMPEG transcoder: Unable to truncate buffer.");
     }
 
-    mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu, diff: %zi.", cache_entry->calculate_size(), cache_entry->m_encoded_filesize, cache_entry->m_encoded_filesize - cache_entry->calculate_size());
+    mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu, diff: %zi.", cache_entry->calculate_size(), cache_entry->m_info.m_encoded_filesize, cache_entry->m_info.m_encoded_filesize - cache_entry->calculate_size());
 
-    if (params.statcachesize > 0 && cache_entry->m_encoded_filesize != 0) {
-        stats_cache.put_filesize(cache_entry->m_filename, decoded_file_mtime, cache_entry->m_encoded_filesize);
+    if (params.statcachesize > 0 && cache_entry->m_info.m_encoded_filesize != 0) {
+        stats_cache.put_filesize(cache_entry->m_filename, decoded_file_mtime, cache_entry->m_info.m_encoded_filesize);
     }
 
     cache_entry->flush();
@@ -280,13 +298,13 @@ static int transcoder_finish(struct Cache_Entry* cache_entry) {
 /* Free the transcoder structure. */
 
 void transcoder_delete(struct Cache_Entry* cache_entry) {
-    cache.close(&cache_entry);
+    cache->close(&cache_entry);
 }
 
 /* Return size of output file, as computed by Encoder. */
 size_t transcoder_get_size(struct Cache_Entry* cache_entry) {
-    if (cache_entry->m_encoded_filesize != 0) {
-        return cache_entry->m_encoded_filesize;
+    if (cache_entry->m_info.m_encoded_filesize != 0) {
+        return cache_entry->m_info.m_encoded_filesize;
     } else
         return cache_entry->calculate_size();
 }
@@ -323,14 +341,8 @@ static void *decoder_thread(void *arg)
 
         mp3fs_debug("Output file opened. Beginning transcoding.");
 
-        size_t n = 0;
-        while (!cache_entry->m_finished && !(timeout = cache_entry->decode_timeout()) && !thread_exit) {
+        while (!cache_entry->m_info.m_finished && !(timeout = cache_entry->decode_timeout()) && !thread_exit) {
             int stat = cache_entry->m_transcoder->process_single_fr();
-
-            if (n != cache_entry->calculate_size())
-            {
-                n = cache_entry->calculate_size();
-            }
 
             if (stat == -1 || (stat == 1 && transcoder_finish(cache_entry) == -1)) {
                 errno = EIO;
@@ -346,13 +358,13 @@ static void *decoder_thread(void *arg)
 
     if (timeout || thread_exit)
     {
-        cache_entry->m_finished = false;
         cache_entry->m_is_decoding = false;
-        cache_entry->m_error = true;
+        cache_entry->m_info.m_finished = false;
+        cache_entry->m_info.m_error = true;
 
         if (timeout) {
             mp3fs_debug("Timeout! Transcoding aborted for file '%s'.", cache_entry->m_filename.c_str());
-            cache.close(&cache_entry, true);  // After timeout need to delete this here
+            cache->close(&cache_entry, true);  // After timeout need to delete this here
         }
         else {
             mp3fs_debug("Thread exit! Transcoding aborted for file '%s'.", cache_entry->m_filename.c_str());
@@ -360,11 +372,10 @@ static void *decoder_thread(void *arg)
     }
     else
     {
-        cache_entry->m_error = !success;
+        cache_entry->m_info.m_error = !success;
 
         mp3fs_debug("Transcoding complete.");
     }
-
     cache_entry->close();
 
     return NULL;
@@ -468,6 +479,7 @@ int init_logging(const char* logfile, const char* max_level, int to_stderr,
     auto it = level_map.find(max_level);
 
     if (it == level_map.end()) {
+        fprintf(stderr, "Invalid logging level string: %s\n", max_level);
         return false;
     }
 

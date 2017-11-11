@@ -50,7 +50,6 @@ Cache_Entry* Cache::open(const char *filename)
     cache_t::iterator p = cache.find(filename);
     if (p == cache.end()) {
         mp3fs_debug("Created new transcoder for file '%s'.", filename);
-        fprintf(stderr, "Created new transcoder for file '%s'.\n", filename);
         cache_entry = new Cache_Entry(filename);
         if (cache_entry == NULL)
         {
@@ -60,7 +59,6 @@ Cache_Entry* Cache::open(const char *filename)
         cache.insert(std::make_pair(filename, cache_entry));
     } else {
         mp3fs_debug("Reusing cached transcoder for file '%s'.", filename);
-        fprintf(stderr, "Reusing cached transcoder for file '%s'.\n", filename);
         cache_entry = p->second;
     }
 
@@ -75,15 +73,13 @@ void Cache::close(Cache_Entry **cache_entry, bool erase_cache)
     }
 
     std::string filename((*cache_entry)->m_filename);
-    if ((*cache_entry)->m_error || (!(*cache_entry)->m_is_decoding && !(*cache_entry)->m_finished))
+    if ((*cache_entry)->m_info.m_error || (!(*cache_entry)->m_is_decoding && !(*cache_entry)->m_info.m_finished))
     {
         cache_t::iterator p = cache.find(filename);
         if (p == cache.end()) {
             mp3fs_warning("Unknown transcoder for file '%s', unable to delete.", filename.c_str());
-            fprintf(stderr, "Unknown transcoder for file '%s', unable to delete.\n", filename.c_str());
         } else {
             mp3fs_debug("Deleted transcoder for file '%s'.", filename.c_str());
-            fprintf(stderr, "Deleted transcoder for file '%s'.\n", filename.c_str());
             cache.erase(p);
         }
 
@@ -98,6 +94,5 @@ void Cache::close(Cache_Entry **cache_entry, bool erase_cache)
         (*cache_entry)->close();
 
         mp3fs_debug("Keeping transcoder for file '%s'.", filename.c_str());
-        fprintf(stderr, "Keeping transcoder for file '%s'.\n", filename.c_str());
     }
 }

@@ -54,22 +54,27 @@ public:
     bool decode_timeout() const;
 
 protected:
-    void reset();
+    void reset(int fetch_file_time = true);
 
 public:
     Buffer *            m_buffer;
     std::string         m_filename;
     std::string         m_cachefile;
-    size_t              m_encoded_filesize;
     bool                m_is_decoding;
-    bool                m_finished;
-    bool                m_error;
-    time_t              m_creation_time;
-    time_t              m_access_time;
     pthread_t           m_thread_id;
     int                 m_ref_count;
 
-//protected:
+    struct
+    {
+        size_t          m_encoded_filesize;
+        bool            m_finished;
+        bool            m_error;
+        time_t          m_creation_time;
+        time_t          m_access_time;
+        time_t          m_file_time;
+    } m_info;
+
+    //protected:
     FFMPEG_Transcoder * m_transcoder;
 };
 
