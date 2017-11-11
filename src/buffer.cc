@@ -43,11 +43,9 @@ Buffer::Buffer(const string &filename, const string &cachefile)
     , m_cachefile(cachefile)
     , m_buffer_pos(0)
     , m_buffer_watermark(0)
-    #ifdef _USE_DISK
     , m_is_open(false)
     , m_buffer(NULL)
     , m_fd(-1)
-    #endif
 {
 }
 
@@ -63,7 +61,6 @@ string Buffer::cache_file() const
 
 bool Buffer::open()
 {
-#ifdef _USE_DISK 
     if (m_is_open)
     {
         return true;
@@ -177,16 +174,12 @@ bool Buffer::open()
     pthread_mutex_unlock(&mutex);
 
     return success;
-#else
-    return true;
-#endif
 }
 
 bool Buffer::close(bool erase_cache)
 {
     bool success = true;
 
-#ifdef _USE_DISK
     if (!m_is_open)
     {
         return true;
@@ -229,7 +222,6 @@ bool Buffer::close(bool erase_cache)
 
     pthread_mutex_unlock(&mutex);
 
-#endif
     return success;
 }
 
@@ -254,8 +246,6 @@ bool Buffer::flush()
  * Reserve memory without changing size to reduce re-allocations
  */
 bool Buffer::reserve(size_t size) {
-
-#ifdef _USE_DISK
     bool success = true;
 
     pthread_mutex_lock(&mutex);
@@ -272,18 +262,6 @@ bool Buffer::reserve(size_t size) {
     pthread_mutex_unlock(&mutex);
 
     return ((m_buffer != NULL) && success);
-#else
-    try
-    {
-        m_buffer.reserve(size);
-    }
-    catch (exception& /*e*/)
-    {
-        return false;
-    }
-
-    return true;
-#endif
 }
 
 /*
@@ -319,11 +297,7 @@ uint8_t* Buffer::write_prepare(size_t length) {
         if (m_buffer_watermark < m_buffer_pos + length) {
             m_buffer_watermark = m_buffer_pos + length;
         }
-#ifdef _USE_DISK
         return m_buffer + m_buffer_pos;
-#else
-        return m_buffer.data() + m_buffer_pos;
-#endif
     } else {
         return NULL;
     }
@@ -356,11 +330,7 @@ size_t Buffer::tell() const {
 
 /* Give the value of the internal buffer size pointer. */
 size_t Buffer::size() const {
-#ifdef _USE_DISK
     return m_buffer_size;
-#else
-    return m_buffer.size();
-#endif
 }
 
 /* Number of bytes written to buffer so far (may be less than m_buffer.size()) */
@@ -378,12 +348,9 @@ void Buffer::copy(uint8_t* out_data, size_t offset, size_t bufsize) {
         {
             bufsize = size() - offset - 1;
         }
-#ifdef _USE_DISK
+
         memcpy(out_data, m_buffer + offset, bufsize);
         pthread_mutex_unlock(&mutex);
-#else
-        memcpy(out_data, m_buffer.data() + offset, bufsize);
-#endif
     }
 }
 
@@ -395,21 +362,11 @@ void Buffer::copy(uint8_t* out_data, size_t offset, size_t bufsize) {
 bool Buffer::reallocate(size_t newsize) {
     if (newsize > size()) {
         size_t oldsize = size();
-#ifdef _USE_DISK
+
         if (!reserve(newsize))
         {
             return false;
         }
-#else
-        try
-        {
-            m_buffer.resize(newsize, 0);
-        }
-        catch (exception& /*e*/)
-        {
-            return false;
-        }
-#endif
 
         mp3fs_debug("Buffer reallocate: %lu -> %lu.", oldsize, newsize);
     }
