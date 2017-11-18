@@ -4,7 +4,7 @@
  * Copyright (C) 2017 Norbert Schlia (nschlia@oblivon-software.de)
  * Copyright (C) 2015 Thomas Schwarzenberger
  * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
- 
+
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,8 +51,7 @@ typedef enum _tagOUTPUTTYPE
 {
     TYPE_UNKNOWN,
     TYPE_MP3,
-    TYPE_MP4,
-    TYPE_ISMV
+    TYPE_MP4
 } OUTPUTTYPE;
 
 class FFMPEG_Transcoder {
@@ -60,7 +59,7 @@ public:
     FFMPEG_Transcoder();
     ~FFMPEG_Transcoder();
     int open_file(const char* filename);
-    int open_out_file(Buffer* buffer, const char* type);
+    int open_out_file(Buffer* buffer);
     int process_single_fr();
     int encode_finish();
 
@@ -68,12 +67,12 @@ public:
     size_t calculate_size();
 
     const ID3v1 * id3v1tag() const;
-    
+
 protected:
     bool is_video() const;
     int open_codec_context(int *stream_idx, AVCodecContext **avctx, AVFormatContext *fmt_ctx, AVMediaType type, const char *filename);
     int add_stream(AVCodecID codec_id);
-    int open_output_file(Buffer *buffer, const char* type);
+    int open_output_file(Buffer *buffer);
     void copy_metadata(AVDictionary *metadata, AVStream *stream, bool bIsVideo);
     int process_metadata();
     void init_packet(AVPacket *packet);
@@ -98,20 +97,16 @@ protected:
     static int64_t seek(void * pOpaque, int64_t i4Offset, int nWhence);
 
     int64_t get_output_bit_rate(AVStream *in_stream, int64_t bit_rate) const;
-    
+
 private:
     time_t                      m_mtime;
     size_t                      m_nCalculated_size;         // Use this as the size instead of computing it.
     bool                        m_bIsVideo;
 
     // Audio conversion and buffering
-#ifdef _USE_LIBSWRESAMPLE
-    SwrContext *                m_pSwr_ctx;
-#else
     AVAudioResampleContext *    m_pAudio_resample_ctx;
-#endif	
     AVAudioFifo *               m_pAudioFifo;
-	
+
     // Video conversion and buffering
     SwsContext *                m_pSws_ctx;
     std::queue<AVFrame*>        m_VideoFifo;
@@ -144,12 +139,14 @@ private:
         int                     m_nVideo_stream_idx;
 
         int64_t                 m_nAudio_pts;           // Global timestamp for the audio frames
-        int64_t                 m_nVideo_pts;           // Global timestamp for the video frames
+        int64_t                 m_audio_start_pts;      // Audio start PTS
+        int64_t                 m_video_start_pts;      // Video start PTS
 
-        int64_t                 m_nVideo_offset;
+        int64_t                 m_last_mux_dts;         // Last muxed DTS
 
         ID3v1                   m_id3v1;
     } m_out;
+
 };
 
 #endif

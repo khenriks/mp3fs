@@ -44,12 +44,37 @@ To build the docs succesfully you may need
 
     apt-get install asciidoc
 	
-Note that for Debian 8 the LIBAV clone of FFMPEG will be installed. From Debian 9 
-on the original FFMPEG comes with the distribution. Both libraries work.
+Note that for Debian 8 the LIBAV 11 clone of FFMPEG will be installed. 
+From Debian 9 on the original FFMPEG comes with the distribution. 
+Both libraries work, but please read the FFMPEG/LIBAV version chapter.
 
 On Ubuntu use the same command with `apt-get` in place of `aptitude`.
 
 * Tips on other OSes and distributions like Mac or Red-Hat are welcome.
+
+FFMPEG/LIBAV Version
+--------------------
+
+mp3fs will compile fine with Libav 11 (coming with Debian 8 "Squeeze")
+and FFMPEG, but if you intend to use the mp4 target format it may be
+necessary to use a newer version.
+
+For direct to stream transcoding several new features in mp4 need to
+be used (ISMV, faststart, separate_moof/empty_moov to name them) 
+which are not implemented in older versions (or if available, not 
+working properly). 
+
+Streaming while transcoding does not work with Libav 11 (the version
+that comes with Debian 8). You need to replace it with a recent
+FFMPEG version. Maybe Libav 12 will work, but this has not been
+tested.
+
+With Libav, the first time a file is accessed the playback will fail.
+After it has been decoded fully to cache playback will work. Playing
+the file via http may fail and it may take quite long until the
+file starts playing.
+
+This is a LIBAV problem. Generally I recommend using FFMPEG instead.
 
 Installation
 ------------

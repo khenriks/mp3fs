@@ -35,11 +35,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
-#ifdef _USE_LIBSWRESAMPLE
-#include <libswresample/swresample.h>
-#else
 #include <libavresample/avresample.h>	
-#endif
 #include <libavutil/imgutils.h>
 #include <libavutil/opt.h>
 #include <libavutil/error.h>
@@ -120,5 +116,11 @@ const char * get_codec_name(enum AVCodecID codec_id);
 
 int mktree(const char *path, mode_t mode);
 void tempdir(char *dir, size_t size);
+
+#ifdef USING_LIBAV
+// LIBAV does not have these functions
+int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat, const char *format, const char *filename);
+const char *avcodec_get_name(enum AVCodecID id);
+#endif
 
 #endif

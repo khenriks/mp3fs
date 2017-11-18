@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # Sets up package and initializes build system.
-AC_INIT([MP3FS], [0.91-FFMPEG])
+AC_INIT([MP3FS], [0.92-FFMPEG])
 AC_CONFIG_SRCDIR([src/mp3fs.c])
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign])
@@ -33,7 +33,7 @@ AC_ARG_WITH([ffmpeg],
 # libavfilter     6. 82.100
 # libavresample   3.  5.  0		2.1.0 (required)
 # libswscale      4.  2.100		3.0.0 (required)
-# libswresample   2.  3.100             1.2.0 (required) ???
+# libswresample   2.  3.100
 # libpostproc    54.  5.10
 #
 # May work with older versions but this is not guaranteed.
@@ -44,13 +44,10 @@ AS_IF([test "x$with_ffmpeg" != xno],
 		[PKG_CHECK_MODULES([libavcodec], [libavcodec >= 56.1.0],
 			[PKG_CHECK_MODULES([libavformat], [libavformat >= 56.1.0],
 				[PKG_CHECK_MODULES([libavresample], [libavresample >= 2.1.0],
-					[PKG_CHECK_MODULES([libswresample], [libswresample >= 1.2.0],
 						[PKG_CHECK_MODULES([libswscale], [libswscale >= 3.0.0],
 							[AC_DEFINE([HAVE_FFMPEG], [1], [Use FFMPEG libraries.])]
 						)
 						]
-					)
-					]
 				)
 				]
 			)

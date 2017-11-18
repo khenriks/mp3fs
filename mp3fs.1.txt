@@ -82,11 +82,6 @@ When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
 *-h, --help*::
     Print usage information.
 
-*--quality, -oquality*='QUALITY'::
-    Set quality for encoding, as understood by LAME. The slowest and best
-    quality is 0, while 9 is the fastest and worst quality. The default
-    value is 5, although according to the LAME manual, 2 is recommended.
-
 *-s*::
     Force single-threaded operation.
 

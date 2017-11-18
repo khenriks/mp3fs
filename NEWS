@@ -1,5 +1,16 @@
 mp3fs NEWS
 
+Important changes in 0.92-FFMPEG (2017-11-18)
+
+Changes in this release:
+* Files will now be decoded to /tmp/ instead of memory.
+* Full support for video files (mp4 target only).
+* TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
+  that already represents a H264 video stream it would be possible to 
+  simply repackage it to a mp4 container without recoding.
+
+nschlia@oblivion-software.de
+
 Important changes in 0.91-FFMPEG (2017-10-04)
 
 Added FFMPEG for decoding and encoding. 

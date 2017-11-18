@@ -79,6 +79,12 @@ const char* decoder_list[] = {
     "mpg",
     "ts",
     "mov",
+    "m2ts",
+    "mkv",
+    "vob",
+    "wma",
+    "wmv",
+    "rm",
     NULL
 };
 

@@ -335,7 +335,7 @@ static void *decoder_thread(void *arg)
             throw false;
         }
 
-        if (cache_entry->m_transcoder->open_out_file(cache_entry->m_buffer, params.desttype) == -1) {
+        if (cache_entry->m_transcoder->open_out_file(cache_entry->m_buffer) == -1) {
             throw false;
         }
 

@@ -47,6 +47,7 @@ extern struct mp3fs_params {
     // mp3fs options
     int debug;
     const char* desttype;
+    int enable_ismv;
     const char* log_maxlevel;
     int log_stderr;
     int log_syslog;

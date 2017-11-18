@@ -25,11 +25,19 @@
 
 #include <unistd.h>
 
+//#include <vector>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
+//#include <stdio.h>
+//#include <string.h>
+//#include <stdlib.h>
 #include <sys/stat.h>
+//#include <unistd.h>
+//#include <linux/limits.h>
+//#include <errno.h>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -88,7 +96,7 @@ static std::string ffmpeg_libinfo(
         char buffer[1024];
 
         sprintf(buffer,
-                "lib%-15s: %d.%d.%d\n",
+                "lib%-17s: %d.%d.%d\n",
                 pszLibname,
                 nVersionMinor,
                 nVersionMajor,
@@ -107,20 +115,21 @@ void ffmpeg_libinfo(char * buffer, size_t maxsize)
 
     std::string info;
 
+#ifdef USING_LIBAV
+    info = "LIBAV Version:\n";
+#else
     info = "FFMPEG Version:\n";
+#endif
 
     info += PRINT_LIB_INFO(avutil,      AVUTIL);
     info += PRINT_LIB_INFO(avcodec,     AVCODEC);
     info += PRINT_LIB_INFO(avformat,    AVFORMAT);
-    //    info += PRINT_LIB_INFO(avdevice,    AVDEVICE);
-    //    info += PRINT_LIB_INFO(avfilter,    AVFILTER);
-#ifdef _USE_LIBSWRESAMPLE
-    info += PRINT_LIB_INFO(swresample,  SWRESAMPLE);
-#else
+    // info += PRINT_LIB_INFO(avdevice,    AVDEVICE);
+    // info += PRINT_LIB_INFO(avfilter,    AVFILTER);
+    // info += PRINT_LIB_INFO(swresample,  SWRESAMPLE);
     info += PRINT_LIB_INFO(avresample,  AVRESAMPLE);
-#endif
     info += PRINT_LIB_INFO(swscale,     SWSCALE);
-    //    info += PRINT_LIB_INFO(postproc,    POSTPROC);
+    // info += PRINT_LIB_INFO(postproc,    POSTPROC);
 
     *buffer = '\0';
     strncat(buffer, info.c_str(), maxsize - 1);
@@ -138,6 +147,7 @@ static int is_device(const AVClass *avclass)
 int show_formats_devices(int device_only)
 {
     AVInputFormat *ifmt  = NULL;
+    //    AVOutputFormat *ofmt = NULL;
     const char *last_name;
     int is_dev;
 
@@ -153,7 +163,17 @@ int show_formats_devices(int device_only)
         const char *long_name = NULL;
         const char *extensions = NULL;
 
-
+        //        while ((ofmt = av_oformat_next(ofmt))) {
+        //            is_dev = is_device(ofmt->priv_class);
+        //            if (!is_dev && device_only)
+        //                continue;
+        //            if ((!name || strcmp(ofmt->name, name) < 0) &&
+        //                    strcmp(ofmt->name, last_name) > 0) {
+        //                name      = ofmt->name;
+        //                long_name = ofmt->long_name;
+        //                encode    = 1;
+        //            }
+        //        }
         while ((ifmt = av_iformat_next(ifmt))) {
             is_dev = is_device(ifmt->priv_class);
             if (!is_dev && device_only)
@@ -268,3 +288,77 @@ void tempdir(char *dir, size_t size)
 
     strncpy(dir, "/tmp", size);
 }
+
+#ifdef USING_LIBAV
+int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat, const char *format, const char *filename)
+{
+    AVFormatContext *s = avformat_alloc_context();
+    int ret = 0;
+
+    *avctx = NULL;
+    if (!s)
+        goto nomem;
+
+    if (!oformat) {
+        if (format) {
+            oformat = av_guess_format(format, NULL, NULL);
+            if (!oformat) {
+                av_log(s, AV_LOG_ERROR, "Requested output format '%s' is not a suitable output format\n", format);
+                ret = AVERROR(EINVAL);
+                goto error;
+            }
+        } else {
+            oformat = av_guess_format(NULL, filename, NULL);
+            if (!oformat) {
+                ret = AVERROR(EINVAL);
+                av_log(s, AV_LOG_ERROR, "Unable to find a suitable output format for '%s'\n",
+                       filename);
+                goto error;
+            }
+        }
+    }
+
+    s->oformat = oformat;
+    if (s->oformat->priv_data_size > 0) {
+        s->priv_data = av_mallocz(s->oformat->priv_data_size);
+        if (!s->priv_data)
+            goto nomem;
+        if (s->oformat->priv_class) {
+            *(const AVClass**)s->priv_data= s->oformat->priv_class;
+            av_opt_set_defaults(s->priv_data);
+        }
+    } else
+        s->priv_data = NULL;
+
+    if (filename)
+        av_strlcpy(s->filename, filename, sizeof(s->filename));
+    *avctx = s;
+    return 0;
+nomem:
+    av_log(s, AV_LOG_ERROR, "Out of memory\n");
+    ret = AVERROR(ENOMEM);
+error:
+    avformat_free_context(s);
+    return ret;
+}
+
+const char *avcodec_get_name(enum AVCodecID id)
+{
+    const AVCodecDescriptor *cd;
+    AVCodec *codec;
+
+    if (id == AV_CODEC_ID_NONE)
+        return "none";
+    cd = avcodec_descriptor_get(id);
+    if (cd)
+        return cd->name;
+    av_log(NULL, AV_LOG_WARNING, "Codec 0x%x is not in the full list.\n", id);
+    codec = avcodec_find_decoder(id);
+    if (codec)
+        return codec->name;
+    codec = avcodec_find_encoder(id);
+    if (codec)
+        return codec->name;
+    return "unknown_codec";
+}
+#endif

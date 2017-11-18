@@ -372,8 +372,6 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset, st
         goto transcoder_fail;
     }
 
-    mp3fs_debug("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
-
     read = transcoder_read(cache_entry, buf, offset, size);
 
 transcoder_fail:
