@@ -249,9 +249,9 @@ bool FFMPEG_Transcoder::is_video() const
     {
         if ((m_in.m_pVideo_codec_ctx->codec_id == AV_CODEC_ID_PNG) || (m_in.m_pVideo_codec_ctx->codec_id == AV_CODEC_ID_MJPEG))
         {
-#ifdef USING_LIBAV
             bIsVideo = false;
 
+#ifdef USING_LIBAV
             if (m_in.m_pVideo_stream->avg_frame_rate.den)
             {
                 double dbFrameRate = (double)m_in.m_pVideo_stream->avg_frame_rate.num / m_in.m_pVideo_stream->avg_frame_rate.den;
@@ -263,8 +263,6 @@ bool FFMPEG_Transcoder::is_video() const
                 }
             }
 #else
-            bIsVideo = false;
-
             if (m_in.m_pVideo_stream->r_frame_rate.den)
             {
                 double dbFrameRate = (double)m_in.m_pVideo_stream->r_frame_rate.num / m_in.m_pVideo_stream->r_frame_rate.den;
@@ -457,10 +455,10 @@ int64_t FFMPEG_Transcoder::get_output_bit_rate(AVStream *in_stream, int64_t bit_
 
 int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
 {
-    AVCodecContext *codec_ctx     = NULL;
-    AVStream *      stream        = NULL;
-    AVCodec *       output_codec  = NULL;
-    AVDictionary *  opt           = NULL;
+    AVCodecContext *codec_ctx           = NULL;
+    AVStream *      out_video_stream    = NULL;
+    AVCodec *       output_codec        = NULL;
+    AVDictionary *  opt                 = NULL;
     int ret;
 
     /* find the encoder */
@@ -471,15 +469,15 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
     }
 
 #if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFMPEG 3
-    stream = avformat_new_stream(m_out.m_pFormat_ctx, NULL);
+    out_video_stream = avformat_new_stream(m_out.m_pFormat_ctx, NULL);
 #else
-    stream = avformat_new_stream(m_out.m_pFormat_ctx, output_codec);
+    out_video_stream = avformat_new_stream(m_out.m_pFormat_ctx, output_codec);
 #endif
-    if (!stream) {
+    if (!out_video_stream) {
         mp3fs_error("FFMPEG transcoder: Could not allocate stream.");
         return AVERROR(ENOMEM);
     }
-    stream->id = m_out.m_pFormat_ctx->nb_streams-1;
+    out_video_stream->id = m_out.m_pFormat_ctx->nb_streams-1;
 #if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFMPEG 3
     codec_ctx = avcodec_alloc_context3(output_codec);
     if (!codec_ctx) {
@@ -487,7 +485,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         return AVERROR(ENOMEM);
     }
 #else
-    codec_ctx = stream->codec;
+    codec_ctx = out_video_stream->codec;
 #endif
 
     switch (output_codec->type) {
@@ -506,8 +504,8 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         codec_ctx->strict_std_compliance  = FF_COMPLIANCE_EXPERIMENTAL;
 
         /** Set the sample rate for the container. */
-        stream->time_base.den             = m_in.m_pAudio_codec_ctx->sample_rate;
-        stream->time_base.num             = 1;
+        out_video_stream->time_base.den             = m_in.m_pAudio_codec_ctx->sample_rate;
+        out_video_stream->time_base.num             = 1;
 
 #if (LIBAVCODEC_VERSION_MAJOR <= 56) // Check for FFMPEG 3
         // set -strict -2 for aac (required for FFMPEG 2)
@@ -517,9 +515,9 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         /** Save the encoder context for easier access later. */
         m_out.m_pAudio_codec_ctx    = codec_ctx;
         // Save the stream index
-        m_out.m_nAudio_stream_idx = stream->index;
+        m_out.m_nAudio_stream_idx = out_video_stream->index;
         // Save output audio stream for faster reference
-        m_out.m_pAudio_stream = stream;
+        m_out.m_pAudio_stream = out_video_stream;
         break;
     }
     case AVMEDIA_TYPE_VIDEO:
@@ -547,8 +545,8 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
          * timebase should be 1/framerate and timestamp increments should be
          * identical to 1. */
         //stream->time_base               = in_video_stream->time_base;
-        stream->time_base               = { 1, 90000 }; // ??? Fest setzen für MP4?
-        codec_ctx->time_base            = stream->time_base;
+        out_video_stream->time_base               = { 1, 90000 }; // ??? Fest setzen für MP4?
+        codec_ctx->time_base            = out_video_stream->time_base;
         // At this moment the output format must be AV_PIX_FMT_YUV420P;
         codec_ctx->pix_fmt       		= AV_PIX_FMT_YUV420P;
 
@@ -584,17 +582,59 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
 #warning "Must be fixed here! USING_LIBAV"
 #else
         codec_ctx->framerate            = in_video_stream->codec->framerate;
+        if (!codec_ctx->framerate.num) {
+            codec_ctx->framerate = (AVRational){25, 1};
+            mp3fs_warning(
+                        "No information "
+                        "about the input framerate is available. Falling "
+                        "back to a default value of 25fps for output stream");
+        }
+        out_video_stream->avg_frame_rate = codec_ctx->framerate;
 #endif
         codec_ctx->sample_aspect_ratio  = in_video_stream->codec->sample_aspect_ratio;
+
+        // Allow the use of the experimental AAC encoder
+        // codec_ctx->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
+
+        // FÜR ALBUM ARTS?
+        // mp4 album arts do not work with ipod profile. Set mp4.
+        //    if (m_out.m_pFormat_ctx->oformat->mime_type != NULL && (!strcmp(m_out.m_pFormat_ctx->oformat->mime_type, "application/mp4") || !strcmp(m_out.m_pFormat_ctx->oformat->mime_type, "video/mp4")))
+        //    {
+        //        m_out.m_pFormat_ctx->oformat->name = "mp4";
+        //        m_out.m_pFormat_ctx->oformat->mime_type = "application/mp4";
+        //    }
+
+        //    // Ignore missing width/height
+        //    m_out.m_pFormat_ctx->oformat->flags |= AVFMT_NODIMENSIONS;
+
+        //    codec_ctx->flags2 |= AV_CODEC_FLAG2_FAST;
+
+        // -profile:v baseline -level 3.0
+        //av_opt_set(codec_ctx->priv_data, "profile", "baseline", AV_OPT_SEARCH_CHILDREN);
+        //av_opt_set(codec_ctx->priv_data, "level", "3.0", AV_OPT_SEARCH_CHILDREN);
+        // -profile:v high -level 3.1
         av_opt_set(codec_ctx->priv_data, "profile", "high", AV_OPT_SEARCH_CHILDREN);
         av_opt_set(codec_ctx->priv_data, "level", "3.1", AV_OPT_SEARCH_CHILDREN);
+
         av_opt_set(codec_ctx->priv_data, "preset", "ultrafast", AV_OPT_SEARCH_CHILDREN);
+        //av_opt_set(codec_ctx->priv_data, "preset", "veryfast", AV_OPT_SEARCH_CHILDREN);
+        //av_opt_set(codec_ctx->priv_data, "tune", "zerolatency", AV_OPT_SEARCH_CHILDREN);
+
+        //av_opt_set(codec_ctx->priv_data, "qmin", "0", AV_OPT_SEARCH_CHILDREN);
+        //av_opt_set(codec_ctx->priv_data, "qmax", "69", AV_OPT_SEARCH_CHILDREN);
+        //av_opt_set(codec_ctx->priv_data, "qdiff", "4", AV_OPT_SEARCH_CHILDREN);
+
+//        if (!av_dict_get(codec_ctx->priv_data, "threads", NULL, 0))
+//        {
+//            av_dict_set(codec_ctx->priv_data, "threads", "auto", 0);
+//        }
+
         /** Save the encoder context for easier access later. */
         m_out.m_pVideo_codec_ctx    = codec_ctx;
         // Save the stream index
-        m_out.m_nVideo_stream_idx = stream->index;
+        m_out.m_nVideo_stream_idx = out_video_stream->index;
         // Save output video stream for faster reference
-        m_out.m_pVideo_stream = stream;
+        m_out.m_pVideo_stream = out_video_stream;
         break;
     }
     default:
@@ -621,7 +661,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
     mp3fs_debug("FFMPEG transcoder: successfully opened %s output codec.", get_codec_name(codec_id));
 
 #if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFMPEG 3
-    ret = avcodec_parameters_from_context(stream->codecpar, codec_ctx);
+    ret = avcodec_parameters_from_context(out_video_stream->codecpar, codec_ctx);
     if (ret < 0) {
         mp3fs_error("FFMPEG transcoder: Could not initialise stream parameters (error '%s').", ffmpeg_geterror(ret).c_str());
         avcodec_free_context(&codec_ctx);
@@ -719,24 +759,17 @@ int FFMPEG_Transcoder::open_output_file(Buffer *buffer)
 
     // Some formats require the time stamps to start at 0, so if there is a difference between
     // the streams we need to drop audio or video until we are in sync.
-
-    //    m_out.m_pFormat_ctx->avoid_negative_ts = AVFMT_AVOID_NEG_TS_MAKE_NON_NEGATIVE;
-    //    m_out.m_pFormat_ctx->avoid_negative_ts = AVFMT_AVOID_NEG_TS_MAKE_ZERO;
-
-    if (/*!(m_out.m_pFormat_ctx->oformat->flags & (AVFMT_TS_NEGATIVE | AVFMT_NOTIMESTAMPS)) &&*/
-            (m_in.m_nVideo_stream_idx != INVALID_STREAM) &&
+    if ((m_in.m_nVideo_stream_idx != INVALID_STREAM) &&
             (m_in.m_nAudio_stream_idx != INVALID_STREAM))
     {
         // Calculate difference
         AVStream *in_audio_stream = m_in.m_pAudio_stream;
         AVStream *in_video_stream = m_in.m_pVideo_stream;
 
-        int64_t audio_start;
+        int64_t audio_start = av_rescale_q(in_audio_stream->start_time, in_audio_stream->time_base, AV_TIME_BASE_Q);
 
-        audio_start = av_rescale_q(in_audio_stream->start_time, in_audio_stream->time_base, AV_TIME_BASE_Q);
-
-        m_out.m_video_start_pts = av_rescale_q(audio_start /*diff*/, AV_TIME_BASE_Q, in_video_stream->time_base);
-   }
+        m_out.m_video_start_pts = av_rescale_q(audio_start, AV_TIME_BASE_Q, in_video_stream->time_base);
+    }
 
     return 0;
 }
@@ -1379,7 +1412,31 @@ int FFMPEG_Transcoder::encode_video_frame(AVFrame *frame, int *data_present)
     AVPacket output_packet;
     int error;
     init_packet(&output_packet);
+	
+#if (LIBAVCODEC_VERSION_MICRO >= 100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( 57, 64, 101 ) )
 
+//        if (m_out.m_pVideo_codec_ctx->flags & (AV_CODEC_FLAG_INTERLACED_DCT | AV_CODEC_FLAG_INTERLACED_ME) &&
+//            ost->top_field_first >= 0)
+//            frame->top_field_first = !!ost->top_field_first;
+
+        if (frame->interlaced_frame) {
+            if (m_out.m_pVideo_codec_ctx->codec->id == AV_CODEC_ID_MJPEG)
+                m_out.m_pVideo_stream->codecpar->field_order = frame->top_field_first ? AV_FIELD_TT:AV_FIELD_BB;
+            else
+                m_out.m_pVideo_stream->codecpar->field_order = frame->top_field_first ? AV_FIELD_TB:AV_FIELD_BT;
+        }
+        else
+        {
+            m_out.m_pVideo_stream->codecpar->field_order = AV_FIELD_PROGRESSIVE;
+        }
+#endif
+
+        frame->quality = m_out.m_pVideo_codec_ctx->global_quality;
+#ifndef USING_LIBAV
+        frame->pict_type = AV_PICTURE_TYPE_NONE;	// other than AV_PICTURE_TYPE_NONE causes warnings
+#else
+        frame->pict_type = (AVPictureType)0;
+#endif
     /**
              * Encode the video frame and store it in the temporary packet.
              * The output video stream encoder is used to do this.

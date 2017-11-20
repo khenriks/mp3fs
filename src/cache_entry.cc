@@ -107,24 +107,61 @@ void Cache_Entry::reset(int fetch_file_time)
 
 bool Cache_Entry::read_info()
 {
-    ifstream input_file;
+    bool success = true;
+    FILE *fpi = NULL;
 
     reset();
 
-    input_file.exceptions ( ifstream::failbit | ifstream::badbit );
-    try {
+    // Removed C++ ifstream code, cause ABI troubles, see https://github.com/Alexpux/MINGW-packages/issues/747
+
+    try
+    {
         time_t file_time = m_info.m_file_time;
+        size_t n;
 
-        input_file.open(info_file(), ios::in | ios::binary);
+        reset();
 
-        input_file.read((char*)&m_info.m_encoded_filesize, sizeof(m_info.m_encoded_filesize));
-        input_file.read((char*)&m_info.m_finished, sizeof(m_info.m_finished));
-        input_file.read((char*)&m_info.m_error, sizeof(m_info.m_error));
-        input_file.read((char*)&m_info.m_creation_time, sizeof(m_info.m_creation_time));
-        input_file.read((char*)&m_info.m_access_time, sizeof(m_info.m_access_time));
-        input_file.read((char*)&m_info.m_file_time, sizeof(m_info.m_file_time));
+        fpi = fopen(info_file().c_str(), "rb");
+        if (fpi == NULL)
+        {
+            throw (int)errno;
+        }
 
-        input_file.close();
+        n = fread((char*)&m_info.m_encoded_filesize, 1, sizeof(m_info.m_encoded_filesize), fpi);
+        if (n != sizeof(m_info.m_encoded_filesize))
+        {
+            throw (int)ferror(fpi);
+        }
+
+        n = fread((char*)&m_info.m_finished, 1, sizeof(m_info.m_finished), fpi);
+        if (n != sizeof(m_info.m_finished))
+        {
+            throw (int)ferror(fpi);
+        }
+
+        n = fread((char*)&m_info.m_error, 1, sizeof(m_info.m_error), fpi);
+        if (n != sizeof(m_info.m_error))
+        {
+            throw (int)ferror(fpi);
+        }
+
+        n = fread((char*)&m_info.m_creation_time, 1, sizeof(m_info.m_creation_time), fpi);
+        if (n != sizeof(m_info.m_creation_time))
+        {
+            throw (int)ferror(fpi);
+        }
+
+        n = fread((char*)&m_info.m_access_time, 1, sizeof(m_info.m_access_time), fpi);
+        if (n != sizeof(m_info.m_access_time))
+        {
+            throw (int)ferror(fpi);
+        }
+
+        n = fread((char*)&m_info.m_file_time, 1, sizeof(m_info.m_file_time), fpi);
+        if (n != sizeof(m_info.m_file_time))
+        {
+            throw (int)ferror(fpi);
+        }
 
         if (file_time != m_info.m_file_time)
         {
@@ -135,46 +172,84 @@ bool Cache_Entry::read_info()
             mp3fs_info("File date changed '%s': rebuilding file.", info_file().c_str());
         }
     }
-    catch (ifstream::failure e) {
-        mp3fs_warning("Unable to read file '%s': %s", info_file().c_str(), e.what());
-        //        cerr << "Caught an ios_base::failure reading file." << endl
-        //                  << "File: " << info_file()  << endl
-        //                  << "Explanatory string: " << e.what() << endl
-        //                  << "Error code: " << e.code() << endl;
+    catch (int error)
+    {
+        mp3fs_warning("Unable to read file '%s': %s", info_file().c_str(), strerror(error));
         reset();
-        return false;
+        success = false;
     }
 
-    return true;
+    if (fpi != NULL)
+    {
+        fclose(fpi);
+    }
+
+    return success;
 }
 
 bool Cache_Entry::write_info()
 {
-    ofstream output_file;
-    output_file.exceptions ( ifstream::failbit | ifstream::badbit );
+    bool success = true;
+    FILE *fpo = NULL;
+
     try {
-        output_file.open(info_file(), ios::out | ios::binary);
+        size_t n;
 
-        output_file.write((char*)&m_info.m_encoded_filesize, sizeof(m_info.m_encoded_filesize));
-        output_file.write((char*)&m_info.m_finished, sizeof(m_info.m_finished));
-        output_file.write((char*)&m_info.m_error, sizeof(m_info.m_error));
-        output_file.write((char*)&m_info.m_creation_time, sizeof(m_info.m_creation_time));
-        output_file.write((char*)&m_info.m_access_time, sizeof(m_info.m_access_time));
-        output_file.write((char*)&m_info.m_file_time, sizeof(m_info.m_file_time));
+        fpo = fopen(info_file().c_str(), "wb");
+        if (fpo == NULL)
+        {
+            throw (int)errno;
+        }
 
-        output_file.close();
+        n = fwrite((char*)&m_info.m_encoded_filesize, 1, sizeof(m_info.m_encoded_filesize), fpo);
+        if (n != sizeof(m_info.m_encoded_filesize))
+        {
+            throw (int)ferror(fpo);
+        }
+
+        n = fwrite((char*)&m_info.m_finished, 1, sizeof(m_info.m_finished), fpo);
+        if (n != sizeof(m_info.m_finished))
+        {
+            throw (int)ferror(fpo);
+        }
+
+        n = fwrite((char*)&m_info.m_error, 1, sizeof(m_info.m_error), fpo);
+        if (n != sizeof(m_info.m_error))
+        {
+            throw (int)ferror(fpo);
+        }
+
+        n = fwrite((char*)&m_info.m_creation_time, 1, sizeof(m_info.m_creation_time), fpo);
+        if (n != sizeof(m_info.m_creation_time))
+        {
+            throw (int)ferror(fpo);
+        }
+
+        n = fwrite((char*)&m_info.m_access_time, 1, sizeof(m_info.m_access_time), fpo);
+        if (n != sizeof(m_info.m_access_time))
+        {
+            throw (int)ferror(fpo);
+        }
+
+        n = fwrite((char*)&m_info.m_file_time, 1, sizeof(m_info.m_file_time), fpo);
+        if (n != sizeof(m_info.m_file_time))
+        {
+            throw (int)ferror(fpo);
+        }
     }
-    catch (ifstream::failure e) {
-        mp3fs_error("Unable to update file '%s': %s", info_file().c_str(), e.what());
-
-        //        cerr << "Caught an ios_base::failure writing file." << endl
-        //                  << "File: " << info_file()  << endl
-        //                  << "Explanatory string: " << e.what() << endl
-        //                  << "Error code: " << e.code() << endl;
-        return false;
+    catch (int error)
+    {
+        mp3fs_warning("Unable to update file '%s': %s", info_file().c_str(), strerror(error));
+        reset();
+        success = false;
     }
 
-    return true;
+    if (fpo != NULL)
+    {
+        fclose(fpo);
+    }
+
+    return success;
 }
 
 bool Cache_Entry::open(bool create_cache /*= true*/)

@@ -41,6 +41,9 @@ extern "C" {
 #include <libavutil/error.h>
 #include <libavutil/audio_fifo.h>
 #include "libavutil/avstring.h"
+#if LIBAVUTIL_VERSION_MICRO >= 100
+#include "libavutil/ffversion.h"
+#endif
 
 //#include "libavdevice/avdevice.h"
 //#include <libavformat/avio.h>

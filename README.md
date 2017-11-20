@@ -1,26 +1,29 @@
 mp3fs
 =====
 
-Web site: 
+Web site:
 Original Version: http://khenriks.github.io/mp3fs/
 FFMPEG Version: https://github.com/nschlia/mp3fs
 
-mp3fs is a read-only FUSE filesystem which transcodes between audio and 
-video formats (many formats that FFMPEG can decode to MP3 or MP4) on the 
-fly when opened and read.
+NOTE THAT THIS IS AN ALPHA VERSION FOR TESTING ONLY!
 
-This can let you use a multi media file collection with software and/or
-hardware which only understands the MP3 or MP4 format, or transcode files 
-through simple drag-and-drop in a file browser.
+mp3fs is a read-only FUSE filesystem which transcodes between audio 
+and video formats (many formats that FFMPEG can decode to MP3 or MP4) 
+on the fly when opened and read.
+
+This can let you use a multi media file collection with software 
+and/or hardware which only understands the MP3 or MP4 format, or 
+transcode files  through simple drag-and-drop in a file browser.
 
 For installation instructions see the [install](INSTALL.md) file.
 
-NOTE THAT THIS IS AN ALPHA VERSION FOR TESTING ONLY!
-
-Restricions:
+RESTRICIONS:
 
 * mp4 support is highly experimental.
 * Cover arts are also not yet supported.
+* The current version is in alpha state and input is limited to:
+  avi, flac, flv, m2ts, mkv, mov, mpg, oga, ogg, ogv, rm, ts, vob, 
+  webm, wma and wmv.
 
 Usage
 -----
@@ -42,8 +45,8 @@ At this point files like `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
 show up as `/mnt/mp3fs/**.mp4`.
 
 Note that the "allow_other" option by default can only be used by root.
-You must either run mp3fs as root or add a "user_allow_other" key to
-/etc/fuse.conf.
+You must either run mp3fs as root or better add a "user_allow_other" key 
+to /etc/fuse.conf.
 
 "allow_other" is required to allow any user access to the mount, by
 default this is only possible for the user who launched mp3fs.
@@ -58,21 +61,28 @@ but only fair to good for mp4.
 
 As the file is read, it is transcoded into an internal per-file
 buffer. This buffer continues to grow while the file is being read
-until the whole file is transcoded in memory. The memory is freed
-only when the file is closed. This simplifies the implementation.
+until the whole file is transcoded in memory. Once decoded the 
+file is kept in a disk buffer and can be accessed very fast.
+
+Transcoding is done in an extra thread, so if other processes should
+access the same file they will share the same transcoded data, saving
+CPU time. If the first process abandons the file before its end,
+transconding will continue for some time. If the file is accessed
+again before the timeout transcoding will go on, if not stop and the
+chunk created so far discarded to save CPU time.
 
 Seeking within a file will cause the file to be transcoded up to the
 seek point (if not already done). This is not usually a problem
 since most programs will read a file from start to finish. Future
 enhancements may provide true random seeking.
 
-ID3 version 2.4 and 1.1 tags are created from the vorbis comments in
-the FLAC, Ogg Vorbis file or equivalent informaton. They are located at 
-the start and end of the file respectively.
+ID3 version 2.4 and 1.1 tags are created from the comments in the 
+source file. They are located at  the start and end of the file 
+respectively.
 
-A special optimisation is made so that applicatins which scan for
-id3v1 tags do not have to wait for the whole file to be transcoded
-before reading the tag. This *dramatically* speeds up such
+MP3 target only: A special optimisation is made so that applications 
+which scan for id3v1 tags do not have to wait for the whole file to be 
+transcoded before reading the tag. This *dramatically* speeds up such
 applications.
 
 Supported Output Formats

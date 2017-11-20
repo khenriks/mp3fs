@@ -116,9 +116,9 @@ void ffmpeg_libinfo(char * buffer, size_t maxsize)
     std::string info;
 
 #ifdef USING_LIBAV
-    info = "LIBAV Version:\n";
+    info = "LIBAV Version       :\n";
 #else
-    info = "FFMPEG Version:\n";
+    info = "FFMPEG Version      : " FFMPEG_VERSION "\n";
 #endif
 
     info += PRINT_LIB_INFO(avutil,      AVUTIL);

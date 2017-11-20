@@ -111,9 +111,8 @@ static struct fuse_opt mp3fs_opts[] = {
 #define INFO "Mount IN_DIR on OUT_DIR, converting audio/video files to MP3/MP4 upon access."
 
 void usage(char *name) {
-    printf("\nUsage: %s [OPTION]... IN_DIR OUT_DIR\n", name);
+    printf("Usage: %s [OPTION]... IN_DIR OUT_DIR\n\n", name);
     fputs(INFO "\n\
-          Mount IN_DIR on OUT_DIR, converting FLAC/Ogg Vorbis files to MP3 upon access.\n\
           \n\
           Encoding options:\n\
               -h HEIGHT, --height=HEIGHT\n\
@@ -202,7 +201,7 @@ static int mp3fs_opt_proc(void* data, const char* arg, int key, struct fuse_args
     case KEY_VERSION:
     {
         // TODO: Also output this information in debug mode
-        printf("mp3fs version: %s\n", PACKAGE_VERSION);
+        printf("%-20s: %s\n", PACKAGE_NAME " version", PACKAGE_VERSION);
 
         char buffer[1024];
         ffmpeg_libinfo(buffer, sizeof(buffer));
@@ -227,10 +226,10 @@ int main(int argc, char *argv[]) {
 
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-    cache_new();
-
     /* register the termination function */
     atexit(cleanup);
+
+    cache_new();
 
     // Configure FFMPEG
     /* register all the codecs */
@@ -261,56 +260,56 @@ int main(int argc, char *argv[]) {
     }
 
     if (!init_logging(params.logfile, params.log_maxlevel, params.log_stderr, params.log_syslog)) {
-        fprintf(stderr, "Failed to initialize logging module.\n");
-        fprintf(stderr, "Maybe log file couldn't be opened for writing?\n");
+        fprintf(stderr, "ERROR: Failed to initialise logging module.\n");
+        fprintf(stderr, "Maybe log file couldn't be opened for writing?\n\n");
         return 1;
     }
 
     if (!params.basepath) {
-        fprintf(stderr, "No valid basepath specified.\n\n");
+        fprintf(stderr, "ERROR: No valid basepath specified.\n\n");
         usage(argv[0]);
         return 1;
     }
 
     if (params.basepath[0] != '/') {
-        fprintf(stderr, "basepath must be an absolute path.\n\n");
+        fprintf(stderr, "ERROR: basepath must be an absolute path.\n\n");
         usage(argv[0]);
         return 1;
     }
 
     struct stat st;
     if (stat(params.basepath, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        fprintf(stderr, "basepath is not a valid directory: %s\n", params.basepath);
+        fprintf(stderr, "ERROR: basepath is not a valid directory: %s\n\n", params.basepath);
         usage(argv[0]);
         return 1;
     }
 
     if (!params.mountpath) {
-        fprintf(stderr, "No valid mountpath specified.\n\n");
+        fprintf(stderr, "ERROR: No valid mountpath specified.\n\n");
         usage(argv[0]);
         return 1;
     }
 
     if (params.mountpath[0] != '/') {
-        fprintf(stderr, "mountpath must be an absolute path.\n\n");
+        fprintf(stderr, "ERROR: mountpath must be an absolute path.\n\n");
         usage(argv[0]);
         return 1;
     }
 
     if (stat(params.mountpath, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        fprintf(stderr, "mountpath is not a valid directory: %s\n", params.mountpath);
+        fprintf(stderr, "ERROR: mountpath is not a valid directory: %s\n\n", params.mountpath);
         usage(argv[0]);
         return 1;
     }
 
     /* Check for valid destination type. */
     if (!check_encoder(params.desttype)) {
-        fprintf(stderr, "No encoder available for desttype: %s\n\n", params.desttype);
+        fprintf(stderr, "ERROR: No encoder available for desttype: %s\n\n", params.desttype);
         usage(argv[0]);
         return 1;
     }
 
-    mp3fs_debug("MP3FS options:\n"
+    mp3fs_debug(PACKAGE_NAME " options:\n\n"
                 "basepath:        %s\n"
                 "mountpath:       %s\n"
                 "video width:   %2s%u\n"

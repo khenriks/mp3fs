@@ -38,17 +38,26 @@ On Debian:
 
     aptitude install gcc g++
 
-    aptitude install libfuse-dev libavcodec-dev libavformat-dev libavresample-dev libavutil-dev
-	
-To build the docs succesfully you may need
+    aptitude install libfuse-dev libavcodec-dev libavformat-dev libavresample-dev libavutil-dev libswscale-dev
 
-    apt-get install asciidoc
-	
-Note that for Debian 8 the LIBAV 11 clone of FFMPEG will be installed. 
-From Debian 9 on the original FFMPEG comes with the distribution. 
-Both libraries work, but please read the FFMPEG/LIBAV version chapter.
+On Suse (please read notes before continueing:
+
+    zypper install gcc gcc-c++
+
+    zypper install fuse-devel libavcodec-devel libavformat-devel libavresample-devel libavutil-devel libswscale-devel
 
 On Ubuntu use the same command with `apt-get` in place of `aptitude`.
+    
+Notes:
+
+Suse does not provide proprietary formats like AAC and H264, thus
+the distribution FFMPEG is crippled. mp3fs will not be able to
+encode H264 and AAC. End of story. 
+See https://en.opensuse.org/Restricted_formats.
+
+With Debian 8 the LIBAV 11 clone of FFMPEG will be installed. From 
+Debian 9 on the original FFMPEG comes with the distribution. Both 
+libraries work, but please read the FFMPEG/LIBAV version chapter.
 
 * Tips on other OSes and distributions like Mac or Red-Hat are welcome.
 
@@ -71,10 +80,17 @@ tested.
 
 With Libav, the first time a file is accessed the playback will fail.
 After it has been decoded fully to cache playback will work. Playing
-the file via http may fail and it may take quite long until the
+the file via http may fail or it may take quite long until the
 file starts playing.
 
 This is a LIBAV problem. Generally I recommend using FFMPEG instead.
+
+Tested with:
+
+	Debian 8: AVLib 11.11-1~deb8u1 - not good, see comment above
+	Debian 9: FFmpeg 3.2.8-1~deb9u1 - good results
+	Ubuntu 16.04.3 LTS: 2.8.11-0ubuntu0.16.04.1 - compile OK, crash in avcodec_decode_video2 ()
+	Suse 42: 3.3.4 - no H264/AAC support, mp4 not working
 
 Installation
 ------------
