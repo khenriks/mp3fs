@@ -996,7 +996,7 @@ int FFMPEG_Transcoder::decode_frame(AVPacket *input_packet, int *data_present)
         if (data_present && input_frame->nb_samples) {
             /** Temporary storage for the converted input samples. */
             uint8_t **converted_input_samples = NULL;
-            int nb_output_samples = avresample_get_out_samples(m_pAudio_resample_ctx, input_frame->nb_samples);
+            int nb_output_samples = (m_pAudio_resample_ctx != NULL) ? avresample_get_out_samples(m_pAudio_resample_ctx, input_frame->nb_samples) : input_frame->nb_samples;
             // Store audio frame
             /** Initialize the temporary storage for the converted input samples. */
             ret = init_converted_samples(&converted_input_samples, nb_output_samples);
