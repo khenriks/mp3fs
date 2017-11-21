@@ -44,14 +44,19 @@ struct mp3fs_params params = {
     .mountpath          	= NULL,
 
     .desttype           	= "mp4",
+#ifndef DISABLE_ISMV
     .enable_ismv			= 0,
+#endif
 
     .audiobitrate       	= 128,
     .audiosamplerate      	= 44100,
 
+    .videobitrate       	= 2000,
+#ifndef DISABLE_AVFILTER
+    .deinterlace            = 0,
     .videowidth             = 0,
     .videoheight           	= 0,
-    .videobitrate       	= 2000,
+#endif
 
     .debug              	= 0,
     .log_maxlevel       	= "INFO",
@@ -76,8 +81,10 @@ enum {
 static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("--desttype=%s",              desttype, 0),
     MP3FS_OPT("desttype=%s",                desttype, 0),
+#ifndef DISABLE_ISMV
     MP3FS_OPT("--enable_ismv=%u",           enable_ismv, 0),
     MP3FS_OPT("enable_ismv=%u",             enable_ismv, 0),
+#endif
 
     // Audio
     MP3FS_OPT("-b %u",                      audiobitrate, 0),
@@ -89,12 +96,16 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("audiosamplerate=%u",         audiosamplerate, 0),
 
     // Video
+    MP3FS_OPT("--videobitrate=%u",          videobitrate, 0),
+    MP3FS_OPT("videobitrate=%u",            videobitrate, 0),
+#ifndef DISABLE_AVFILTER
     MP3FS_OPT("--videoheight=%u",           videowidth, 0),
     MP3FS_OPT("videoheight=%u",             videowidth, 0),
     MP3FS_OPT("--videowidth=%u",            videoheight, 0),
     MP3FS_OPT("videowidth=%u",              videoheight, 0),
-    MP3FS_OPT("--videobitrate=%u",          videobitrate, 0),
-    MP3FS_OPT("videobitrate=%u",            videobitrate, 0),
+    MP3FS_OPT("--deinterlace=%u",           deinterlace, 0),
+    MP3FS_OPT("deinterlace=%u",             deinterlace, 0),
+#endif
 
     MP3FS_OPT("--statcachesize=%u",         statcachesize, 0),
     MP3FS_OPT("statcachesize=%u",           statcachesize, 0),
@@ -139,12 +150,14 @@ void usage(char *name) {
                "                           either mp3 or mp4. To stream videos, mp4 must be\n"
                "                           selected.\n"
                "                           Default: mp4\n"
+      #ifndef DISABLE_ISMV
                "    --enable_ismv=0|1, -oenable_ismv=0|1\n"
                "                           Set to 1 to create a ISMV (Smooth Streaming) file.\n"
                "                           Must be used together with desttype=mp4.\n"
                "                           Resulting files will stream to Internet Explorer, but\n"
                "                           are not compatible with most other players.\n"
                "                           Default: 0\n"
+      #endif
                "\n"
                "Audio Options:\n"
                "\n"
@@ -167,6 +180,7 @@ void usage(char *name) {
                "                           range between 500 and 250000. Setting this too high or low may.\n"
                "                           cause transcoding to fail.\n"
                "                           Default: 2000 kbit\n"
+      #ifndef DISABLE_AVFILTER
                "    --videoheight=HEIGHT, -ovideoheight=HEIGHT\n"
                "                           Sets the height of the target video.\n"
                "                           When the video is rescaled the aspect ratio is\n"
@@ -177,6 +191,12 @@ void usage(char *name) {
                "                           Whene the video is rescaled the aspect ratio is\n"
                "                           preserved if --height is not set at the same time.\n"
                "                           Default: keep source video width\n"
+               "    --deinterlace=0|1, -deinterlace=0|1\n"
+               "                           Deinterlace video if necessary while transcoding.\n"
+               "                           May need higher bit rate, but will increase picture qualitiy\n"
+               "                           when streaming via HTML5.\n"
+               "                           Default: 0\n"
+      #endif
                "\n"
                "Cache Options:\n"
                "\n"
@@ -369,10 +389,14 @@ int main(int argc, char *argv[]) {
                              "basepath:           %s\n"
                              "mountpath:          %s\n"
                              "desttype:           %s\n"
+            #ifndef DISABLE_ISMV
                              "use ISMV:           %s\n"
+            #endif
                              "audio bitrate:      %u\n"
                              "audio sample rate:  %u\n"
+            #ifndef DISABLE_AVFILTER
                              "video size:         %ux%u\n"
+            #endif
                              "video bitrate:      %u\n"
                              "log_maxlevel:       %s\n"
                              "log_stderr:         %u\n"
@@ -386,11 +410,15 @@ int main(int argc, char *argv[]) {
                 params.basepath,
                 params.mountpath,
                 params.desttype,
+            #ifndef DISABLE_ISMV
                 params.enable_ismv ? "yes" : "no",
+            #endif
                 params.audiobitrate,
                 params.audiosamplerate,
+            #ifndef DISABLE_AVFILTER
                 params.videowidth,
                 params.videoheight,
+            #endif
                 params.videobitrate,
                 params.log_maxlevel,
                 params.log_stderr,

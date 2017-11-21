@@ -75,7 +75,7 @@ FFMPEG_Transcoder::FFMPEG_Transcoder()
             .m_audio_start_pts = 0,
             .m_video_start_pts = 0,
             .m_last_mux_dts = 0,
-        })
+            })
 {
 #pragma GCC diagnostic pop
     mp3fs_debug("FFMPEG trancoder: ready to initialise.");
@@ -352,6 +352,8 @@ int FFMPEG_Transcoder::open_file(const char* filename) {
         return ret;
     }
 
+    //     av_dump_format(m_in.m_pFormat_ctx, 0, filename, 0);
+
     // Open best match video codec
     ret = open_codec_context(&m_in.m_nVideo_stream_idx, &m_in.m_pVideo_codec_ctx, m_in.m_pFormat_ctx, AVMEDIA_TYPE_VIDEO, filename);
     if (ret < 0) {
@@ -555,7 +557,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
          * timebase should be 1/framerate and timestamp increments should be
          * identical to 1. */
         //stream->time_base               = in_video_stream->time_base;
-        out_video_stream->time_base               = { 1, 90000 }; // ??? Fest setzen für MP4?
+        out_video_stream->time_base               = { 1, 90000 }; // ??? Fest setzen fÃ¼r MP4?
         codec_ctx->time_base            = out_video_stream->time_base;
         // At this moment the output format must be AV_PIX_FMT_YUV420P;
         codec_ctx->pix_fmt       		= AV_PIX_FMT_YUV420P;
@@ -603,10 +605,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
 #endif
         codec_ctx->sample_aspect_ratio  = in_video_stream->codec->sample_aspect_ratio;
 
-        // Allow the use of the experimental AAC encoder
-        // codec_ctx->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
-
-        // FÜR ALBUM ARTS?
+        // FÃœR ALBUM ARTS?
         // mp4 album arts do not work with ipod profile. Set mp4.
         //    if (m_out.m_pFormat_ctx->oformat->mime_type != NULL && (!strcmp(m_out.m_pFormat_ctx->oformat->mime_type, "application/mp4") || !strcmp(m_out.m_pFormat_ctx->oformat->mime_type, "video/mp4")))
         //    {
@@ -634,10 +633,10 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         //av_opt_set(codec_ctx->priv_data, "qmax", "69", AV_OPT_SEARCH_CHILDREN);
         //av_opt_set(codec_ctx->priv_data, "qdiff", "4", AV_OPT_SEARCH_CHILDREN);
 
-//        if (!av_dict_get(codec_ctx->priv_data, "threads", NULL, 0))
-//        {
-//            av_dict_set(codec_ctx->priv_data, "threads", "auto", 0);
-//        }
+        //        if (!av_dict_get(codec_ctx->priv_data, "threads", NULL, 0))
+        //        {
+        //            av_dict_set(codec_ctx->priv_data, "threads", "auto", 0);
+        //        }
 
         /** Save the encoder context for easier access later. */
         m_out.m_pVideo_codec_ctx    = codec_ctx;
@@ -705,7 +704,11 @@ int FFMPEG_Transcoder::open_output_file(Buffer *buffer)
     }
     else if (!strcasecmp(type, "mp4"))
     {
+#ifndef DISABLE_ISMV
         ext = params.enable_ismv ? "ismv" : "mp4";
+#else
+        ext = "mp4";
+#endif
         audio_codecid = AV_CODEC_ID_AAC;
         video_codecid = AV_CODEC_ID_H264;
         // video_codecid = AV_CODEC_ID_MJPEG;
@@ -804,9 +807,9 @@ int FFMPEG_Transcoder::init_input_frame(AVFrame **frame)
 }
 
 /**
-         * Initialize the audio resampler based on the input and output codec settings.
-         * If the input and output sample formats differ, a conversion is required
-         * libavresample takes care of this, but requires initialisation.
+ * Initialize the audio resampler based on the input and output codec settings.
+ * If the input and output sample formats differ, a conversion is required
+ * libavresample takes care of this, but requires initialisation.
          */
 int FFMPEG_Transcoder::init_resampler()
 {
@@ -826,10 +829,10 @@ int FFMPEG_Transcoder::init_resampler()
         }
 
         /**
-                 * Set the conversion parameters.
-                 * Default channel layouts based on the number of channels
-                 * are assumed for simplicity (they are sometimes not detected
-                 * properly by the demuxer and/or decoder).
+         * Set the conversion parameters.
+         * Default channel layouts based on the number of channels
+         * are assumed for simplicity (they are sometimes not detected
+         * properly by the demuxer and/or decoder).
                  */
         av_opt_set_int(m_pAudio_resample_ctx, "in_channel_layout", av_get_default_channel_layout(m_in.m_pAudio_codec_ctx->channels), 0);
         av_opt_set_int(m_pAudio_resample_ctx, "out_channel_layout", av_get_default_channel_layout(m_out.m_pAudio_codec_ctx->channels), 0);
@@ -868,13 +871,32 @@ int FFMPEG_Transcoder::write_output_file_header()
 
     if (m_out.m_output_type == TYPE_MP4)
     {
+#ifndef DISABLE_ISMV
         if (!params.enable_ismv)
         {
+#endif
             // For all but M$ Explorer/Edge
             // Settings for fast playback start in HTML5
             av_dict_set(&dict, "movflags", "+faststart", 0);
             av_dict_set(&dict, "movflags", "+empty_moov", 0);
+            //av_dict_set(&dict, "movflags", "+separate_moof", 0); // MS Edge
             av_dict_set(&dict, "frag_duration", "1000000", 0); // 1 sec
+            //av_dict_set(&dict, "frag_duration", "10000000", 0);
+
+            // Keine guten Ideen
+            //av_dict_set(&dict, "movflags", "frag_keyframe", 0);
+            //av_dict_set(&dict, "movflags", "default_base_moof", 0);
+            //av_dict_set(&dict, "movflags", "omit_tfhd_offset", 0)
+            //av_dict_set(&dict, "movflags", "+rtphint", 0);
+            //av_dict_set(&dict, "movflags", "+disable_chpl", 0);
+
+            // Geht (empty_moov+empty_moov automatisch mit isml)
+            //av_dict_set(&dict, "movflags", "isml+frag_keyframe+separate_moof", 0);
+            //av_dict_set(&dict, "movflags", "isml", 0);
+
+            // spielt 50 Sekunden...
+            // ISMV NICHT av_dict_set(&dict, "frag_duration", "50000000", 0);
+#ifndef DISABLE_ISMV
         }
         else
         {
@@ -885,6 +907,7 @@ int FFMPEG_Transcoder::write_output_file_header()
             av_dict_set(&dict, "movflags", "isml+frag_keyframe+separate_moof", 0);
             av_dict_set(&dict, "frag_duration", "5000000", 0); // 1 sec
         }
+#endif
 
         av_dict_set(&dict, "flags:a", "+global_header", 0);
         av_dict_set(&dict, "flags:v", "+global_header", 0);
@@ -1038,13 +1061,6 @@ cleanup2:
 
         ret = avcodec_decode_video2(m_in.m_pVideo_codec_ctx, input_frame, data_present, input_packet);
 
-        //        if (ret == -1 || ret == AVERROR_INVALIDDATA)
-        //        {
-        //            // unused frame
-        //            av_frame_free(&input_frame);
-        //            return 0;
-        //        }
-
         if (ret < 0) {
             mp3fs_error("FFMPEG transcoder: Could not decode video frame (error '%s').", ffmpeg_geterror(ret).c_str());
             // unused frame
@@ -1055,7 +1071,7 @@ cleanup2:
         decoded = ret;
 
         // Sometimes only a few packets contain valid dts/pts/pos data, so we keep it
-		if (input_packet->dts != (int64_t)AV_NOPTS_VALUE)
+        if (input_packet->dts != (int64_t)AV_NOPTS_VALUE)
         {
             int64_t pts = input_packet->dts;
             if (pts > m_pts)
@@ -1101,7 +1117,7 @@ cleanup2:
             }
 
 #ifndef USING_LIBAV
-            int64_t best_effort_timestamp = ::av_frame_get_best_effort_timestamp(input_frame); //input_frame->best_effort_timestamp;
+            int64_t best_effort_timestamp = ::av_frame_get_best_effort_timestamp(input_frame);
 
             if (best_effort_timestamp != (int64_t)AV_NOPTS_VALUE)
             {
@@ -1139,28 +1155,28 @@ cleanup2:
 }
 
 /**
-         * Initialize a temporary storage for the specified number of audio samples.
-         * The conversion requires temporary storage due to the different format.
-         * The number of audio samples to be allocated is specified in frame_size.
-         */
+ * Initialize a temporary storage for the specified number of audio samples.
+ * The conversion requires temporary storage due to the different format.
+ * The number of audio samples to be allocated is specified in frame_size.
+ */
 int FFMPEG_Transcoder::init_converted_samples(uint8_t ***converted_input_samples, int frame_size)
 {
     int error;
 
     /**
-             * Allocate as many pointers as there are audio channels.
-             * Each pointer will later point to the audio samples of the corresponding
-             * channels (although it may be NULL for interleaved formats).
-             */
+     * Allocate as many pointers as there are audio channels.
+     * Each pointer will later point to the audio samples of the corresponding
+     * channels (although it may be NULL for interleaved formats).
+     */
     if (!(*converted_input_samples = (uint8_t **)calloc(m_out.m_pAudio_codec_ctx->channels, sizeof(**converted_input_samples)))) {
         mp3fs_error("FFMPEG transcoder: Could not allocate converted input sample pointers");
         return AVERROR(ENOMEM);
     }
 
     /**
-             * Allocate memory for the samples of all channels in one consecutive
-             * block for convenience.
-             */
+     * Allocate memory for the samples of all channels in one consecutive
+     * block for convenience.
+     */
     if ((error = av_samples_alloc(*converted_input_samples, NULL,
                                   m_out.m_pAudio_codec_ctx->channels,
                                   frame_size,
@@ -1244,9 +1260,9 @@ int FFMPEG_Transcoder::add_samples_to_fifo(uint8_t **converted_input_samples, co
 }
 
 /**
-         * Read one audio frame from the input file, decodes, converts and stores
-         * it in the FIFO buffer.
-         */
+ * Read one audio frame from the input file, decodes, converts and stores
+ * it in the FIFO buffer.
+ */
 int FFMPEG_Transcoder::read_decode_convert_and_store(int *finished)
 {
     /** Packet used for temporary storage. */
@@ -1294,17 +1310,17 @@ int FFMPEG_Transcoder::read_decode_convert_and_store(int *finished)
     //    } while (data_present);
 
     /**
-             * If the decoder has not been flushed completely, we are not finished,
-             * so that this function has to be called again.
-             */
+      * If the decoder has not been flushed completely, we are not finished,
+      * so that this function has to be called again.
+      */
     if (*finished && data_present)
         *finished = 0;
 
     /**
-             * If we are at the end of the file and there are no more samples
-             * in the decoder which are delayed, we are actually finished.
-             * This must not be treated as an error.
-             */
+      * If we are at the end of the file and there are no more samples
+      * in the decoder which are delayed, we are actually finished.
+      * This must not be treated as an error.
+      */
     if (*finished && !data_present) {
         ret = 0;
         goto cleanup;
@@ -1319,9 +1335,9 @@ cleanup:
 }
 
 /**
-         * Initialize one input frame for writing to the output file.
-         * The frame will be exactly frame_size samples large.
-         */
+ * Initialize one input frame for writing to the output file.
+ * The frame will be exactly frame_size samples large.
+ */
 int FFMPEG_Transcoder::init_audio_output_frame(AVFrame **frame, int frame_size)
 {
     int error;
@@ -1333,21 +1349,21 @@ int FFMPEG_Transcoder::init_audio_output_frame(AVFrame **frame, int frame_size)
     }
 
     /**
-             * Set the frame's parameters, especially its size and format.
-             * av_frame_get_buffer needs this to allocate memory for the
-             * audio samples of the frame.
-             * Default channel layouts based on the number of channels
-             * are assumed for simplicity.
-             */
+     * Set the frame's parameters, especially its size and format.
+     * av_frame_get_buffer needs this to allocate memory for the
+     * audio samples of the frame.
+     * Default channel layouts based on the number of channels
+     * are assumed for simplicity.
+     */
     (*frame)->nb_samples     = frame_size;
     (*frame)->channel_layout = m_out.m_pAudio_codec_ctx->channel_layout;
     (*frame)->format         = m_out.m_pAudio_codec_ctx->sample_fmt;
     (*frame)->sample_rate    = m_out.m_pAudio_codec_ctx->sample_rate;
 
     /**
-             * Allocate the samples of the created frame. This call will make
-             * sure that the audio frame can hold as many samples as specified.
-             */
+     * Allocate the samples of the created frame. This call will make
+     * sure that the audio frame can hold as many samples as specified.
+     */
     if ((error = av_frame_get_buffer(*frame, 0)) < 0) {
         mp3fs_error("FFMPEG transcoder: Could allocate output frame samples (error '%s').", ffmpeg_geterror(error).c_str());
         av_frame_free(frame);
@@ -1390,9 +1406,9 @@ int FFMPEG_Transcoder::encode_audio_frame(AVFrame *frame, int *data_present)
     init_packet(&output_packet);
 
     /**
-             * Encode the audio frame and store it in the temporary packet.
-             * The output audio stream encoder is used to do this.
-             */
+      * Encode the audio frame and store it in the temporary packet.
+      * The output audio stream encoder is used to do this.
+      */
     if ((error = avcodec_encode_audio2(m_out.m_pAudio_codec_ctx, &output_packet, frame, data_present)) < 0) {
         mp3fs_error("FFMPEG transcoder: Could not encode audio frame (error '%s').", ffmpeg_geterror(error).c_str());
         av_packet_unref(&output_packet);
@@ -1424,34 +1440,34 @@ int FFMPEG_Transcoder::encode_video_frame(AVFrame *frame, int *data_present)
     AVPacket output_packet;
     int error;
     init_packet(&output_packet);
-	
+
 #if (LIBAVCODEC_VERSION_MICRO >= 100 && LIBAVCODEC_VERSION_INT >= AV_VERSION_INT( 57, 64, 101 ) )
 
-//        if (m_out.m_pVideo_codec_ctx->flags & (AV_CODEC_FLAG_INTERLACED_DCT | AV_CODEC_FLAG_INTERLACED_ME) &&
-//            ost->top_field_first >= 0)
-//            frame->top_field_first = !!ost->top_field_first;
+    //        if (m_out.m_pVideo_codec_ctx->flags & (AV_CODEC_FLAG_INTERLACED_DCT | AV_CODEC_FLAG_INTERLACED_ME) &&
+    //            ost->top_field_first >= 0)
+    //            frame->top_field_first = !!ost->top_field_first;
 
-        if (frame->interlaced_frame) {
-            if (m_out.m_pVideo_codec_ctx->codec->id == AV_CODEC_ID_MJPEG)
-                m_out.m_pVideo_stream->codecpar->field_order = frame->top_field_first ? AV_FIELD_TT:AV_FIELD_BB;
-            else
-                m_out.m_pVideo_stream->codecpar->field_order = frame->top_field_first ? AV_FIELD_TB:AV_FIELD_BT;
-        }
+    if (frame->interlaced_frame) {
+        if (m_out.m_pVideo_codec_ctx->codec->id == AV_CODEC_ID_MJPEG)
+            m_out.m_pVideo_stream->codecpar->field_order = frame->top_field_first ? AV_FIELD_TT:AV_FIELD_BB;
         else
-        {
-            m_out.m_pVideo_stream->codecpar->field_order = AV_FIELD_PROGRESSIVE;
-        }
+            m_out.m_pVideo_stream->codecpar->field_order = frame->top_field_first ? AV_FIELD_TB:AV_FIELD_BT;
+    }
+    else
+    {
+        m_out.m_pVideo_stream->codecpar->field_order = AV_FIELD_PROGRESSIVE;
+    }
 #endif
 
-        frame->quality = m_out.m_pVideo_codec_ctx->global_quality;
+    frame->quality = m_out.m_pVideo_codec_ctx->global_quality;
 #ifndef USING_LIBAV
-        frame->pict_type = AV_PICTURE_TYPE_NONE;	// other than AV_PICTURE_TYPE_NONE causes warnings
+    frame->pict_type = AV_PICTURE_TYPE_NONE;	// other than AV_PICTURE_TYPE_NONE causes warnings
 #else
-        frame->pict_type = (AVPictureType)0;
+    frame->pict_type = (AVPictureType)0;        // other than 0 causes warnings
 #endif
     /**
-             * Encode the video frame and store it in the temporary packet.
-             * The output video stream encoder is used to do this.
+     * Encode the video frame and store it in the temporary packet.
+     * The output video stream encoder is used to do this.
              */
     if ((error = avcodec_encode_video2(m_out.m_pVideo_codec_ctx, &output_packet, frame, data_present)) < 0) {
         mp3fs_error("FFMPEG transcoder: Could not encode video frame (error '%s').", ffmpeg_geterror(error).c_str());
@@ -1513,18 +1529,18 @@ int FFMPEG_Transcoder::encode_video_frame(AVFrame *frame, int *data_present)
 }
 
 /**
-         * Load one audio frame from the FIFO buffer, encode and write it to the
-         * output file.
+ * Load one audio frame from the FIFO buffer, encode and write it to the
+ * output file.
          */
 int FFMPEG_Transcoder::load_encode_and_write()
 {
     /** Temporary storage of the output samples of the frame written to the file. */
     AVFrame *output_frame;
     /**
-             * Use the maximum number of possible samples per frame.
-             * If there is less than the maximum possible frame size in the FIFO
-             * buffer use this number. Otherwise, use the maximum possible frame size
-             */
+     * Use the maximum number of possible samples per frame.
+     * If there is less than the maximum possible frame size in the FIFO
+     * buffer use this number. Otherwise, use the maximum possible frame size
+     */
     const int frame_size = FFMIN(av_audio_fifo_size(m_pAudioFifo), m_out.m_pAudio_codec_ctx->frame_size);
     int data_written;
 
@@ -1533,9 +1549,9 @@ int FFMPEG_Transcoder::load_encode_and_write()
         return AVERROR_EXIT;
 
     /**
-             * Read as many samples from the FIFO buffer as required to fill the frame.
-             * The samples are stored in the frame temporarily.
-             */
+     * Read as many samples from the FIFO buffer as required to fill the frame.
+     * The samples are stored in the frame temporarily.
+     */
     if (av_audio_fifo_read(m_pAudioFifo, (void **)output_frame->data, frame_size) < frame_size) {
         mp3fs_error("FFMPEG transcoder: Could not read data from FIFO");
         av_frame_free(&output_frame);
@@ -1567,12 +1583,12 @@ time_t FFMPEG_Transcoder::mtime() const {
 }
 
 /*
-         * Process the metadata in the FFMPEG file. This should be called at the
-         * beginning, before reading audio data. The set_text_tag() and
-         * set_picture_tag() methods of the given Encoder will be used to set the
-         * metadata, with results going into the given Buffer. This function will also
-         * read the actual PCM stream parameters.
-         */
+ * Process the metadata in the FFMPEG file. This should be called at the
+ * beginning, before reading audio data. The set_text_tag() and
+ * set_picture_tag() methods of the given Encoder will be used to set the
+ * metadata, with results going into the given Buffer. This function will also
+ * read the actual PCM stream parameters.
+ */
 
 #define tagcpy(dst, src)    \
     for (char *p1 = (dst), *pend = p1 + sizeof(dst), *p2 = (src); *p2 && p1 < pend; p1++, p2++) \
@@ -1647,14 +1663,14 @@ int FFMPEG_Transcoder::process_metadata() {
 }
 
 /*
-         * Process a single frame of audio data. The encode_pcm_data() method
-         * of the Encoder will be used to process the resulting audio data, with the
-         * result going into the given Buffer.
+ * Process a single frame of audio data. The encode_pcm_data() method
+ * of the Encoder will be used to process the resulting audio data, with the
+ * result going into the given Buffer.
          *
-         * Returns:
-         *  0   if decoding was OK
-         *  1   if EOF reached
-         *  -1  error
+ * Returns:
+ *  0   if decoding was OK
+ *  1   if EOF reached
+ *  -1  error
          */
 int FFMPEG_Transcoder::process_single_fr() {
     int ret = 0;
@@ -1666,46 +1682,46 @@ int FFMPEG_Transcoder::process_single_fr() {
         int finished                = 0;
 
         /**
-                 * Make sure that there is one frame worth of samples in the FIFO
-                 * buffer so that the encoder can do its work.
-                 * Since the decoder's and the encoder's frame size may differ, we
-                 * need to FIFO buffer to store as many frames worth of input samples
-                 * that they make up at least one frame worth of output samples.
-                 */
+         * Make sure that there is one frame worth of samples in the FIFO
+         * buffer so that the encoder can do its work.
+         * Since the decoder's and the encoder's frame size may differ, we
+         * need to FIFO buffer to store as many frames worth of input samples
+         * that they make up at least one frame worth of output samples.
+         */
         while (av_audio_fifo_size(m_pAudioFifo) < output_frame_size) {
             /**
-                     * Decode one frame worth of audio samples, convert it to the
-                     * output sample format and put it into the FIFO buffer.
-                     */
+             * Decode one frame worth of audio samples, convert it to the
+             * output sample format and put it into the FIFO buffer.
+             */
             if (read_decode_convert_and_store(&finished))
                 goto cleanup;
 
             /**
-                     * If we are at the end of the input file, we continue
-                     * encoding the remaining audio samples to the output file.
-                     */
+             * If we are at the end of the input file, we continue
+             * encoding the remaining audio samples to the output file.
+             */
             if (finished)
                 break;
         }
 
         /**
-                 * If we have enough samples for the encoder, we encode them.
-                 * At the end of the file, we pass the remaining samples to
-                 * the encoder.
-                 */
+         * If we have enough samples for the encoder, we encode them.
+         * At the end of the file, we pass the remaining samples to
+         * the encoder.
+         */
         while (av_audio_fifo_size(m_pAudioFifo) >= output_frame_size ||
                (finished && av_audio_fifo_size(m_pAudioFifo) > 0))
             /**
-                     * Take one frame worth of audio samples from the FIFO buffer,
-                     * encode it and write it to the output file.
-                     */
+             * Take one frame worth of audio samples from the FIFO buffer,
+             * encode it and write it to the output file.
+             */
             if (load_encode_and_write())
                 goto cleanup;
 
         /**
-                 * If we are at the end of the input file and have encoded
-                 * all remaining samples, we can exit this loop and finish.
-                 */
+         * If we are at the end of the input file and have encoded
+         * all remaining samples, we can exit this loop and finish.
+         */
         if (finished) {
             int data_written;
             /** Flush the encoder as it may have delayed frames. */
@@ -1743,9 +1759,9 @@ int FFMPEG_Transcoder::process_single_fr() {
         av_frame_free(&output_frame);
 
         /**
-                         * If we are at the end of the input file and have encoded
-                         * all remaining samples, we can exit this loop and finish.
-                         */
+         * If we are at the end of the input file and have encoded
+         * all remaining samples, we can exit this loop and finish.
+         */
         //        if (finished) {
         //            /** Flush the encoder as it may have delayed frames. */
         //            do {
@@ -1762,11 +1778,11 @@ cleanup:
 }
 
 /*
-         * Properly calculate final file size. This is the sum of the size of
-         * ID3v2, ID3v1, and raw MP3 data. This is theoretically only approximate
-         * but in practice gives excellent answers, usually exactly correct.
-         * Cast to 64-bit int to avoid overflow.
-         */
+ * Properly calculate final file size. This is the sum of the size of
+ * ID3v2, ID3v1, and raw MP3 data. This is theoretically only approximate
+ * but in practice gives excellent answers, usually exactly correct.
+ * Cast to 64-bit int to avoid overflow.
+ */
 size_t FFMPEG_Transcoder::calculate_size() {
 
     if (m_nCalculated_size == 0 && m_in.m_pFormat_ctx != NULL)
@@ -1866,10 +1882,10 @@ size_t FFMPEG_Transcoder::calculate_size() {
 }
 
 /*
-         * Encode any remaining PCM data in LAME internal buffers to the given
-         * Buffer. This should be called after all input data has already been
-         * passed to encode_pcm_data().
-         */
+ * Encode any remaining PCM data in LAME internal buffers to the given
+ * Buffer. This should be called after all input data has already been
+ * passed to encode_pcm_data().
+ */
 int FFMPEG_Transcoder::encode_finish() {
 
     int ret = 0;

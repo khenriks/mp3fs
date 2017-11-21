@@ -24,6 +24,10 @@
 
 #pragma once
 
+// For release 1.0: disable ISMV (smooth streaming) and image filters
+#define DISABLE_ISMV
+#define DISABLE_AVFILTER
+
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
@@ -36,14 +40,19 @@ extern struct mp3fs_params {
     const char *    mountpath;
     // Output type
     const char*     desttype;
-    int             enable_ismv;
+#ifndef DISABLE_ISMV
+    int             enable_ismv;    // TODO: produces rediculuosly large files
+#endif
     // Audio
     unsigned int    audiobitrate;
     unsigned int    audiosamplerate;
     // Video
+    unsigned int    videobitrate;
+#ifndef DISABLE_AVFILTER
     unsigned int    videowidth;     // TODO
     unsigned int    videoheight;    // TODO
-    unsigned int    videobitrate;
+    int             deinterlace;    // TODO
+#endif
     // mp3fs options
     int             debug;
     const char*     log_maxlevel;
