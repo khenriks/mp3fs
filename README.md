@@ -17,7 +17,7 @@ transcode files  through simple drag-and-drop in a file browser.
 
 For installation instructions see the [install](INSTALL.md) file.
 
-RESTRICIONS:
+RESTRICTIONS:
 
 * mp4 support is highly experimental.
 * Cover arts are also not yet supported.
@@ -138,22 +138,15 @@ mp3fs uses Git for revision control. You can obtain the full repository
 with:
 
     git clone https://github.com/khenriks/mp3fs.git (original version)
-    git clone https://github.com/nschlia/mp3fs.git (FFMPEG enabled version)
+    git clone https://github.com/nschlia/mp3fs.git (this FFMPEG enabled version)
 
 mp3fs is written in a mixture of C and C++ and uses the following libraries:
 
 * [FUSE](http://fuse.sourceforge.net/)
 
-If using the FFMPEG support (Libav works as well):
+If using the FFMPEG support (Libav works as well, but FFMPEG is recommended):
 
 * [FFMPEG](https://www.ffmpeg.org/) or [LIBAV](https://www.libav.org/)
-
-These are only required if not using FFMPEG:
-
-* [FLAC](http://flac.sourceforge.net/)
-* [libvorbis](http://www.xiph.org/vorbis/)
-* [LAME](http://lame.sourceforge.net/)
-* [libid3tag](http://www.underbit.com/products/mad/)
 
 Authors
 -------
