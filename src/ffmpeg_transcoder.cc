@@ -441,13 +441,15 @@ int FFMPEG_Transcoder::open_out_file(Buffer *buffer) {
     return 0;
 }
 
-int64_t FFMPEG_Transcoder::get_output_bit_rate(AVStream *in_stream, int64_t bit_rate) const
+int64_t FFMPEG_Transcoder::get_output_bit_rate(AVStream *in_stream, int64_t max_bit_rate) const
 {
     int64_t real_bit_rate = in_stream->codec->bit_rate != 0 ? in_stream->codec->bit_rate : m_in.m_pFormat_ctx->bit_rate;
 
-    if (real_bit_rate > bit_rate)
+    max_bit_rate *= 1000;   // kbit -> bit
+
+    if (real_bit_rate > max_bit_rate)
     {
-        real_bit_rate = bit_rate;
+        real_bit_rate = max_bit_rate;
     }
 
     return real_bit_rate;
@@ -494,30 +496,38 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         /**
          * Set the basic encoder parameters.
          */
-        codec_ctx->bit_rate               = (int)get_output_bit_rate(m_in.m_pAudio_stream, params.audiobitrate * 1000);
-        codec_ctx->channels               = 2;
-        codec_ctx->channel_layout         = av_get_default_channel_layout(codec_ctx->channels);
-        codec_ctx->sample_rate            = m_in.m_pAudio_codec_ctx->sample_rate;
-        codec_ctx->sample_fmt             = output_codec->sample_fmts[0];
+        codec_ctx->bit_rate                 = (int)get_output_bit_rate(m_in.m_pAudio_stream, params.audiobitrate);
+        codec_ctx->channels                 = 2;
+        codec_ctx->channel_layout           = av_get_default_channel_layout(codec_ctx->channels);
+        codec_ctx->sample_rate              = m_in.m_pAudio_codec_ctx->sample_rate;
+        if (params.audiosamplerate && codec_ctx->sample_rate > (int)params.audiosamplerate)
+        {
+            // Limit sample rate
+            mp3fs_info("FFMPEG transcoder: Limiting audio sample rate from %i Hz to %i Hz.\n", codec_ctx->sample_rate, params.audiosamplerate);
+            codec_ctx->sample_rate          = params.audiosamplerate;
+        }
+        codec_ctx->sample_fmt               = output_codec->sample_fmts[0];
 
         /** Allow the use of the experimental AAC encoder */
-        codec_ctx->strict_std_compliance  = FF_COMPLIANCE_EXPERIMENTAL;
+        codec_ctx->strict_std_compliance    = FF_COMPLIANCE_EXPERIMENTAL;
 
         /** Set the sample rate for the container. */
-        out_video_stream->time_base.den             = m_in.m_pAudio_codec_ctx->sample_rate;
-        out_video_stream->time_base.num             = 1;
+        out_video_stream->time_base.den     = codec_ctx->sample_rate;
+        out_video_stream->time_base.num     = 1;
 
 #if (LIBAVCODEC_VERSION_MAJOR <= 56) // Check for FFMPEG 3
         // set -strict -2 for aac (required for FFMPEG 2)
         av_dict_set(&opt, "strict", "-2", 0);
+        // Allow the use of the experimental AAC encoder
+        codec_ctx->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
 #endif
 
         /** Save the encoder context for easier access later. */
-        m_out.m_pAudio_codec_ctx    = codec_ctx;
+        m_out.m_pAudio_codec_ctx            = codec_ctx;
         // Save the stream index
-        m_out.m_nAudio_stream_idx = out_video_stream->index;
+        m_out.m_nAudio_stream_idx           = out_video_stream->index;
         // Save output audio stream for faster reference
-        m_out.m_pAudio_stream = out_video_stream;
+        m_out.m_pAudio_stream               = out_video_stream;
         break;
     }
     case AVMEDIA_TYPE_VIDEO:
@@ -535,7 +545,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         //            return ret;
         //        }
 
-        codec_ctx->bit_rate             = (int)get_output_bit_rate(m_in.m_pVideo_stream, params.videobitrate * 1000);
+        codec_ctx->bit_rate             = (int)get_output_bit_rate(m_in.m_pVideo_stream, params.videobitrate);
         //codec_ctx->bit_rate_tolerance   = 0;
         /* Resolution must be a multiple of two. */
         codec_ctx->width                = in_video_stream->codec->width;
@@ -938,11 +948,11 @@ int FFMPEG_Transcoder::decode_frame(AVPacket *input_packet, int *data_present)
         }
 
         /**
-                * Decode the audio frame stored in the temporary packet.
-                * The input audio stream decoder is used to do this.
-                * If we are at the end of the file, pass an empty packet to the decoder
-                * to flush it.
-                */
+         * Decode the audio frame stored in the temporary packet.
+         * The input audio stream decoder is used to do this.
+         * If we are at the end of the file, pass an empty packet to the decoder
+         * to flush it.
+         */
         ret = avcodec_decode_audio4(m_in.m_pAudio_codec_ctx, input_frame, data_present, input_packet);
         if (ret < 0 && ret != AVERROR_INVALIDDATA) {
             av_frame_free(&input_frame);
@@ -963,27 +973,27 @@ int FFMPEG_Transcoder::decode_frame(AVPacket *input_packet, int *data_present)
         if (data_present && input_frame->nb_samples) {
             /** Temporary storage for the converted input samples. */
             uint8_t **converted_input_samples = NULL;
-
+            int nb_output_samples = avresample_get_out_samples(m_pAudio_resample_ctx, input_frame->nb_samples);
             // Store audio frame
             /** Initialize the temporary storage for the converted input samples. */
-            ret = init_converted_samples(&converted_input_samples, input_frame->nb_samples);
+            ret = init_converted_samples(&converted_input_samples, nb_output_samples);
             if (ret < 0)
             {
                 goto cleanup2;
             }
 
             /**
-                 * Convert the input samples to the desired output sample format.
-                 * This requires a temporary storage provided by converted_input_samples.
-                 */
-            ret = convert_samples(input_frame->extended_data, converted_input_samples, input_frame->nb_samples);
+             * Convert the input samples to the desired output sample format.
+             * This requires a temporary storage provided by converted_input_samples.
+             */
+            ret = convert_samples(input_frame->extended_data, input_frame->nb_samples, converted_input_samples, &nb_output_samples);
             if (ret < 0)
             {
                 goto cleanup2;
             }
 
             /** Add the converted input samples to the FIFO buffer for later processing. */
-            ret = add_samples_to_fifo(converted_input_samples, input_frame->nb_samples);
+            ret = add_samples_to_fifo(converted_input_samples, nb_output_samples);
             if (ret < 0)
             {
                 goto cleanup2;
@@ -1164,27 +1174,29 @@ int FFMPEG_Transcoder::init_converted_samples(uint8_t ***converted_input_samples
 }
 
 /**
-         * Convert the input audio samples into the output sample format.
-         * The conversion happens on a per-frame basis, the size of which is specified
-         * by frame_size.
-         */
-int FFMPEG_Transcoder::convert_samples(uint8_t **input_data, uint8_t **converted_data, const int frame_size)
+ * Convert the input audio samples into the output sample format.
+ * The conversion happens on a per-frame basis, the size of which is specified
+ * by frame_size.
+ */
+int FFMPEG_Transcoder::convert_samples(uint8_t **input_data, const int in_samples, uint8_t **converted_data, int *out_samples)
 {
     if (m_pAudio_resample_ctx != NULL)
     {
         int ret;
 
         /** Convert the samples using the resampler. */
-        if ((ret = avresample_convert(m_pAudio_resample_ctx, converted_data, 0, frame_size, input_data, 0, frame_size)) < 0) {
+        if ((ret = avresample_convert(m_pAudio_resample_ctx, converted_data, 0, *out_samples, input_data, 0, in_samples)) < 0) {
             mp3fs_error("FFMPEG transcoder: Could not convert input samples (error '%s').", ffmpeg_geterror(ret).c_str());
             return ret;
         }
 
+        *out_samples = ret;
+
         /**
-             * Perform a sanity check so that the number of converted samples is
-             * not greater than the number of samples to be converted.
-             * If the sample rates differ, this case has to be handled differently
-             */
+          * Perform a sanity check so that the number of converted samples is
+          * not greater than the number of samples to be converted.
+          * If the sample rates differ, this case has to be handled differently
+          */
         if (avresample_available(m_pAudio_resample_ctx)) {
             mp3fs_error("FFMPEG transcoder: Converted samples left over");
             return AVERROR_EXIT;
@@ -1195,13 +1207,13 @@ int FFMPEG_Transcoder::convert_samples(uint8_t **input_data, uint8_t **converted
         // No resampling, just copy samples
         if (!av_sample_fmt_is_planar(m_in.m_pAudio_codec_ctx->sample_fmt))
         {
-            memcpy(converted_data[0], input_data[0], frame_size * av_get_bytes_per_sample(m_out.m_pAudio_codec_ctx->sample_fmt));
+            memcpy(converted_data[0], input_data[0], in_samples * av_get_bytes_per_sample(m_out.m_pAudio_codec_ctx->sample_fmt));
         }
         else
         {
             for (int n = 0; n < m_in.m_pAudio_codec_ctx->channels; n++)
             {
-                memcpy(converted_data[n], input_data[n], frame_size * av_get_bytes_per_sample(m_out.m_pAudio_codec_ctx->sample_fmt));
+                memcpy(converted_data[n], input_data[n], in_samples * av_get_bytes_per_sample(m_out.m_pAudio_codec_ctx->sample_fmt));
             }
         }
     }
@@ -1214,9 +1226,9 @@ int FFMPEG_Transcoder::add_samples_to_fifo(uint8_t **converted_input_samples, co
     int error;
 
     /**
-             * Make the FIFO as large as it needs to be to hold both,
-             * the old and the new samples.
-             */
+     * Make the FIFO as large as it needs to be to hold both,
+     * the old and the new samples.
+     */
     if ((error = av_audio_fifo_realloc(m_pAudioFifo, av_audio_fifo_size(m_pAudioFifo) + frame_size)) < 0) {
         mp3fs_error("FFMPEG transcoder: Could not reallocate FIFO");
         return error;
@@ -1460,62 +1472,32 @@ int FFMPEG_Transcoder::encode_video_frame(AVFrame *frame, int *data_present)
             output_packet.dts -=  m_out.m_video_start_pts;
         }
 
-        AVPacket *pkt = &output_packet;
-        AVFormatContext *s = m_out.m_pFormat_ctx;
-        AVStream *st = m_out.m_pVideo_stream;
-        //        if (output_packet.pts >= 0)
-        if (!(s->oformat->flags & AVFMT_NOTIMESTAMPS)) {
-            if (pkt->dts != (int64_t)AV_NOPTS_VALUE &&
-                    pkt->pts != (int64_t)AV_NOPTS_VALUE &&
-                    pkt->dts > pkt->pts) {
-                //                av_log(s, AV_LOG_WARNING, "Invalid DTS: %" PRId64 " PTS: %" PRId64 " in output stream %d:%d, replacing by guess\n",
-                //                       pkt->dts, pkt->pts,
-                //                       0 /*ost->file_index*/, /*ost->*/st->index);
+        if (!(m_out.m_pFormat_ctx->oformat->flags & AVFMT_NOTIMESTAMPS)) {
+            if (output_packet.dts != (int64_t)AV_NOPTS_VALUE &&
+                    output_packet.pts != (int64_t)AV_NOPTS_VALUE &&
+                    output_packet.dts > output_packet.pts) {
 
-                fprintf(stderr, "XXXXX Invalid DTS: %" PRId64 " PTS: %" PRId64 " in output stream %d:%d, replacing by guess\n",
-                        pkt->dts, pkt->pts,
-                        0 /*ost->file_index*/, /*ost->*/st->index);
-                fflush(stderr);
+                mp3fs_warning("FFMPEG transcoder: Invalid DTS: %" PRId64 " PTS: %" PRId64 " in video output, replacing by guess", output_packet.dts, output_packet.pts);
 
-                pkt->pts =
-                        pkt->dts = pkt->pts + pkt->dts + m_out.m_last_mux_dts + 1
-                        - FFMIN3(pkt->pts, pkt->dts, m_out.m_last_mux_dts + 1)
-                        - FFMAX3(pkt->pts, pkt->dts, m_out.m_last_mux_dts + 1);
+                output_packet.pts =
+                        output_packet.dts = output_packet.pts + output_packet.dts + m_out.m_last_mux_dts + 1
+                        - FFMIN3(output_packet.pts, output_packet.dts, m_out.m_last_mux_dts + 1)
+                        - FFMAX3(output_packet.pts, output_packet.dts, m_out.m_last_mux_dts + 1);
             }
-            if (pkt->dts != (int64_t)AV_NOPTS_VALUE && m_out.m_last_mux_dts != (int64_t)AV_NOPTS_VALUE)
+            if (output_packet.dts != (int64_t)AV_NOPTS_VALUE && m_out.m_last_mux_dts != (int64_t)AV_NOPTS_VALUE)
             {
-                int64_t max = m_out.m_last_mux_dts + !(s->oformat->flags & AVFMT_TS_NONSTRICT);
-                if (pkt->dts < max) {
-                    //                    int loglevel = max - pkt->dts > 2 || st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO ? AV_LOG_WARNING : AV_LOG_DEBUG;
-                    //                    av_log(s, loglevel, "Non-monotonous DTS in output stream "
-                    //                           "%d:%d; previous: %" PRId64 ", current: %" PRId64 "; ",
-                    //                           0 /*ost->file_index*/, /*ost->*/st->index, m_out.last_mux_dts, pkt->dts);
+                int64_t max = m_out.m_last_mux_dts + !(m_out.m_pFormat_ctx->oformat->flags & AVFMT_TS_NONSTRICT);
+                if (output_packet.dts < max) {
 
-                    fprintf(stderr, "XXX Non-monotonous DTS in output stream "
-                                    "%d:%d; previous: %" PRId64 ", current: %" PRId64 "; ",
-                            0 /*ost->file_index*/, /*ost->*/st->index, m_out.m_last_mux_dts, pkt->dts);
-                    fflush(stderr);
+                    mp3fs_warning("FFMPEG transcoder: Non-monotonous DTS in video output stream; previous: %" PRId64 ", current: %" PRId64 "; changing to %" PRId64 ". This may result in incorrect timestamps in the output file.", m_out.m_last_mux_dts, output_packet.dts, max);
 
-                    //                    if (exit_on_error) {
-                    //                        av_log(NULL, AV_LOG_FATAL, "aborting.\n");
-                    //                        exit_program(1);
-                    //                    }
-                    //                    av_log(s, loglevel, "changing to %" PRId64 ". This may result "
-                    //                           "in incorrect timestamps in the output file.\n",
-                    //                           max);
-
-                    fprintf(stderr, "changing to %" PRId64 ". This may result "
-                                                           "in incorrect timestamps in the output file.\n",
-                            max);
-                    fflush(stderr);
-
-                    if (pkt->pts >= pkt->dts)
-                        pkt->pts = FFMAX(pkt->pts, max);
-                    pkt->dts = max;
+                    if (output_packet.pts >= output_packet.dts)
+                        output_packet.pts = FFMAX(output_packet.pts, max);
+                    output_packet.dts = max;
                 }
             }
         }
-        m_out.m_last_mux_dts = pkt->dts;
+        m_out.m_last_mux_dts = output_packet.dts;
 
         error = av_interleaved_write_frame(m_out.m_pFormat_ctx, &output_packet);
         if (error < 0) {
@@ -1796,7 +1778,7 @@ size_t FFMPEG_Transcoder::calculate_size() {
         if (m_in.m_nAudio_stream_idx > -1)
         {
             AVCodecID audio_codec_id = AV_CODEC_ID_AAC; // ??? TODO: aus der Kommandozeile...
-            int64_t audiobitrate = get_output_bit_rate(m_in.m_pAudio_stream, params.audiobitrate * 1000);
+            int64_t audiobitrate = get_output_bit_rate(m_in.m_pAudio_stream, params.audiobitrate);
 
             switch (audio_codec_id)
             {
@@ -1811,6 +1793,31 @@ size_t FFMPEG_Transcoder::calculate_size() {
                 // TODO: calculate correct size of mp3
                 // Kbps = bits per second / 8 = Bytes per second x 60 seconds = Bytes per minute x 60 minutes = Bytes per hour
                 size += (size_t)(duration * (double)audiobitrate / 8) + ID3V1_TAG_LENGTH;
+
+                //               You can calculate the size using the following formula:
+                //               x = length of song in seconds
+                //               y = bitrate in kilobits per second
+                //               (x * y) / 8
+                //               We divide by 8 to get the result in bytes.
+                //               So for example if you have a 3 minute song
+                //               3 minutes = 180 seconds
+                //               128kbps * 180 seconds = 23,040 kilobits of data 23,040 kilobits / 8 = 2880 kb
+                //               You would then convert to Megabytes by dividing by 1024:
+                //               2880/1024 = 2.8125 Mb
+                //               If all of this was done at a different encoding rate, say 192kbps it would look like this:
+                //               (192 * 180) / 8 = 4320 kb / 1024 = 4.21875 Mb
+
+                // Copied from lame
+                //#define MAX_VBR_FRAME_SIZE 2880
+                //
+                //size_t Mp3Encoder::calculate_size() const {
+                //    if (actual_size != 0) {
+                //        return actual_size;
+                //    } else if (params.vbr) {
+                //        return id3size + ID3V1_TAG_LENGTH + MAX_VBR_FRAME_SIZE + (uint64_t)lame_get_totalframes(lame_encoder) * 144 * params.bitrate * 10 / (lame_get_in_samplerate(lame_encoder) / 100);
+                //    } else {
+                //        return id3size + ID3V1_TAG_LENGTH +                      (uint64_t)lame_get_totalframes(lame_encoder) * 144 * params.bitrate * 10 / (lame_get_out_samplerate(lame_encoder) / 100);
+                //    }
                 break;
             }
             default:
@@ -1826,7 +1833,7 @@ size_t FFMPEG_Transcoder::calculate_size() {
             if (m_bIsVideo)
             {
                 AVCodecID video_codec_id = AV_CODEC_ID_H264; // ??? TODO: aus der Kommandozeile...
-                int64_t videobitrate = get_output_bit_rate(m_in.m_pVideo_stream, params.videobitrate * 1000);
+                int64_t videobitrate = get_output_bit_rate(m_in.m_pVideo_stream, params.videobitrate);
                 int64_t bitrateoverhead = 0;
 
                 videobitrate += bitrateoverhead;

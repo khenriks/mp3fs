@@ -42,23 +42,24 @@
 struct mp3fs_params params = {
     .basepath           	= NULL,
     .mountpath          	= NULL,
-    .width              	= 0,
-    .maxwidth           	= 0,
-    .height             	= 0,
-    .maxheight          	= 0,
+
+    .desttype           	= "mp4",
+    .enable_ismv			= 0,
+
     .audiobitrate       	= 128,
-    .maxaudiobitrate    	= 0,
-    .videobitrate       	= 1000,
-    .maxvideobitrate    	= 0,
+    .audiosamplerate      	= 44100,
+
+    .videowidth             = 0,
+    .videoheight           	= 0,
+    .videobitrate       	= 2000,
+
     .debug              	= 0,
     .log_maxlevel       	= "INFO",
     .log_stderr         	= 0,
     .log_syslog         	= 0,
     .logfile            	= "",
+
     .statcachesize      	= 500,
-    .maxsamplerate      	= 44100,
-    .desttype           	= "mp4",
-    .enable_ismv			= 0,
     .expiry_time            = (60*60*24 /* d */) * 7,	// default: 1 week
     .max_inactive_suspend   = (60 /* m */) * 2,         // default: 2 minutes
     .max_inactive_abort     = (60 /* m */) * 25,        // default: 5 minutes
@@ -73,38 +74,55 @@ enum {
 #define MP3FS_OPT(t, p, v) { t, offsetof(struct mp3fs_params, p), v }
 
 static struct fuse_opt mp3fs_opts[] = {
-    MP3FS_OPT("-h %u",              width, 0),
-    MP3FS_OPT("height=%u",          width, 0),
-    MP3FS_OPT("-w %u",              height, 0),
-    MP3FS_OPT("width=%u",           height, 0),
-    MP3FS_OPT("-b %u",              audiobitrate, 0),
-    MP3FS_OPT("bitrate=%u",         audiobitrate, 0),
-    MP3FS_OPT("--desttype=%s",      desttype, 0),
-    MP3FS_OPT("desttype=%s",        desttype, 0),
-    MP3FS_OPT("--enable_ismv=%s",   enable_ismv, 0),
-    MP3FS_OPT("enable_ismv=%s",     enable_ismv, 0),
-    MP3FS_OPT("--maxsamplerate=%u", maxsamplerate, 0),
-    MP3FS_OPT("maxsamplerate=%u",   maxsamplerate, 0),
-    MP3FS_OPT("--statcachesize=%u", statcachesize, 0),
-    MP3FS_OPT("statcachesize=%u",   statcachesize, 0),
+    MP3FS_OPT("--desttype=%s",              desttype, 0),
+    MP3FS_OPT("desttype=%s",                desttype, 0),
+    MP3FS_OPT("--enable_ismv=%u",           enable_ismv, 0),
+    MP3FS_OPT("enable_ismv=%u",             enable_ismv, 0),
 
-    MP3FS_OPT("-d",                 debug, 1),
-    MP3FS_OPT("debug",              debug, 1),
-    MP3FS_OPT("--log_maxlevel=%s",  log_maxlevel, 0),
-    MP3FS_OPT("log_maxlevel=%s",    log_maxlevel, 0),
-    MP3FS_OPT("--log_stderr",       log_stderr, 1),
-    MP3FS_OPT("log_stderr",         log_stderr, 1),
-    MP3FS_OPT("--log_syslog",       log_syslog, 1),
-    MP3FS_OPT("log_syslog",         log_syslog, 1),
-    MP3FS_OPT("--logfile=%s",       logfile, 0),
-    MP3FS_OPT("logfile=%s",         logfile, 0),
+    // Audio
+    MP3FS_OPT("-b %u",                      audiobitrate, 0),
+    MP3FS_OPT("--bitrate=%u",               audiobitrate, 0),
+    MP3FS_OPT("bitrate=%u",                 audiobitrate, 0),
+    MP3FS_OPT("--audiobitrate=%u",          audiobitrate, 0),
+    MP3FS_OPT("audiobitrate=%u",            audiobitrate, 0),
+    MP3FS_OPT("--audiosamplerate=%u",       audiosamplerate, 0),
+    MP3FS_OPT("audiosamplerate=%u",         audiosamplerate, 0),
 
-    FUSE_OPT_KEY("-h",               KEY_HELP),
-    FUSE_OPT_KEY("--help",           KEY_HELP),
-    FUSE_OPT_KEY("-V",               KEY_VERSION),
-    FUSE_OPT_KEY("--version",        KEY_VERSION),
-    FUSE_OPT_KEY("-d",               KEY_KEEP_OPT),
-    FUSE_OPT_KEY("debug",            KEY_KEEP_OPT),
+    // Video
+    MP3FS_OPT("--videoheight=%u",           videowidth, 0),
+    MP3FS_OPT("videoheight=%u",             videowidth, 0),
+    MP3FS_OPT("--videowidth=%u",            videoheight, 0),
+    MP3FS_OPT("videowidth=%u",              videoheight, 0),
+    MP3FS_OPT("--videobitrate=%u",          videobitrate, 0),
+    MP3FS_OPT("videobitrate=%u",            videobitrate, 0),
+
+    MP3FS_OPT("--statcachesize=%u",         statcachesize, 0),
+    MP3FS_OPT("statcachesize=%u",           statcachesize, 0),
+
+    MP3FS_OPT("--expiry_time=%u",           expiry_time, 0),
+    MP3FS_OPT("expiry_time=%u",             expiry_time, 0),
+    MP3FS_OPT("--max_inactive_suspend=%u",  max_inactive_suspend, 0),
+    MP3FS_OPT("max_inactive_suspend=%u",    max_inactive_suspend, 0),
+    MP3FS_OPT("--max_inactive_abort=%u",    max_inactive_abort, 0),
+    MP3FS_OPT("max_inactive_abort=%u",      max_inactive_abort, 0),
+
+    MP3FS_OPT("-d",                         debug, 1),
+    MP3FS_OPT("debug",                      debug, 1),
+    MP3FS_OPT("--log_maxlevel=%s",          log_maxlevel, 0),
+    MP3FS_OPT("log_maxlevel=%s",            log_maxlevel, 0),
+    MP3FS_OPT("--log_stderr",               log_stderr, 1),
+    MP3FS_OPT("log_stderr",                 log_stderr, 1),
+    MP3FS_OPT("--log_syslog",               log_syslog, 1),
+    MP3FS_OPT("log_syslog",                 log_syslog, 1),
+    MP3FS_OPT("--logfile=%s",               logfile, 0),
+    MP3FS_OPT("logfile=%s",                 logfile, 0),
+
+    FUSE_OPT_KEY("-h",                      KEY_HELP),
+    FUSE_OPT_KEY("--help",                  KEY_HELP),
+    FUSE_OPT_KEY("-V",                      KEY_VERSION),
+    FUSE_OPT_KEY("--version",               KEY_VERSION),
+    FUSE_OPT_KEY("-d",                      KEY_KEEP_OPT),
+    FUSE_OPT_KEY("debug",                   KEY_KEEP_OPT),
     FUSE_OPT_END
 };
 
@@ -112,63 +130,96 @@ static struct fuse_opt mp3fs_opts[] = {
 
 void usage(char *name) {
     printf("Usage: %s [OPTION]... IN_DIR OUT_DIR\n\n", name);
-    fputs(INFO "\n\
-          \n\
-          Encoding options:\n\
-              -h HEIGHT, --height=HEIGHT\n\
-                             Video only: sets the height of the target video.\n\
-                             When the video is rescaled the aspect ratio is\n\
-                             preserved if --width is not set at the same time.\n\
-                             Default: keep source video height\n\
-              -w WIDTH, --width=WIDTH\n\
-                             Video only: sets the width of the target video.\n\
-                             Whene the video is rescaled the aspect ratio is\n\
-                             preserved if --height is not set at the same time.\n\
-                             Default: keep source video width\n\
-              -b RATE, -obitrate=RATE\n\
-                             encoding bitrate: Acceptable values for RATE\n\
-                             include 96, 112, 128, 160, 192, 224, 256, and\n\
-                             320.\n\
-                             Default: 128\n\
-              --desttype=TYPE, -odesttype=TYPE\n\
-                             Select destination format. Can currently be\n\
-                             either mp3 or mp4. To stream videos, mp4 must be\n\
-                             selected.\n\
-                             Default: mp4\n\
-              --enable_ismv=0|1, -oenable_ismv=0|1\n\
-                             Set to 1 to create a ISMV (Smooth Streaming) file.\n\
-                             Must be used together with desttype=mp4.\n\
-                             Resulting files will stream to Internet Explorer, but\n\
-                             are not compatible with most other players.\n\
-                             Default: 0\n\
-    		  --maxsamplerate=Hz, -omaxsamplerate=Hz\n\
-                             Limits the output sample rate to Hz. If the source file\n\
-                             sample rate is more it will be downsampled automatically.\n\
-                             Typical values are 8000, 11025, 22050, 44100,\n\
-                             48000, 96000, 192000\n\
-                             Default: keep source rate\n\
-              --statcachesize=SIZE, -ostatcachesize=SIZE\n\
-                             Set the number of entries for the file stats\n\
-                             cache. Each entry takes 100-200 bytes.\n\
-                             Default: 500\n\
-              --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL\n\
-                             Maximum level of messages to log, either ERROR,\n\
-                             INFO, TRACE or DEBUG. Defaults to INFO, and always set\n\
-                             to DEBUG in debug mode. Note that the other log\n\
-                             flags must also be set to enable logging.\n\
-              --log_stderr, -olog_stderr\n\
-                             Enable outputting logging messages to stderr.\n\
-                             Enabled in debug mode.\n\
-              --log_syslog, -olog_syslog\n\
-                             Enable outputting logging messages to syslog.\n\
-              --logfile=FILE, -ologfile=FILE\n\
-                             File to output log messages to. By default, no\n\
-                             file will be written.\n\
-\n\
-General options:\n\
-              -h, --help     display this help and exit\n\
-              -V, --version  output version information and exit\n\
-\n", stdout);
+    fputs(INFO "\n"
+               "\n"
+               "Encoding options:\n"
+               "\n"
+               "    --desttype=TYPE, -odesttype=TYPE\n"
+               "                           Select destination format. Can currently be\n"
+               "                           either mp3 or mp4. To stream videos, mp4 must be\n"
+               "                           selected.\n"
+               "                           Default: mp4\n"
+               "    --enable_ismv=0|1, -oenable_ismv=0|1\n"
+               "                           Set to 1 to create a ISMV (Smooth Streaming) file.\n"
+               "                           Must be used together with desttype=mp4.\n"
+               "                           Resulting files will stream to Internet Explorer, but\n"
+               "                           are not compatible with most other players.\n"
+               "                           Default: 0\n"
+               "\n"
+               "Audio Options:\n"
+               "\n"
+               "    -b RATE, --audiobitrate=RATE, -oaudiobitrate=RATE\n"
+               "                           Audio encoding bitrate (in kbit): Acceptable values for RATE\n"
+               "                           include 96, 112, 128, 160, 192, 224, 256, and\n"
+               "                           320.\n"
+               "                           Default: 128 kbit\n"
+               "    --audiosamplerate=Hz, -oaudiosamplerate=Hz\n"
+               "                           Limits the output sample rate to Hz. If the source file\n"
+               "                           sample rate is more it will be downsampled automatically.\n"
+               "                           Typical values are 8000, 11025, 22050, 44100,\n"
+               "                           48000, 96000, 192000. Set to 0 to keep source rate.\n"
+               "                           Default: 44100 Hz\n"
+               "\n"
+               "Video Options:\n"
+               "\n"
+               "    --videobitrate=RATE, -ovideobitrate=RATE\n"
+               "                           Video encoding bit rate (in kbit). Acceptable values for RATE\n"
+               "                           range between 500 and 250000. Setting this too high or low may.\n"
+               "                           cause transcoding to fail.\n"
+               "                           Default: 2000 kbit\n"
+               "    --videoheight=HEIGHT, -ovideoheight=HEIGHT\n"
+               "                           Sets the height of the target video.\n"
+               "                           When the video is rescaled the aspect ratio is\n"
+               "                           preserved if --width is not set at the same time.\n"
+               "                           Default: keep source video height\n"
+               "    --videowidth=WIDTH, -ovideowidth=WIDTH\n"
+               "                           Sets the width of the target video.\n"
+               "                           Whene the video is rescaled the aspect ratio is\n"
+               "                           preserved if --height is not set at the same time.\n"
+               "                           Default: keep source video width\n"
+               "\n"
+               "Cache Options:\n"
+               "\n"
+               "    --statcachesize=SIZE, -ostatcachesize=SIZE\n"
+               "                           Set the number of entries for the file stats\n"
+               "                           cache. Each entry takes 100-200 bytes.\n"
+               "                           Default: 500\n"
+               "     --expiry_time=SECONDS, -o expiry_time=SECONDS\n"
+               "                           Cache entries expire after SECONDS and will be deleted\n"
+               "                           to save disk space.\n"
+               "                           Default: 1 week\n"
+               "     --max_inactive_suspend=SECONDS, -o max_inactive_suspend=SECONDS\n"
+               "                           While being accessed the file is transcoded to the target format\n"
+               "                           in the background. When the client quits transcoding will continue\n"
+               "                           until this time out. Transcoding is suspended until it is\n"
+               "                           accessed again, and transcoding will continue.\n"
+               "                           Default: 2 minutes\n"
+               "     --max_inactive_abort=SECONDS, -o max_inactive_abort=SECONDS\n"
+               "                           While being accessed the file is transcoded to the target format\n"
+               "                           in the background. When the client quits transcoding will continue\n"
+               "                           until this time out, and the transcoder thread quits\n"
+               "                           Default: 5 minutes\n"
+               "\n"
+               "Logging:\n"
+               "\n"
+               "    --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL\n"
+               "                           Maximum level of messages to log, either ERROR,\n"
+               "                           INFO, TRACE or DEBUG. Defaults to INFO, and always set\n"
+               "                           to DEBUG in debug mode. Note that the other log\n"
+               "                           flags must also be set to enable logging.\n"
+               "    --log_stderr, -olog_stderr\n"
+               "                           Enable outputting logging messages to stderr.\n"
+               "                           Enabled in debug mode.\n"
+               "    --log_syslog, -olog_syslog\n"
+               "                           Enable outputting logging messages to syslog.\n"
+               "    --logfile=FILE, -ologfile=FILE\n"
+               "                           File to output log messages to. By default, no\n"
+               "                           file will be written.\n"
+               "\n"
+               "General options:\n"
+               "    -h, --help             display this help and exit\n"
+               "    -V, --version          output version information and exit\n"
+               "\n", stdout);
 }
 
 static int mp3fs_opt_proc(void* data, const char* arg, int key, struct fuse_args *outargs) {
@@ -201,7 +252,7 @@ static int mp3fs_opt_proc(void* data, const char* arg, int key, struct fuse_args
     case KEY_VERSION:
     {
         // TODO: Also output this information in debug mode
-        printf("%-20s: %s\n", PACKAGE_NAME " version", PACKAGE_VERSION);
+        printf("%-20s: %s\n", PACKAGE_NAME " Version", PACKAGE_VERSION);
 
         char buffer[1024];
         ffmpeg_libinfo(buffer, sizeof(buffer));
@@ -225,6 +276,11 @@ int main(int argc, char *argv[]) {
     int ret;
 
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+
+    printf("%s V%s\n", PACKAGE_NAME, PACKAGE_VERSION);
+    printf("Copyright (C) 2006-2008 David Collett\n"
+           "Copyright (C) 2008-2012 K. Henriksson\n"
+           "FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)\n\n");
 
     /* register the termination function */
     atexit(cleanup);
@@ -310,30 +366,40 @@ int main(int argc, char *argv[]) {
     }
 
     mp3fs_debug(PACKAGE_NAME " options:\n\n"
-                "basepath:        %s\n"
-                "mountpath:       %s\n"
-                "video width:   %2s%u\n"
-                "video height:  %2s%u\n"
-                "audio bitrate: %2s%u\n"
-                "video bitrate: %2s%u\n"
-                "desttype:        %s\n"
-                "log_maxlevel:    %s\n"
-                "log_stderr:      %u\n"
-                "log_syslog:      %u\n"
-                "logfile:         %s\n"
-                "statcachesize:   %u\n",
+                             "basepath:           %s\n"
+                             "mountpath:          %s\n"
+                             "desttype:           %s\n"
+                             "use ISMV:           %s\n"
+                             "audio bitrate:      %u\n"
+                             "audio sample rate:  %u\n"
+                             "video size:         %ux%u\n"
+                             "video bitrate:      %u\n"
+                             "log_maxlevel:       %s\n"
+                             "log_stderr:         %u\n"
+                             "log_syslog:         %u\n"
+                             "logfile:            %s\n"
+                             "statcachesize:      %u\n"
+                             "cache settings:\n"
+                             "expiry:             %zu seconds\n"
+                             "inactivity suspend: %zu seconds\n"
+                             "inactivity abort:   %zu seconds\n",
                 params.basepath,
                 params.mountpath,
-                params.maxwidth ? "<=" : " =", params.width,
-                params.maxheight ? "<=" : " =", params.height,
-                params.maxaudiobitrate ? "<=" : "", params.audiobitrate,
-                params.maxvideobitrate ? "<=" : "", params.videobitrate,
                 params.desttype,
+                params.enable_ismv ? "yes" : "no",
+                params.audiobitrate,
+                params.audiosamplerate,
+                params.videowidth,
+                params.videoheight,
+                params.videobitrate,
                 params.log_maxlevel,
                 params.log_stderr,
                 params.log_syslog,
                 params.logfile,
-                params.statcachesize);
+                params.statcachesize,
+                params.expiry_time,
+                params.max_inactive_suspend,
+                params.max_inactive_abort);
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);

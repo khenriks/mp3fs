@@ -82,7 +82,7 @@ protected:
     int write_output_file_header();
     int decode_frame(AVPacket *input_packet, int *data_present);
     int init_converted_samples(uint8_t ***converted_input_samples, int frame_size);
-    int convert_samples(uint8_t **input_data, uint8_t **converted_data, const int frame_size);
+    int convert_samples(uint8_t **input_data, const int in_samples, uint8_t **converted_data, int *out_samples);
     int add_samples_to_fifo(uint8_t **converted_input_samples, const int frame_size);
     int read_decode_convert_and_store(int *finished);
     int init_audio_output_frame(AVFrame **frame, int frame_size);
@@ -96,7 +96,7 @@ protected:
     static int writePacket(void * pOpaque, unsigned char * pBuffer, int nBufSize);
     static int64_t seek(void * pOpaque, int64_t i4Offset, int nWhence);
 
-    int64_t get_output_bit_rate(AVStream *in_stream, int64_t bit_rate) const;
+    int64_t get_output_bit_rate(AVStream *in_stream, int64_t max_bit_rate) const;
 
 private:
     time_t                      m_mtime;

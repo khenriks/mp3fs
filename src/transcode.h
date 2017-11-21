@@ -32,34 +32,31 @@
 
 /* Global program parameters */
 extern struct mp3fs_params {
-    const char *basepath;
-    const char *mountpath;
-    // Video
-    unsigned int width;
-    int maxwidth;
-    unsigned int height;
-    int maxheight;
-    unsigned int videobitrate;
-    int maxvideobitrate;
+    const char *    basepath;
+    const char *    mountpath;
+    // Output type
+    const char*     desttype;
+    int             enable_ismv;
     // Audio
-    unsigned int audiobitrate;
-    int maxaudiobitrate;
+    unsigned int    audiobitrate;
+    unsigned int    audiosamplerate;
+    // Video
+    unsigned int    videowidth;     // TODO
+    unsigned int    videoheight;    // TODO
+    unsigned int    videobitrate;
     // mp3fs options
-    int debug;
-    const char* desttype;
-    int enable_ismv;
-    const char* log_maxlevel;
-    int log_stderr;
-    int log_syslog;
-    const char* logfile;
-    unsigned int statcachesize;
-    unsigned int maxsamplerate;
+    int             debug;
+    const char*     log_maxlevel;
+    int             log_stderr;
+    int             log_syslog;
+    const char*     logfile;
+    unsigned int    statcachesize;
     // Background recoding/caching
-    time_t expiry_time;             // Time (seconds) after which an cache entry is deleted
-    time_t max_inactive_suspend;    // TODO: Time (seconds) that must elapse without access until transcoding is suspened
-    time_t max_inactive_abort;      // Time (seconds) that must elapse without access until transcoding is aborted
-    int max_cache_size;             // TODO: Max. cache size in MB. When exceeded, oldest entries will be pruned
-    int max_threads;                // TODO: Max. number of recoder threads
+    time_t          expiry_time;                // TODO: Time (seconds) after which an cache entry is deleted
+    time_t          max_inactive_suspend;       // TODO: Time (seconds) that must elapse without access until transcoding is suspened
+    time_t          max_inactive_abort;         // Time (seconds) that must elapse without access until transcoding is aborted
+    int             max_cache_size;             // TODO: Max. cache size in MB. When exceeded, oldest entries will be pruned
+    int             max_threads;                // TODO: Max. number of recoder threads
 } params;
 
 /* Fuse operations struct */

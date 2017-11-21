@@ -42,6 +42,7 @@ extern "C" {
 #include <libavutil/audio_fifo.h>
 #include "libavutil/avstring.h"
 #if LIBAVUTIL_VERSION_MICRO >= 100
+// Does not exist in libav
 #include "libavutil/ffversion.h"
 #endif
 
