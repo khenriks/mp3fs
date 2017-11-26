@@ -117,7 +117,18 @@ FFMPEG_Transcoder::~FFMPEG_Transcoder() {
         sws_freeContext(m_pSws_ctx);
     }
 
-    // Close input file
+    // Close output file
+#if (AV_VERSION_MAJOR < 57)
+    if (m_out.m_pAudio_codec_ctx)
+    {   
+        avcodec_close(m_out.m_pAudio_codec_ctx);
+    }
+
+    if (m_out.m_pVideo_codec_ctx)
+    {   
+        avcodec_close(m_out.m_pVideo_codec_ctx);
+    }
+#else 
     if (m_out.m_pAudio_codec_ctx)
     {
         avcodec_free_context(&m_out.m_pAudio_codec_ctx);
@@ -127,36 +138,50 @@ FFMPEG_Transcoder::~FFMPEG_Transcoder() {
     {
         avcodec_free_context(&m_out.m_pVideo_codec_ctx);
     }
+#endif
 
     if (m_out.m_pFormat_ctx != NULL)
     {
         AVIOContext *output_io_context  = (AVIOContext *)m_out.m_pFormat_ctx->pb;
 
-        //avio_close(output_format_context->pb);
-
+#if (AV_VERSION_MAJOR >= 57)
         if (output_io_context != NULL)
         {
             av_freep(&output_io_context->buffer);
         }
-        av_freep(&output_io_context);
-
-#ifndef USING_LIBAV
-        avformat_free_context(m_out.m_pFormat_ctx);
 #endif
+//        if (!(m_out.m_pFormat_ctx->oformat->flags & AVFMT_NOFILE))
+        {
+       		av_freep(&output_io_context);
+        }
+
+        avformat_free_context(m_out.m_pFormat_ctx);
     }
 
-    // Close output file
+   // Close input file
+#if (AV_VERSION_MAJOR < 57)
+    if (m_in.m_pAudio_codec_ctx)
+    {
+        avcodec_close(m_in.m_pAudio_codec_ctx);
+    }
 
-    //    if (m_in.m_pAudio_codec_ctx)
-    //    {
-    //        avcodec_free_context(&m_in.m_pAudio_codec_ctx);
-    //    }
+    if (m_in.m_pVideo_codec_ctx)
+    {
+        avcodec_close(m_in.m_pVideo_codec_ctx);
+    }
+#else
+    if (m_in.m_pAudio_codec_ctx)
+    {
+        avcodec_free_context(&m_in.m_pAudio_codec_ctx);
+    }
 
-    //    if (m_in.m_pVideo_codec_ctx)
-    //    {
-    //        avcodec_free_context(&m_in.m_pVideo_codec_ctx);
-    //    }
+    if (m_in.m_pVideo_codec_ctx)
+    {
+        avcodec_free_context(&m_in.m_pVideo_codec_ctx);
+    }
+#endif
 
+    //if (m_in.m_pAudio_codec_ctx)
     if (m_in.m_pFormat_ctx != NULL)
     {
         avformat_close_input(&m_in.m_pFormat_ctx);
@@ -222,6 +247,9 @@ int FFMPEG_Transcoder::open_codec_context(int *stream_idx, AVCodecContext **avct
         dec_ctx->codec_id = dec->id;
 
         ret = avcodec_open2(dec_ctx, dec, &opts);
+
+        av_dict_free(&opts);
+
         if (ret < 0) {
             mp3fs_error("FFMPEG transcoder: Failed to find %s input codec (error '%s').", get_media_type_string(type), ffmpeg_geterror(ret).c_str());
             return ret;
@@ -285,11 +313,16 @@ bool FFMPEG_Transcoder::is_video() const
     return bIsVideo;
 }
 
+bool FFMPEG_Transcoder::is_open() const
+{
+    return (m_in.m_pFormat_ctx != NULL);
+}
+
 /*
  * Open the given FFMPEG file and prepare for decoding. After this function,
  * the other methods can be used to process the file.
  */
-int FFMPEG_Transcoder::open_file(const char* filename) {
+int FFMPEG_Transcoder::open_input_file(const char* filename) {
     AVDictionary * opt = NULL;
     int ret;
 
@@ -301,6 +334,12 @@ int FFMPEG_Transcoder::open_file(const char* filename) {
         return -1;
     }
     m_mtime = s.st_mtime;
+
+    if (is_open())
+    {
+        mp3fs_debug("FFMPEG transcoder: already open.");
+        return 0;
+    }
 
     //    This allows selecting if the demuxer should consider all streams to be
     //    found after the first PMT and add further streams during decoding or if it rather
@@ -324,6 +363,7 @@ int FFMPEG_Transcoder::open_file(const char* filename) {
         mp3fs_error("FFMPEG transcoder: Could not open input file '%s' (error '%s').", filename, ffmpeg_geterror(ret).c_str());
         return ret;
     }
+    assert(m_in.m_pFormat_ctx != NULL);
 
     ret = ::av_dict_set(&opt, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
     if (ret < 0)
@@ -402,7 +442,7 @@ int FFMPEG_Transcoder::open_file(const char* filename) {
     return 0;
 }
 
-int FFMPEG_Transcoder::open_out_file(Buffer *buffer) {
+int FFMPEG_Transcoder::open_output_file(Buffer *buffer) {
 
     // Pre-allocate the predicted file size to reduce memory reallocations
     if (!buffer->reserve(calculate_size())) {
@@ -411,7 +451,7 @@ int FFMPEG_Transcoder::open_out_file(Buffer *buffer) {
     }
 
     /** Open the output file for writing. */
-    if (open_output_file(buffer)) {
+    if (open_output_filestreams(buffer)) {
         return -1;
     }
 
@@ -686,7 +726,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
  * Also set some basic encoder parameters.
  * Some of these parameters are based on the input file's parameters.
  */
-int FFMPEG_Transcoder::open_output_file(Buffer *buffer)
+int FFMPEG_Transcoder::open_output_filestreams(Buffer *buffer)
 {
     AVIOContext *   output_io_context   = NULL;
     AVCodecID       audio_codecid;

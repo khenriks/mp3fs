@@ -58,8 +58,9 @@ class FFMPEG_Transcoder {
 public:
     FFMPEG_Transcoder();
     ~FFMPEG_Transcoder();
-    int open_file(const char* filename);
-    int open_out_file(Buffer* buffer);
+    bool is_open() const;
+    int open_input_file(const char* filename);
+    int open_output_file(Buffer* buffer);
     int process_single_fr();
     int encode_finish();
 
@@ -72,7 +73,7 @@ protected:
     bool is_video() const;
     int open_codec_context(int *stream_idx, AVCodecContext **avctx, AVFormatContext *fmt_ctx, AVMediaType type, const char *filename);
     int add_stream(AVCodecID codec_id);
-    int open_output_file(Buffer *buffer);
+    int open_output_filestreams(Buffer *buffer);
     void copy_metadata(AVDictionary *metadata, AVStream *stream, bool bIsVideo);
     int process_metadata();
     void init_packet(AVPacket *packet);
