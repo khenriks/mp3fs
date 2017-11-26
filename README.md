@@ -29,8 +29,8 @@ Supported Linux Distributions
 -----------------------------
 
 **Suse** does not provide proprietary formats like AAC and H264, thus
-the distribution FFMPEG is crippled. mp3fs will not be able to
-encode H264 and AAC. End of story. 
+the distribution FFMPEG is crippled. mp3fs will not be able to encode 
+to H264 and AAC. End of story. 
 See https://en.opensuse.org/Restricted_formats.
 
 **Debian 8** comes with LIBAV 11 clone of FFMPEG. 
@@ -48,11 +48,11 @@ FFMPEG library.
 
 Tested with:
 
-* `Debian 8` **AVLib 11.11-1~deb8u1**: not working with LIVAC
-* `Debian 9` **FFmpeg 3.2.8-1~deb9u1** OK
-* `Ubuntu 16.04.3 LTS` **FFmpeg 2.8.11-0ubuntu0.16.04.1** OK
-* `Ubuntu 17.10` **FFmpeg 3.3.4-2** OK
-* `Suse 42` **FFmpeg 3.3.4** No H264/AAC support by default
+* `Debian 8` **AVLib 11.11-1~deb8u1**: not working with LIBAV
+* `Debian 9` **FFmpeg 3.2.8-1~deb9u1**: OK!
+* `Ubuntu 16.04.3 LTS` **FFmpeg 2.8.11-0ubuntu0.16.04.1**: OK!
+* `Ubuntu 17.10` **FFmpeg 3.3.4-2**: OK!
+* `Suse 42` **FFmpeg 3.3.4**: No H264/AAC support by default
 
 **Tips on other OSes and distributions like Mac or Red-Hat are welcome.**
 
