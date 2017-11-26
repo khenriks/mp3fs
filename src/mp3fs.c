@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     if (fuse_opt_parse(&args, &params, mp3fs_opts, mp3fs_opt_proc)) {
-        fprintf(stderr, "Error parsing options.\n\n");
+        fprintf(stderr, "ERROR: parsing options.\n\n");
         usage(argv[0]);
         return 1;
     }

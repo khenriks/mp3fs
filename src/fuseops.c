@@ -94,7 +94,7 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
     char* origpath;
     ssize_t len;
     
-    mp3fs_debug("readlink %s", path);
+    mp3fs_trace("readlink %s", path);
     
     errno = 0;
     
@@ -129,7 +129,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     DIR *dp;
     struct dirent *de;
     
-    mp3fs_debug("readdir %s", path);
+    mp3fs_trace("readdir %s", path);
     
     errno = 0;
     
@@ -180,7 +180,7 @@ translate_fail:
 static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     char* origpath;
 
-    mp3fs_debug("getattr %s", path);
+    mp3fs_trace("getattr %s", path);
     
     errno = 0;
     
@@ -235,7 +235,7 @@ int mp3fs_fgetattr(const char *filename, struct stat * stbuf, struct fuse_file_i
 {
     char* origpath;
 
-    mp3fs_debug("fgetattr %s", filename);
+    mp3fs_trace("fgetattr %s", filename);
 
     errno = 0;
 
@@ -342,7 +342,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset, st
     ssize_t read = 0;
     struct Cache_Entry* cache_entry;
 
-    mp3fs_debug("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
+    mp3fs_trace("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
     
     errno = 0;
     
@@ -389,7 +389,7 @@ translate_fail:
 static int mp3fs_statfs(const char *path, struct statvfs *stbuf) {
     char* origpath;
     
-    mp3fs_debug("statfs %s", path);
+    mp3fs_trace("statfs %s", path);
     
     errno = 0;
     
