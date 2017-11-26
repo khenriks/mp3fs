@@ -20,10 +20,41 @@ For installation instructions see the [install](INSTALL.md) file.
 RESTRICTIONS:
 
 * mp4 support is highly experimental.
-* Cover arts are also not yet supported.
+* Cover arts are not yet supported.
 * The current version is in alpha state and input is limited to:
   avi, flac, flv, m2ts, mkv, mov, mpg, oga, ogg, ogv, rm, ts, vob, 
   webm, wma and wmv.
+
+Supported Linux Distributions
+-----------------------------
+
+**Suse** does not provide proprietary formats like AAC and H264, thus
+the distribution FFMPEG is crippled. mp3fs will not be able to
+encode H264 and AAC. End of story. 
+See https://en.opensuse.org/Restricted_formats.
+
+**Debian 8** comes with LIBAV 11 clone of FFMPEG. 
+
+mp3fs compiles with LIBAV 11 and 12, but streaming directly while 
+transcoding does not work. The first time a file is accessed playback 
+will fail. After it has been decoded fully to cache playback will work. 
+Playing the file via http may fail or it may take quite long until the
+file starts playing.
+
+This is a LIBAV insufficiency. You may have to replace it with FFMPEG.
+
+**Debian 9**, **Ubuntu 16** and **Ubuntu 17** include the original 
+FFMPEG library.
+
+Tested with:
+
+* `Debian 8` **AVLib 11.11-1~deb8u1**: not working with LIVAC
+* `Debian 9` **FFmpeg 3.2.8-1~deb9u1** OK
+* `Ubuntu 16.04.3 LTS` **FFmpeg 2.8.11-0ubuntu0.16.04.1** OK
+* `Ubuntu 17.10` **FFmpeg 3.3.4-2** OK
+* `Suse 42` **FFmpeg 3.3.4** No H264/AAC support by default
+
+**Tips on other OSes and distributions like Mac or Red-Hat are welcome.**
 
 Usage
 -----
@@ -109,6 +140,11 @@ To get around the restriction several extensions have been developed,
 one of which is called "faststart" that relocates the afformentioned
 data from the end to the beginning of the mp4. Additonally, the size field 
 can be left empty (0). isml (smooth live streaming) is another extension.
+
+For direct to stream transcoding several new features in mp4 need to
+be used (ISMV, faststart, separate_moof/empty_moov to name them) 
+which are not implemented in older versions (or if available, not 
+working properly). 
 
 By default faststart files will be created with an empty size field so 
 that the file can be started to be written out at once instead of 

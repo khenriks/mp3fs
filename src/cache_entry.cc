@@ -31,7 +31,8 @@
 using namespace std;
 
 Cache_Entry::Cache_Entry(const char *filename)
-    : m_thread_id(0)
+    : m_mutex(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+    , m_thread_id(0)
     , m_ref_count(0)
     , m_transcoder(new FFMPEG_Transcoder)
 {
@@ -373,4 +374,14 @@ bool Cache_Entry::suspend_timeout() const
 bool Cache_Entry::decode_timeout() const
 {
     return ((time(NULL) - m_info.m_access_time) > params.max_inactive_abort);
+}
+
+void Cache_Entry::lock()
+{
+    pthread_mutex_lock(&m_mutex);
+}
+
+void Cache_Entry::unlock()
+{
+    pthread_mutex_unlock(&m_mutex);
 }

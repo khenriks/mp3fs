@@ -50,47 +50,8 @@ On Ubuntu use the same command with `apt-get` in place of `aptitude`.
     
 Notes:
 
-Suse does not provide proprietary formats like AAC and H264, thus
-the distribution FFMPEG is crippled. mp3fs will not be able to
-encode H264 and AAC. End of story. 
-See https://en.opensuse.org/Restricted_formats.
-
-With Debian 8 the LIBAV 11 clone of FFMPEG will be installed. From 
-Debian 9 on the original FFMPEG comes with the distribution. Both 
-libraries work, but please read the FFMPEG/LIBAV version chapter.
-
-* Tips on other OSes and distributions like Mac or Red-Hat are welcome.
-
-FFMPEG/LIBAV Version
---------------------
-
-mp3fs will compile fine with Libav 11 (coming with Debian 8 "Squeeze")
-and FFMPEG, but if you intend to use the mp4 target format it may be
-necessary to use a newer version.
-
-For direct to stream transcoding several new features in mp4 need to
-be used (ISMV, faststart, separate_moof/empty_moov to name them) 
-which are not implemented in older versions (or if available, not 
-working properly). 
-
-Streaming while transcoding does not work with Libav 11 (the version
-that comes with Debian 8). You need to replace it with a recent
-FFMPEG version. Maybe Libav 12 will work, but this has not been
-tested.
-
-With Libav, the first time a file is accessed the playback will fail.
-After it has been decoded fully to cache playback will work. Playing
-the file via http may fail or it may take quite long until the
-file starts playing.
-
-This is a LIBAV problem. Generally I recommend using FFMPEG instead.
-
-Tested with:
-
-	Debian 8: AVLib 11.11-1~deb8u1 - not good, see comment above
-	Debian 9: FFmpeg 3.2.8-1~deb9u1 - good results
-	Ubuntu 16.04.3 LTS: 2.8.11-0ubuntu0.16.04.1 - compile OK, crash in avcodec_decode_video2 ()
-	Suse 42: 3.3.4 - no H264/AAC support, mp4 not working
+Please read the "Supported Linux Distributions" chapter in README.md 
+for details.
 
 Installation
 ------------

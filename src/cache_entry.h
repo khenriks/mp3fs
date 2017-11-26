@@ -53,10 +53,15 @@ public:
     bool suspend_timeout() const;
     bool decode_timeout() const;
 
+    void lock();
+    void unlock();
+
 protected:
     void reset(int fetch_file_time = true);
 
 public:
+    pthread_mutex_t     m_mutex;
+
     Buffer *            m_buffer;
     std::string         m_filename;
     std::string         m_cachefile;

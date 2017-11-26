@@ -38,7 +38,7 @@ using namespace std;
 
 /* Initially Buffer is empty. It will be allocated as needed. */
 Buffer::Buffer(const string &filename, const string &cachefile)
-    : mutex(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+    : m_mutex(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
     , m_filename(filename)
     , m_cachefile(cachefile)
     , m_buffer_pos(0)
@@ -70,7 +70,7 @@ bool Buffer::open()
 
     bool success = true;
 
-    pthread_mutex_lock(&mutex);
+    lock();
     try
     {
         struct stat sb;
@@ -171,7 +171,7 @@ bool Buffer::open()
             }
         }
     }
-    pthread_mutex_unlock(&mutex);
+    unlock();
 
     return success;
 }
@@ -187,7 +187,7 @@ bool Buffer::close(bool erase_cache)
 
     m_is_open = false;
 
-    pthread_mutex_lock(&mutex);
+    lock();
 
     // Write it now to disk
     flush();
@@ -220,7 +220,7 @@ bool Buffer::close(bool erase_cache)
         errno = 0;  // ignore this error
     }
 
-    pthread_mutex_unlock(&mutex);
+    unlock();
 
     return success;
 }
@@ -232,12 +232,12 @@ bool Buffer::flush()
         return false;
     }
 
-    pthread_mutex_lock(&mutex);
+    lock();
     if (msync(m_buffer, m_buffer_size, MS_SYNC) == -1)
     {
         mp3fs_error("Could not sync the file to disk: %s", strerror(errno));
     }
-    pthread_mutex_unlock(&mutex);
+    unlock();
 
     return true;
 }
@@ -248,7 +248,7 @@ bool Buffer::flush()
 bool Buffer::reserve(size_t size) {
     bool success = true;
 
-    pthread_mutex_lock(&mutex);
+    lock();
 
     m_buffer = (uint8_t*)mremap (m_buffer, m_buffer_size, size,  MREMAP_MAYMOVE);
     m_buffer_size = size;
@@ -259,7 +259,7 @@ bool Buffer::reserve(size_t size) {
         success = false;
     }
 
-    pthread_mutex_unlock(&mutex);
+    unlock();
 
     return ((m_buffer != NULL) && success);
 }
@@ -270,7 +270,7 @@ bool Buffer::reserve(size_t size) {
  */
 size_t Buffer::write(const uint8_t* data, size_t length) {
 
-    pthread_mutex_lock(&mutex);
+    lock();
 
     uint8_t* write_ptr = write_prepare(length);
     if (!write_ptr) {
@@ -282,7 +282,7 @@ size_t Buffer::write(const uint8_t* data, size_t length) {
         increment_pos(length);
     }
 
-    pthread_mutex_unlock(&mutex);
+    unlock();
 
     return length;
 }
@@ -342,7 +342,7 @@ size_t Buffer::buffer_watermark() const {
 void Buffer::copy(uint8_t* out_data, size_t offset, size_t bufsize) {
     if (size() >= offset)
     {
-        pthread_mutex_lock(&mutex);
+        lock();
 
         if (size() < offset + bufsize)
         {
@@ -350,7 +350,7 @@ void Buffer::copy(uint8_t* out_data, size_t offset, size_t bufsize) {
         }
 
         memcpy(out_data, m_buffer + offset, bufsize);
-        pthread_mutex_unlock(&mutex);
+        unlock();
     }
 }
 
@@ -368,7 +368,17 @@ bool Buffer::reallocate(size_t newsize) {
             return false;
         }
 
-        mp3fs_debug("Buffer reallocate: %lu -> %lu.", oldsize, newsize);
+        mp3fs_trace("Buffer reallocate: %lu -> %lu.", oldsize, newsize);
     }
     return true;
+}
+
+void Buffer::lock()
+{
+    pthread_mutex_lock(&m_mutex);
+}
+
+void Buffer::unlock()
+{
+    pthread_mutex_unlock(&m_mutex);
 }

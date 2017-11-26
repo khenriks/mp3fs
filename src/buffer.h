@@ -44,13 +44,16 @@ public:
     size_t buffer_watermark() const;
     void copy(uint8_t* out_data, size_t offset, size_t bufsize);
 
+    void lock();
+    void unlock();
+    
 private:
     uint8_t* write_prepare(size_t length);
     void increment_pos(ptrdiff_t increment);
     bool reallocate(size_t newsize);
 
 private:
-    pthread_mutex_t         mutex;
+    pthread_mutex_t         m_mutex;
     const std::string &     m_filename;
     const std::string &     m_cachefile;
     size_t                  m_buffer_pos;           // Read/write position

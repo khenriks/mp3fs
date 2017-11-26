@@ -43,7 +43,6 @@ public:
 
 private:
     cache_t cache;
-    pthread_mutex_t mutex;
 };
 
 #endif

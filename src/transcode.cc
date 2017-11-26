@@ -34,10 +34,18 @@
 #include <limits>
 #include <unistd.h>
 
+typedef struct tagThread_Data {
+   pthread_mutex_t  m_mutex;
+   pthread_cond_t   m_cond;
+   bool             m_initialised;
+   void *           m_arg;
+ } Thread_Data;
+
 static Cache *cache;
 static volatile bool thread_exit;
 
 static void *decoder_thread(void *arg);
+static int transcode_finish(struct Cache_Entry* cache_entry);
 
 namespace {
 
@@ -68,6 +76,40 @@ static bool transcode_until(struct Cache_Entry* cache_entry, off_t offset, size_
     return success;
 }
 
+}
+
+/* Close the input file and free everything but the initial buffer. */
+
+static int transcode_finish(struct Cache_Entry* cache_entry) {
+    // decoder cleanup
+    time_t decoded_file_mtime = 0;
+
+    decoded_file_mtime = cache_entry->mtime();
+
+    // encoder cleanup
+    int len = cache_entry->m_transcoder->encode_finish();
+    if (len == -1) {
+        return -1;
+    }
+
+    /* Check encoded buffer size. */
+    cache_entry->m_info.m_encoded_filesize = cache_entry->m_buffer->buffer_watermark();
+    cache_entry->m_info.m_finished = true;
+    cache_entry->m_is_decoding = false;
+
+    if (!cache_entry->m_buffer->reserve(cache_entry->m_info.m_encoded_filesize)) {
+        mp3fs_warning("FFMPEG transcoder: Unable to truncate buffer.");
+    }
+
+    mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu, diff: %zi.", cache_entry->calculate_size(), cache_entry->m_info.m_encoded_filesize, cache_entry->m_info.m_encoded_filesize - cache_entry->calculate_size());
+
+    if (params.statcachesize > 0 && cache_entry->m_info.m_encoded_filesize != 0) {
+        stats_cache.put_filesize(cache_entry->m_filename, decoded_file_mtime, cache_entry->m_info.m_encoded_filesize);
+    }
+
+    cache_entry->flush();
+
+    return 0;
 }
 
 /* Use "C" linkage to allow access from C code. */
@@ -115,72 +157,82 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
     /* Allocate transcoder structure */
     struct Cache_Entry* cache_entry = cache->open(filename);
     if (!cache_entry) {
-        goto trans_fail;
+        return NULL;
     }
 
-    if (!cache_entry->open(begin_transcode))
+    cache_entry->lock();
+
+    try
     {
-        goto init_fail;
-    }
-
-    if (!cache_entry->m_is_decoding && !cache_entry->m_info.m_finished)
-    {
-        /* Create transcoder object. */
-
-        mp3fs_debug("Ready to initialise decoder.");
-
-        if (cache_entry->m_transcoder->open_file(filename) < 0) {
-            goto init_fail;
+        if (!cache_entry->open(begin_transcode))
+        {
+            throw false;
         }
 
-        mp3fs_debug("Transcoder initialised successfully.");
-        //        if (params.statcachesize > 0 && cache_entry->m_encoded_filesize != 0) {
-        //            stats_cache.put_filesize(cache_entry->m_filename, cache_entry->mtime(), cache_entry->m_encoded_filesize);
-        //        }
-
-        stats_cache.get_filesize(cache_entry->m_filename, cache_entry->mtime(), cache_entry->m_info.m_encoded_filesize);
-
-        if (begin_transcode)
+        if (!cache_entry->m_is_decoding && !cache_entry->m_info.m_finished)
         {
-            pthread_attr_t attr;
-            //            int stack_size;
-            int s;
+            /* Create transcoder object. */
 
-            //            if (!cache_entry->open())
-            //            {
-            //                goto init_fail;
-            //            }
+            mp3fs_debug("Ready to initialise decoder.");
 
-            if (!cache_entry->m_info.m_finished)
+            if (cache_entry->m_transcoder->open_input_file(filename) < 0) {
+                throw false;
+            }
+
+            mp3fs_debug("Transcoder initialised successfully.");
+
+            stats_cache.get_filesize(cache_entry->m_filename, cache_entry->mtime(), cache_entry->m_info.m_encoded_filesize);
+
+            if (begin_transcode && !cache_entry->m_info.m_finished)
             {
+                pthread_attr_t attr;
+                // int stack_size;
+                int s;
+
                 // Must decode the file, otherwise simply use cache
                 cache_entry->m_is_decoding = true;
 
                 /* Initialize thread creation attributes */
-
                 s = pthread_attr_init(&attr);
                 if (s != 0)
                 {
                     mp3fs_error("Error creating thread attributes: %s", strerror(s));
-                    goto init_fail;
+                    throw false;
                 }
 
-                //            if (stack_size > 0) {
-                //                s = pthread_attr_setstacksize(&attr, stack_size);
-                //                if (s != 0)
-                //                {
-                //                    mp3fs_error("Error setting stack size: %s", strerror(s));
-                //                    pthread_attr_destroy(&attr);
-                //                    goto init_fail;
-                //                }
-                //            }
+                //if (stack_size > 0) {
+                //  s = pthread_attr_setstacksize(&attr, stack_size);
+                //  if (s != 0)
+                //  {
+                //      mp3fs_error("Error setting stack size: %s", strerror(s));
+                //      pthread_attr_destroy(&attr);
+                //      throw false;
+                //  }
+                //}
 
-                s = pthread_create(&cache_entry->m_thread_id, &attr, &decoder_thread, cache_entry);
+                Thread_Data* thread_data = (Thread_Data*)malloc(sizeof(Thread_Data));
+
+                thread_data->m_initialised = false;
+                thread_data->m_arg = cache_entry;
+
+                pthread_mutex_init(&thread_data->m_mutex, 0);
+                pthread_cond_init (&thread_data->m_cond , 0);
+
+                pthread_mutex_lock(&thread_data->m_mutex);
+                s = pthread_create(&cache_entry->m_thread_id, &attr, &decoder_thread, thread_data);
+                if (s == 0)
+                {
+                    pthread_cond_wait(&thread_data->m_cond, &thread_data->m_mutex);
+                }
+                pthread_mutex_unlock(&thread_data->m_mutex);
+
+                free(thread_data); // can safely be done here, will not be used in thread from now on
+
                 if (s != 0)
                 {
                     mp3fs_error("Error creating thread: %s", strerror(s));
                     pthread_attr_destroy(&attr);
-                    goto init_fail;
+                    throw false;
                 }
 
                 /* Destroy the thread attributes object, since it is no longer needed */
@@ -192,107 +244,77 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
                 }
             }
         }
+
+        cache_entry->unlock();
     }
-    //    else
-    //    {
-    //        if (!cache_entry->open())
-    //        {
-    //            goto init_fail;
-    //        }
-    //    }
+    catch (bool /*_bSuccess*/)
+    {
+        cache_entry->m_is_decoding = false;
+        cache->close(&cache_entry);
+        cache_entry->unlock();
+
+        cache_entry = NULL;
+    }
+
     return cache_entry;
-
-init_fail:
-    cache_entry->m_is_decoding = false;
-    cache->close(&cache_entry);
-
-trans_fail:
-    return NULL;
 }
 
 /* Read some bytes into the internal buffer and into the given buffer. */
 
 ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offset, size_t len) {
-    mp3fs_debug("Reading %zu bytes from offset %jd.", len, (intmax_t)offset);
+    mp3fs_trace("Reading %zu bytes from offset %jd.", len, (intmax_t)offset);
 
-    //    if ((size_t)offset > transcoder_get_size(cache_entry)) {
-    //        return -1;
-    //    }
-    //    if (offset + len > transcoder_get_size(cache_entry)) {
-    //        len = transcoder_get_size(cache_entry) - offset;
-    //    }
+    cache_entry->lock();
 
-    // TODO: Avoid favoring MP3 in program structure.
-    /*
+    try
+    {
+        /*
      * If we are encoding to MP3 and the requested data overlaps the ID3v1 tag
      * at the end of the file, do not encode data first up to that position.
      * This optimizes the case where applications read the end of the file
      * first to read the ID3v1 tag.
      */
+        if (strcmp(params.desttype, "mp3") == 0 &&
+                (size_t)offset > cache_entry->m_buffer->tell()
+                && offset + len >
+                (transcoder_get_size(cache_entry) - ID3V1_TAG_LENGTH))
+        {
 
-    if (strcmp(params.desttype, "mp3") == 0 &&
-            (size_t)offset > cache_entry->m_buffer->tell()
-            && offset + len >
-            (transcoder_get_size(cache_entry) - ID3V1_TAG_LENGTH)) {
+            memcpy(buff, cache_entry->id3v1tag(), ID3V1_TAG_LENGTH);
 
-        memcpy(buff, cache_entry->id3v1tag(), ID3V1_TAG_LENGTH);
+            throw len;
+        }
 
-        return len;
+        // Set last access time
+        cache_entry->m_info.m_access_time = time(NULL);
+
+        bool success = transcode_until(cache_entry, offset, len);
+
+        if (!success)
+        {
+            throw -1;
+        }
+
+        // truncate if we didn't actually get len
+        if (cache_entry->m_buffer->tell() < (size_t) offset)
+        {
+            len = 0;
+        }
+        else if (cache_entry->m_buffer->tell() < offset + len)
+        {
+            len = cache_entry->m_buffer->tell() - offset;
+        }
+
+        cache_entry->m_buffer->copy((uint8_t*)buff, offset, len);
+    }
+    catch (int _len)
+    {
+        len = _len;
     }
 
-    // Set last access time
-    cache_entry->m_info.m_access_time = time(NULL);
-
-    bool success = transcode_until(cache_entry, offset, len);
-
-    if (!success) {
-        return -1;
-    }
-
-    // truncate if we didn't actually get len
-    if (cache_entry->m_buffer->tell() < (size_t) offset) {
-        len = 0;
-    } else if (cache_entry->m_buffer->tell() < offset + len) {
-        len = cache_entry->m_buffer->tell() - offset;
-    }
-
-    cache_entry->m_buffer->copy((uint8_t*)buff, offset, len);
+    cache_entry->unlock();
 
     return len;
-}
-
-/* Close the input file and free everything but the initial buffer. */
-
-static int transcoder_finish(struct Cache_Entry* cache_entry) {
-    // decoder cleanup
-    time_t decoded_file_mtime = 0;
-
-    decoded_file_mtime = cache_entry->mtime();
-
-    // encoder cleanup
-    int len = cache_entry->m_transcoder->encode_finish();
-    if (len == -1) {
-        return -1;
-    }
-
-    /* Check encoded buffer size. */
-    cache_entry->m_info.m_encoded_filesize = cache_entry->m_buffer->buffer_watermark();
-    cache_entry->m_info.m_finished = true;
-    cache_entry->m_is_decoding = false;
-
-    if (!cache_entry->m_buffer->reserve(cache_entry->m_info.m_encoded_filesize)) {
-        mp3fs_warning("FFMPEG transcoder: Unable to truncate buffer.");
-    }
-
-    mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu, diff: %zi.", cache_entry->calculate_size(), cache_entry->m_info.m_encoded_filesize, cache_entry->m_info.m_encoded_filesize - cache_entry->calculate_size());
-
-    if (params.statcachesize > 0 && cache_entry->m_info.m_encoded_filesize != 0) {
-        stats_cache.put_filesize(cache_entry->m_filename, decoded_file_mtime, cache_entry->m_info.m_encoded_filesize);
-    }
-
-    cache_entry->flush();
-
-    return 0;
 }
 
 /* Free the transcoder structure. */
@@ -324,7 +346,8 @@ void transcoder_exit(void) {
 
 static void *decoder_thread(void *arg)
 {
-    Cache_Entry *cache_entry = (Cache_Entry *)arg;
+    Thread_Data *thread_data = (Thread_Data*)arg;
+    Cache_Entry *cache_entry = (Cache_Entry *)thread_data->m_arg;
     bool timeout = false;
     bool success = true;
 
@@ -335,16 +358,20 @@ static void *decoder_thread(void *arg)
             throw false;
         }
 
-        if (cache_entry->m_transcoder->open_out_file(cache_entry->m_buffer) == -1) {
+        if (cache_entry->m_transcoder->open_output_file(cache_entry->m_buffer) == -1)
+        {
             throw false;
         }
+
+        thread_data->m_initialised = true;
+        pthread_cond_signal(&thread_data->m_cond);  // signal that we are running
 
         mp3fs_debug("Output file opened. Beginning transcoding.");
 
         while (!cache_entry->m_info.m_finished && !(timeout = cache_entry->decode_timeout()) && !thread_exit) {
             int stat = cache_entry->m_transcoder->process_single_fr();
 
-            if (stat == -1 || (stat == 1 && transcoder_finish(cache_entry) == -1)) {
+            if (stat == -1 || (stat == 1 && transcode_finish(cache_entry) == -1)) {
                 errno = EIO;
                 success = false;
                 break;
@@ -353,6 +380,8 @@ static void *decoder_thread(void *arg)
     }
     catch (bool _success)
     {
+        cache_entry->unlock();
+
         success = _success;
     }
 
@@ -362,11 +391,13 @@ static void *decoder_thread(void *arg)
         cache_entry->m_info.m_finished = false;
         cache_entry->m_info.m_error = true;
 
-        if (timeout) {
+        if (timeout)
+        {
             mp3fs_debug("Timeout! Transcoding aborted for file '%s'.", cache_entry->m_filename.c_str());
             cache->close(&cache_entry, true);  // After timeout need to delete this here
         }
-        else {
+        else
+        {
             mp3fs_debug("Thread exit! Transcoding aborted for file '%s'.", cache_entry->m_filename.c_str());
         }
     }
@@ -479,7 +510,7 @@ int init_logging(const char* logfile, const char* max_level, int to_stderr,
     auto it = level_map.find(max_level);
 
     if (it == level_map.end()) {
-        fprintf(stderr, "Invalid logging level string: %s\n", max_level);
+        mp3fs_debug("Invalid logging level string: %s\n", max_level);
         return false;
     }
 

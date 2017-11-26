@@ -29,7 +29,6 @@
 #include "transcode.h"
 
 Cache::Cache()
-    : mutex(PTHREAD_MUTEX_INITIALIZER)
 {
 }
 
