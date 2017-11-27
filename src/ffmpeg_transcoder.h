@@ -63,6 +63,7 @@ public:
     int open_output_file(Buffer* buffer);
     int process_single_fr();
     int encode_finish();
+    void close();
 
     time_t mtime() const;
     size_t calculate_size();
