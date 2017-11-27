@@ -37,14 +37,13 @@ See https://en.opensuse.org/Restricted_formats.
 
 mp3fs compiles with LIBAV 11 and 12, but streaming directly while 
 transcoding does not work. The first time a file is accessed playback 
-will fail. After it has been decoded fully to cache playback will work. 
+will fail. After it has been decoded fully to cache playback does work. 
 Playing the file via http may fail or it may take quite long until the
-file starts playing.
+file starts playing. This is a LIBAV insufficiency. You may have to 
+replace it with FFMPEG.
 
-This is a LIBAV insufficiency. You may have to replace it with FFMPEG.
-
-**Debian 9**, **Ubuntu 16** and **Ubuntu 17** include the original 
-FFMPEG library.
+**Debian 9**, **Ubuntu 16** and **Ubuntu 17** include a decently recent
+version of the original FFMPEG library.
 
 Tested with:
 
@@ -54,7 +53,7 @@ Tested with:
 * `Ubuntu 17.10` **FFmpeg 3.3.4-2**: OK!
 * `Suse 42` **FFmpeg 3.3.4**: No H264/AAC support by default
 
-**Tips on other OSes and distributions like Mac or Red-Hat are welcome.**
+**Tips on other OSs and distributions like Mac or Red-Hat are welcome.**
 
 Usage
 -----

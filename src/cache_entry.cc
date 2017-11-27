@@ -99,9 +99,11 @@ void Cache_Entry::reset(int fetch_file_time)
     if (fetch_file_time) {
         if (stat(m_filename.c_str(), &sb) == -1) {
             m_info.m_file_time = 0;
+            m_info.m_file_size = 0;
         }
         else {
             m_info.m_file_time = sb.st_mtime;
+            m_info.m_file_size = sb.st_size;
         }
     }
 }
@@ -118,6 +120,7 @@ bool Cache_Entry::read_info()
     try
     {
         time_t file_time = m_info.m_file_time;
+        uint64_t file_size = m_info.m_file_size;
         size_t n;
 
         reset();
@@ -171,6 +174,25 @@ bool Cache_Entry::read_info()
             m_info.m_file_time = file_time;
 
             mp3fs_info("File date changed '%s': rebuilding file.", info_file().c_str());
+
+            success = false;
+        }
+
+        n = fread((char*)&m_info.m_file_size, 1, sizeof(m_info.m_file_size), fpi);
+        if (n != sizeof(m_info.m_file_size))
+        {
+            throw (int)ferror(fpi);
+        }
+
+        if (file_size != m_info.m_file_size)
+        {
+            reset(false);
+
+            m_info.m_file_size = file_size;
+
+            mp3fs_info("File size changed '%s': rebuilding file.", info_file().c_str());
+
+            success = false;
         }
     }
     catch (int error)
@@ -237,6 +259,12 @@ bool Cache_Entry::write_info()
         {
             throw (int)ferror(fpo);
         }
+
+        n = fwrite((char*)&m_info.m_file_size, 1, sizeof(m_info.m_file_size), fpo);
+        if (n != sizeof(m_info.m_file_size))
+        {
+            throw (int)ferror(fpo);
+        }
     }
     catch (int error)
     {
@@ -271,14 +299,16 @@ bool Cache_Entry::open(bool create_cache /*= true*/)
         return true;
     }
 
+    bool bReset = !read_info();
+
     // Open the cache
-    if (m_buffer->open())
+    if (m_buffer->open(bReset))
     {
-        read_info();
         return true;
     }
     else
     {
+        reset(false);
         return false;
     }
 }

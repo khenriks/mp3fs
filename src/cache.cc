@@ -21,11 +21,6 @@
 #include "cache.h"
 #include "cache_entry.h"
 
-//#include <cerrno>
-//#include <cstdlib>
-//#include <cstring>
-//#include <assert.h>
-
 #include "transcode.h"
 
 Cache::Cache()

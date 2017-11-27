@@ -33,7 +33,7 @@ public:
     virtual ~Buffer();
 
     std::string cache_file() const;
-    bool open();
+    bool open(bool erase_cache = false);
     bool close(bool erase_cache = false);
     bool flush();
     bool reserve(size_t size);
@@ -60,7 +60,7 @@ private:
     size_t                  m_buffer_watermark;     // Number of bytes in buffer
     volatile bool           m_is_open;
     size_t                  m_buffer_size;          // Current buffer size
-    uint8_t *      	    m_buffer;
+    uint8_t *               m_buffer;
     int                     m_fd;
 };
 

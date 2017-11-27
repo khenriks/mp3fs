@@ -59,7 +59,7 @@ string Buffer::cache_file() const
     return (m_cachefile + ".cache");
 }
 
-bool Buffer::open()
+bool Buffer::open(bool erase_cache)
 {
     if (m_is_open)
     {
@@ -89,6 +89,13 @@ bool Buffer::open()
 
         m_buffer_size = 0;
         m_buffer = NULL;
+        m_buffer_pos = 0;
+        m_buffer_watermark = 0;
+
+        if (erase_cache && unlink(cache_file().c_str()) && errno != ENOENT)
+        {
+            mp3fs_warning("Cannot unlink the file '%s': %s", cache_file().c_str(), strerror(errno));
+        }
 
         m_fd = ::open(cache_file().c_str(), O_CREAT | O_RDWR, (mode_t)0644);
         if (m_fd == -1)
@@ -119,29 +126,6 @@ bool Buffer::open()
                 mp3fs_error("Error calling ftruncate() to 'stretch' the file '%s': %s", cache_file().c_str(), strerror(errno));
                 throw false;
             }
-
-            //        if (lseek(m_fd, filesize - 1, SEEK_SET) == -1)
-            //        {
-            //            mp3fs_error("Error calling lseek() to 'stretch' the file '%s': %s", cache_file().c_str(), strerror(errno));
-            //            throw false;;
-            //        }
-
-            //        /* Something needs to be written at the end of the file to
-            //     * have the file actually have the new size.
-            //     * Just writing an empty string at the current file position will do.
-            //     *
-            //     * Note:
-            //     *  - The current position in the file is at the end of the stretched
-            //     *    file due to the call to lseek().
-            //     *  - An empty string is actually a single '\0' character, so a zero-byte
-            //     *    will be written at the last byte of the file.
-            //     */
-
-            //        if (::write(m_fd, "", 1) == -1)
-            //        {
-            //            mp3fs_error("Error writing last byte of the file '%s': %s", cache_file().c_str(), strerror(errno));
-            //            throw false;
-            //        }
         }
         else
         {

@@ -1,7 +1,7 @@
 AM_CPPFLAGS = $(fuse_CFLAGS)
 
 bin_PROGRAMS = mp3fs
-mp3fs_SOURCES = mp3fs.c fuseops.c transcode.cc transcode.h cache.cc cache.h buffer.cc buffer.h coders.cc coders.h stats_cache.cc stats_cache.h logging.cc logging.h cache_entry.cc cache_entry.h
+mp3fs_SOURCES = mp3fs.c fuseops.c transcode.cc transcode.h cache.cc cache.h buffer.cc buffer.h coders.cc coders.h logging.cc logging.h cache_entry.cc cache_entry.h
 mp3fs_LDADD	= $(fuse_LIBS)
 
 if HAVE_FFMPEG

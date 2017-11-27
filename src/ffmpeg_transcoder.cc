@@ -26,7 +26,6 @@
 
 #include <unistd.h>
 
-//#include <vector>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -34,10 +33,6 @@
 #include "transcode.h"
 #include "buffer.h"
 
-// Rescale ms to to timebase
-// av_rescale_q(s->output_ts_offset, AV_TIME_BASE_Q, st->time_base);
-// Rescan input to ouput time scale
-// av_rescale_q_rnd(output_packet.pts, in_stream->time_base, out_stream->time_base, (AVRounding)(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX));
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
@@ -88,106 +83,15 @@ FFMPEG_Transcoder::FFMPEG_Transcoder()
     m_out.m_id3v1.m_bGenre = 0;
 }
 
-/* Free the FFMPEG en/decoder and close the open FFMPEG file
+/* Free the FFMPEG en/decoder
  * after the transcoding process has finished.
  */
 FFMPEG_Transcoder::~FFMPEG_Transcoder() {
 
     // Close fifo and resample context
-    if (m_pAudioFifo)
-    {
-        av_audio_fifo_free(m_pAudioFifo);
-    }
+    close();
 
-    while (m_VideoFifo.size())
-    {
-        AVFrame *output_frame = m_VideoFifo.front();
-        m_VideoFifo.pop();
-
-        av_frame_free(&output_frame);
-    }
-
-    if (m_pAudio_resample_ctx) {
-        avresample_close(m_pAudio_resample_ctx);
-        avresample_free(&m_pAudio_resample_ctx);
-    }
-
-    if (m_pSws_ctx != NULL)
-    {
-        sws_freeContext(m_pSws_ctx);
-    }
-
-    // Close output file
-#if (AV_VERSION_MAJOR < 57)
-    if (m_out.m_pAudio_codec_ctx)
-    {   
-        avcodec_close(m_out.m_pAudio_codec_ctx);
-    }
-
-    if (m_out.m_pVideo_codec_ctx)
-    {   
-        avcodec_close(m_out.m_pVideo_codec_ctx);
-    }
-#else 
-    if (m_out.m_pAudio_codec_ctx)
-    {
-        avcodec_free_context(&m_out.m_pAudio_codec_ctx);
-    }
-
-    if (m_out.m_pVideo_codec_ctx)
-    {
-        avcodec_free_context(&m_out.m_pVideo_codec_ctx);
-    }
-#endif
-
-    if (m_out.m_pFormat_ctx != NULL)
-    {
-        AVIOContext *output_io_context  = (AVIOContext *)m_out.m_pFormat_ctx->pb;
-
-#if (AV_VERSION_MAJOR >= 57)
-        if (output_io_context != NULL)
-        {
-            av_freep(&output_io_context->buffer);
-        }
-#endif
-//        if (!(m_out.m_pFormat_ctx->oformat->flags & AVFMT_NOFILE))
-        {
-       		av_freep(&output_io_context);
-        }
-
-        avformat_free_context(m_out.m_pFormat_ctx);
-    }
-
-   // Close input file
-#if (AV_VERSION_MAJOR < 57)
-    if (m_in.m_pAudio_codec_ctx)
-    {
-        avcodec_close(m_in.m_pAudio_codec_ctx);
-    }
-
-    if (m_in.m_pVideo_codec_ctx)
-    {
-        avcodec_close(m_in.m_pVideo_codec_ctx);
-    }
-#else
-    if (m_in.m_pAudio_codec_ctx)
-    {
-        avcodec_free_context(&m_in.m_pAudio_codec_ctx);
-    }
-
-    if (m_in.m_pVideo_codec_ctx)
-    {
-        avcodec_free_context(&m_in.m_pVideo_codec_ctx);
-    }
-#endif
-
-    //if (m_in.m_pAudio_codec_ctx)
-    if (m_in.m_pFormat_ctx != NULL)
-    {
-        avformat_close_input(&m_in.m_pFormat_ctx);
-    }
-
-    mp3fs_debug("FFMPEG trancoder: closed.");
+    mp3fs_debug("FFMPEG trancoder: object destroyed.");
 }
 
 /*
@@ -2012,6 +1916,119 @@ int64_t FFMPEG_Transcoder::seek(void * pOpaque, int64_t i4Offset, int nWhence)
     }
 
     return i64ResOffset;
+}
+
+/* Close the open FFMPEG file
+ */
+void FFMPEG_Transcoder::close()
+{
+    if (m_pAudioFifo)
+    {
+        av_audio_fifo_free(m_pAudioFifo);
+        m_pAudioFifo = NULL;
+    }
+
+    while (m_VideoFifo.size())
+    {
+        AVFrame *output_frame = m_VideoFifo.front();
+        m_VideoFifo.pop();
+
+        av_frame_free(&output_frame);
+    }
+
+    if (m_pAudio_resample_ctx)
+    {
+        avresample_close(m_pAudio_resample_ctx);
+        avresample_free(&m_pAudio_resample_ctx);
+        m_pAudio_resample_ctx = NULL;
+    }
+
+    if (m_pSws_ctx != NULL)
+    {
+        sws_freeContext(m_pSws_ctx);
+    }
+
+    // Close output file
+#if (AV_VERSION_MAJOR < 57)
+    if (m_out.m_pAudio_codec_ctx)
+    {
+        avcodec_close(m_out.m_pAudio_codec_ctx);
+        m_out.m_pAudio_codec_ctx = NULL;
+    }
+
+    if (m_out.m_pVideo_codec_ctx)
+    {
+        avcodec_close(m_out.m_pVideo_codec_ctx);
+        m_out.m_pVideo_codec_ctx = NULL;
+    }
+#else
+    if (m_out.m_pAudio_codec_ctx)
+    {
+        avcodec_free_context(&m_out.m_pAudio_codec_ctx);
+        m_out.m_pAudio_codec_ctx = NULL;
+    }
+
+    if (m_out.m_pVideo_codec_ctx)
+    {
+        avcodec_free_context(&m_out.m_pVideo_codec_ctx);
+        m_out.m_pVideo_codec_ctx = NULL;
+    }
+#endif
+
+    if (m_out.m_pFormat_ctx != NULL)
+    {
+        AVIOContext *output_io_context  = (AVIOContext *)m_out.m_pFormat_ctx->pb;
+
+#if (AV_VERSION_MAJOR >= 57)
+        if (output_io_context != NULL)
+        {
+            av_freep(&output_io_context->buffer);
+        }
+#endif
+//        if (!(m_out.m_pFormat_ctx->oformat->flags & AVFMT_NOFILE))
+        {
+            av_freep(&output_io_context);
+        }
+
+        avformat_free_context(m_out.m_pFormat_ctx);
+        m_out.m_pFormat_ctx = NULL;
+    }
+
+   // Close input file
+#if (AV_VERSION_MAJOR < 57)
+    if (m_in.m_pAudio_codec_ctx)
+    {
+        avcodec_close(m_in.m_pAudio_codec_ctx);
+        m_in.m_pAudio_codec_ctx = NULL;
+    }
+
+    if (m_in.m_pVideo_codec_ctx)
+    {
+        avcodec_close(m_in.m_pVideo_codec_ctx);
+        m_in.m_pVideo_codec_ctx = NULL;
+    }
+#else
+    if (m_in.m_pAudio_codec_ctx)
+    {
+        avcodec_free_context(&m_in.m_pAudio_codec_ctx);
+        m_in.m_pAudio_codec_ctx = NULL;
+    }
+
+    if (m_in.m_pVideo_codec_ctx)
+    {
+        avcodec_free_context(&m_in.m_pVideo_codec_ctx);
+        m_in.m_pVideo_codec_ctx = NULL;
+    }
+#endif
+
+    //if (m_in.m_pAudio_codec_ctx)
+    if (m_in.m_pFormat_ctx != NULL)
+    {
+        avformat_close_input(&m_in.m_pFormat_ctx);
+        m_in.m_pFormat_ctx = NULL;
+    }
+
+    mp3fs_debug("FFMPEG trancoder: closed.");
 }
 
 #pragma GCC diagnostic pop

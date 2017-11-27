@@ -152,8 +152,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     while ((de = readdir(dp))) {
         struct stat st;
         
-        snprintf(origfile, strlen(origpath) + NAME_MAX + 2, "%s/%s", origpath,
-                 de->d_name);
+        snprintf(origfile, strlen(origpath) + NAME_MAX + 2, "%s/%s", origpath, de->d_name);
         
         if (lstat(origfile, &st) == -1) {
             goto stat_fail;

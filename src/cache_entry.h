@@ -77,6 +77,7 @@ public:
         time_t          m_creation_time;
         time_t          m_access_time;
         time_t          m_file_time;
+        uint64_t        m_file_size;
     } m_info;
 
     //protected:
