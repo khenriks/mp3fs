@@ -408,7 +408,6 @@ static void *decoder_thread(void *arg)
 
         mp3fs_debug("Transcoding complete.");
     }
-    cache_entry->close();
 
     return NULL;
 }

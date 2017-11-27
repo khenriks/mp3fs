@@ -1946,6 +1946,7 @@ void FFMPEG_Transcoder::close()
     if (m_pSws_ctx != NULL)
     {
         sws_freeContext(m_pSws_ctx);
+        m_pSws_ctx = NULL;
     }
 
     // Close output file

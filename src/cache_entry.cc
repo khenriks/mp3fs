@@ -299,10 +299,10 @@ bool Cache_Entry::open(bool create_cache /*= true*/)
         return true;
     }
 
-    bool bReset = !read_info();
+    bool erase_cache = !read_info();
 
     // Open the cache
-    if (m_buffer->open(bReset))
+    if (m_buffer->open(erase_cache))
     {
         return true;
     }
