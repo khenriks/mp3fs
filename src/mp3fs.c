@@ -64,7 +64,6 @@ struct mp3fs_params params = {
     .log_syslog         	= 0,
     .logfile            	= "",
 
-    .statcachesize      	= 500,
     .expiry_time            = (60*60*24 /* d */) * 7,	// default: 1 week
     .max_inactive_suspend   = (60 /* m */) * 2,         // default: 2 minutes
     .max_inactive_abort     = (60 /* m */) * 25,        // default: 5 minutes
@@ -106,9 +105,6 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("--deinterlace=%u",           deinterlace, 0),
     MP3FS_OPT("deinterlace=%u",             deinterlace, 0),
 #endif
-
-    MP3FS_OPT("--statcachesize=%u",         statcachesize, 0),
-    MP3FS_OPT("statcachesize=%u",           statcachesize, 0),
 
     MP3FS_OPT("--expiry_time=%u",           expiry_time, 0),
     MP3FS_OPT("expiry_time=%u",             expiry_time, 0),
@@ -200,10 +196,6 @@ void usage(char *name) {
                "\n"
                "Cache Options:\n"
                "\n"
-               "    --statcachesize=SIZE, -ostatcachesize=SIZE\n"
-               "                           Set the number of entries for the file stats\n"
-               "                           cache. Each entry takes 100-200 bytes.\n"
-               "                           Default: 500\n"
                "     --expiry_time=SECONDS, -o expiry_time=SECONDS\n"
                "                           Cache entries expire after SECONDS and will be deleted\n"
                "                           to save disk space.\n"
@@ -402,7 +394,6 @@ int main(int argc, char *argv[]) {
                              "log_stderr:         %u\n"
                              "log_syslog:         %u\n"
                              "logfile:            %s\n"
-                             "statcachesize:      %u\n"
                              "cache settings:\n"
                              "expiry:             %zu seconds\n"
                              "inactivity suspend: %zu seconds\n"
@@ -424,7 +415,6 @@ int main(int argc, char *argv[]) {
                 params.log_stderr,
                 params.log_syslog,
                 params.logfile,
-                params.statcachesize,
                 params.expiry_time,
                 params.max_inactive_suspend,
                 params.max_inactive_abort);

@@ -36,6 +36,7 @@
 
 /* Global program parameters */
 extern struct mp3fs_params {
+    // Paths
     const char *    basepath;
     const char *    mountpath;
     // Output type
