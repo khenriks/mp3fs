@@ -183,6 +183,12 @@ If using the FFMPEG support (Libav works as well, but FFMPEG is recommended):
 
 * [FFMPEG](https://www.ffmpeg.org/) or [LIBAV](https://www.libav.org/)
 
+Future Plans
+------------
+
+* Create a windows version
+* Add DVD/Bluray support
+
 Authors
 -------
 
