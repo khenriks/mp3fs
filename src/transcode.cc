@@ -134,9 +134,6 @@ int transcoder_cached_filesize(const char* filename, struct stat *stbuf) {
     {
         stbuf->st_size = encoded_filesize;
         stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
-
-        cache_entry->close();
-
         return true;
     }
     else {
@@ -312,7 +309,7 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
 
 void transcoder_delete(struct Cache_Entry* cache_entry) {
 
-    if (!cache_entry->m_is_decoding && cache_entry->m_transcoder->is_open())
+	if (!cache_entry->m_is_decoding && cache_entry->m_transcoder->is_open())
     {
         cache_entry->m_transcoder->close();
     }
