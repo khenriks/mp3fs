@@ -100,6 +100,18 @@ static int transcode_finish(struct Cache_Entry* cache_entry) {
 /* Use "C" linkage to allow access from C code. */
 extern "C" {
 
+void cache_path(char *dir, size_t size)
+{
+    if (params.cachepath != NULL)
+    {
+        *dir = 0;
+        strncat(dir, params.cachepath, size - 1);
+        return;
+    }
+
+    tempdir(dir, size);
+}
+
 void cache_new(void)
 {
     if (cache == NULL)

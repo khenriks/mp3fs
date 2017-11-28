@@ -112,6 +112,8 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("max_inactive_suspend=%u",    max_inactive_suspend, 0),
     MP3FS_OPT("--max_inactive_abort=%u",    max_inactive_abort, 0),
     MP3FS_OPT("max_inactive_abort=%u",      max_inactive_abort, 0),
+    MP3FS_OPT("--cachepath=%s",             cachepath, 0),
+    MP3FS_OPT("cachepath=%s",               cachepath, 0),
 
     MP3FS_OPT("-d",                         debug, 1),
     MP3FS_OPT("debug",                      debug, 1),
@@ -211,6 +213,10 @@ void usage(char *name) {
                "                           in the background. When the client quits transcoding will continue\n"
                "                           until this time out, and the transcoder thread quits\n"
                "                           Default: 5 minutes\n"
+               "     --cachepath=DIR, -o cachepath=DIR\n"
+               "                           Sets the disk cache directory to DIR. Will be created if not existing.\n"
+               "                           The user running mp3fs must have write access to the location.\n"
+               "                           Default: temp directory, e.g. /tmp\n"
                "\n"
                "Logging:\n"
                "\n"
@@ -285,6 +291,7 @@ void cleanup()
 }
 
 int main(int argc, char *argv[]) {
+    char cachepath[PATH_MAX];
     int ret;
 
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
@@ -292,7 +299,7 @@ int main(int argc, char *argv[]) {
     printf("%s V%s\n", PACKAGE_NAME, PACKAGE_VERSION);
     printf("Copyright (C) 2006-2008 David Collett\n"
            "Copyright (C) 2008-2012 K. Henriksson\n"
-           "FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)\n\n");
+           "FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivion-software.de)\n\n");
 
     /* register the termination function */
     atexit(cleanup);
@@ -377,6 +384,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    cache_path(cachepath, sizeof(cachepath));
+
     mp3fs_debug(PACKAGE_NAME " options:\n\n"
                              "basepath:           %s\n"
                              "mountpath:          %s\n"
@@ -395,6 +404,7 @@ int main(int argc, char *argv[]) {
                              "log_syslog:         %u\n"
                              "logfile:            %s\n"
                              "cache settings:\n"
+                             "cache path:         %s\n"
                              "expiry:             %zu seconds\n"
                              "inactivity suspend: %zu seconds\n"
                              "inactivity abort:   %zu seconds\n",
@@ -415,6 +425,7 @@ int main(int argc, char *argv[]) {
                 params.log_stderr,
                 params.log_syslog,
                 params.logfile,
+                cachepath,
                 params.expiry_time,
                 params.max_inactive_suspend,
                 params.max_inactive_abort);
