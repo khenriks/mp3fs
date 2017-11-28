@@ -63,10 +63,10 @@ extern struct mp3fs_params {
     const char*     logfile;
     // Background recoding/caching
     time_t          expiry_time;                // TODO: Time (seconds) after which an cache entry is deleted
-    time_t          max_inactive_suspend;       // TODO: Time (seconds) that must elapse without access until transcoding is suspened
+    time_t          max_inactive_suspend;       // Time (seconds) that must elapse without access until transcoding is suspened
     time_t          max_inactive_abort;         // Time (seconds) that must elapse without access until transcoding is aborted
     int             max_cache_size;             // TODO: Max. cache size in MB. When exceeded, oldest entries will be pruned
-    int             max_threads;                // TODO: Max. number of recoder threads
+    int             max_threads;                // Max. number of recoder threads
     const char*     cachepath;                  // Disk cache path, defaults to /tmp
 } params;
 

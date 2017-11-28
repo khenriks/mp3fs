@@ -73,7 +73,7 @@ FFMPEG_Transcoder::FFMPEG_Transcoder()
             })
 {
 #pragma GCC diagnostic pop
-    mp3fs_debug("FFMPEG trancoder: ready to initialise.");
+    mp3fs_debug("FFmpeg trancoder: ready to initialise.");
 
     // Initialise ID3v1.1 tag structure
     memset(&m_out.m_id3v1, ' ', sizeof(ID3v1));
@@ -83,7 +83,7 @@ FFMPEG_Transcoder::FFMPEG_Transcoder()
     m_out.m_id3v1.m_bGenre = 0;
 }
 
-/* Free the FFMPEG en/decoder
+/* Free the FFmpeg en/decoder
  * after the transcoding process has finished.
  */
 FFMPEG_Transcoder::~FFMPEG_Transcoder() {
@@ -91,7 +91,7 @@ FFMPEG_Transcoder::~FFMPEG_Transcoder() {
     // Close fifo and resample context
     close();
 
-    mp3fs_debug("FFMPEG trancoder: object destroyed.");
+    mp3fs_debug("FFmpeg trancoder: object destroyed.");
 }
 
 /*
@@ -104,7 +104,7 @@ int FFMPEG_Transcoder::open_codec_context(int *stream_idx, AVCodecContext **avct
 
     ret = av_find_best_stream(fmt_ctx, type, INVALID_STREAM, INVALID_STREAM, NULL, 0);
     if (ret < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not find %s stream in input file '%s' (error '%s').", get_media_type_string(type), filename, ffmpeg_geterror(ret).c_str());
+        mp3fs_error("FFmpeg transcoder: Could not find %s stream in input file '%s' (error '%s').", get_media_type_string(type), filename, ffmpeg_geterror(ret).c_str());
         return ret;
     } else {
         int stream_index;
@@ -124,7 +124,7 @@ int FFMPEG_Transcoder::open_codec_context(int *stream_idx, AVCodecContext **avct
         /** allocate a new decoding context */
         dec_ctx = avcodec_alloc_context3(dec);
         if (!dec_ctx) {
-            mp3fs_error("FFMPEG transcoder: Could not allocate a decoding context.");
+            mp3fs_error("FFmpeg transcoder: Could not allocate a decoding context.");
             return AVERROR(ENOMEM);
         }
 
@@ -144,7 +144,7 @@ int FFMPEG_Transcoder::open_codec_context(int *stream_idx, AVCodecContext **avct
         /** Find a decoder for the stream. */
         dec = avcodec_find_decoder(codec_id);
         if (!dec) {
-            mp3fs_error("FFMPEG transcoder: failed to find %s codec.", get_media_type_string(type));
+            mp3fs_error("FFmpeg transcoder: failed to find %s codec.", get_media_type_string(type));
             return AVERROR(EINVAL);
         }
 
@@ -155,11 +155,11 @@ int FFMPEG_Transcoder::open_codec_context(int *stream_idx, AVCodecContext **avct
         av_dict_free(&opts);
 
         if (ret < 0) {
-            mp3fs_error("FFMPEG transcoder: Failed to find %s input codec (error '%s').", get_media_type_string(type), ffmpeg_geterror(ret).c_str());
+            mp3fs_error("FFmpeg transcoder: Failed to find %s input codec (error '%s').", get_media_type_string(type), ffmpeg_geterror(ret).c_str());
             return ret;
         }
 
-        mp3fs_debug("FFMPEG transcoder: Successfully opened %s input codec.", get_codec_name(codec_id));
+        mp3fs_debug("FFmpeg transcoder: Successfully opened %s input codec.", get_codec_name(codec_id));
 
         *stream_idx = stream_index;
 
@@ -170,7 +170,7 @@ int FFMPEG_Transcoder::open_codec_context(int *stream_idx, AVCodecContext **avct
 }
 
 /*
- * FFMPEG handles cover arts like video streams.
+ * FFmpeg handles cover arts like video streams.
  * Try to find out if we have a video stream or a cover art.
  */
 bool FFMPEG_Transcoder::is_video() const
@@ -223,25 +223,25 @@ bool FFMPEG_Transcoder::is_open() const
 }
 
 /*
- * Open the given FFMPEG file and prepare for decoding. After this function,
+ * Open the given FFmpeg file and prepare for decoding. After this function,
  * the other methods can be used to process the file.
  */
 int FFMPEG_Transcoder::open_input_file(const char* filename) {
     AVDictionary * opt = NULL;
     int ret;
 
-    mp3fs_debug("FFMPEG transcoder: initialising.");
+    mp3fs_debug("FFmpeg transcoder: initialising.");
 
     struct stat s;
     if (stat(filename, &s) < 0) {
-        mp3fs_error("FFMPEG transcoder: stat failed.");
+        mp3fs_error("FFmpeg transcoder: stat failed.");
         return -1;
     }
     m_mtime = s.st_mtime;
 
     if (is_open())
     {
-        mp3fs_debug("FFMPEG transcoder: already open.");
+        mp3fs_debug("FFmpeg transcoder: already open.");
         return 0;
     }
 
@@ -256,7 +256,7 @@ int FFMPEG_Transcoder::open_input_file(const char* filename) {
 
     if (ret < 0)
     {
-        mp3fs_error("FFMPEG transcoder: Error setting dictionary options file '%s' (error '%s').", filename, ffmpeg_geterror(ret).c_str());
+        mp3fs_error("FFmpeg transcoder: Error setting dictionary options file '%s' (error '%s').", filename, ffmpeg_geterror(ret).c_str());
         return -1; // Couldn't open file
     }
 
@@ -264,7 +264,7 @@ int FFMPEG_Transcoder::open_input_file(const char* filename) {
     assert(m_in.m_pFormat_ctx == NULL);
     ret = avformat_open_input(&m_in.m_pFormat_ctx, filename, NULL, &opt);
     if (ret < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not open input file '%s' (error '%s').", filename, ffmpeg_geterror(ret).c_str());
+        mp3fs_error("FFmpeg transcoder: Could not open input file '%s' (error '%s').", filename, ffmpeg_geterror(ret).c_str());
         return ret;
     }
     assert(m_in.m_pFormat_ctx != NULL);
@@ -272,14 +272,14 @@ int FFMPEG_Transcoder::open_input_file(const char* filename) {
     ret = ::av_dict_set(&opt, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE);
     if (ret < 0)
     {
-        mp3fs_error("FFMPEG transcoder: Error setting dictionary options (error '%s').", ffmpeg_geterror(ret).c_str());
+        mp3fs_error("FFmpeg transcoder: Error setting dictionary options (error '%s').", ffmpeg_geterror(ret).c_str());
         return -1; // Couldn't open file
     }
 
     AVDictionaryEntry * t;
     if ((t = av_dict_get(opt, "", NULL, AV_DICT_IGNORE_SUFFIX)))
     {
-        mp3fs_error("FFMPEG transcoder: Option %s not found.", t->key);
+        mp3fs_error("FFmpeg transcoder: Option %s not found.", t->key);
         return -1; // Couldn't open file
     }
 
@@ -290,7 +290,7 @@ int FFMPEG_Transcoder::open_input_file(const char* filename) {
     /** Get information on the input file (number of streams etc.). */
     ret = avformat_find_stream_info(m_in.m_pFormat_ctx, NULL);
     if (ret < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not open find stream info (error '%s').", ffmpeg_geterror(ret).c_str());
+        mp3fs_error("FFmpeg transcoder: Could not open find stream info (error '%s').", ffmpeg_geterror(ret).c_str());
         avformat_close_input(&m_in.m_pFormat_ctx);
         m_in.m_pFormat_ctx = NULL;
         return ret;
@@ -301,7 +301,7 @@ int FFMPEG_Transcoder::open_input_file(const char* filename) {
     // Open best match video codec
     ret = open_codec_context(&m_in.m_nVideo_stream_idx, &m_in.m_pVideo_codec_ctx, m_in.m_pFormat_ctx, AVMEDIA_TYPE_VIDEO, filename);
     if (ret < 0) {
-        mp3fs_warning("FFMPEG transcoder: Failed to open video codec (error '%s').", ffmpeg_geterror(ret).c_str());
+        mp3fs_warning("FFmpeg transcoder: Failed to open video codec (error '%s').", ffmpeg_geterror(ret).c_str());
         //        avformat_close_input(&m_in.m_pFormat_ctx);
         //        m_in.m_pFormat_ctx = NULL;
         //        return ret;
@@ -327,7 +327,7 @@ int FFMPEG_Transcoder::open_input_file(const char* filename) {
     // Save the audio decoder context for easier access later.
     ret = open_codec_context(&m_in.m_nAudio_stream_idx, &m_in.m_pAudio_codec_ctx, m_in.m_pFormat_ctx, AVMEDIA_TYPE_AUDIO, filename);
     if (ret < 0) {
-        mp3fs_warning("FFMPEG transcoder: Failed to open audio codec (error '%s').", ffmpeg_geterror(ret).c_str());
+        mp3fs_warning("FFmpeg transcoder: Failed to open audio codec (error '%s').", ffmpeg_geterror(ret).c_str());
         //        avformat_close_input(&m_in.m_pFormat_ctx);
         //        m_in.m_pFormat_ctx = NULL;
         //        return ret;
@@ -339,7 +339,7 @@ int FFMPEG_Transcoder::open_input_file(const char* filename) {
     }
 
     if (m_in.m_nAudio_stream_idx == -1 && m_in.m_nVideo_stream_idx == -1) {
-        mp3fs_error("FFMPEG transcoder: File contains neither a video nor an audio stream.");
+        mp3fs_error("FFmpeg transcoder: File contains neither a video nor an audio stream.");
         return AVERROR(EINVAL);
     }
 
@@ -350,7 +350,7 @@ int FFMPEG_Transcoder::open_output_file(Buffer *buffer) {
 
     // Pre-allocate the predicted file size to reduce memory reallocations
     if (!buffer->reserve(calculate_size())) {
-        mp3fs_error("FFMPEG transcoder: Out of memory pre-allocating buffer.");
+        mp3fs_error("FFmpeg transcoder: Out of memory pre-allocating buffer.");
         return -1;
     }
 
@@ -412,24 +412,24 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
     /* find the encoder */
     output_codec = avcodec_find_encoder(codec_id);
     if (!output_codec) {
-        mp3fs_error("FFMPEG transcoder: Could not find encoder for '%s'.", avcodec_get_name(codec_id));
+        mp3fs_error("FFmpeg transcoder: Could not find encoder for '%s'.", avcodec_get_name(codec_id));
         exit(1);
     }
 
-#if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFMPEG 3
+#if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFmpeg 3
     out_video_stream = avformat_new_stream(m_out.m_pFormat_ctx, NULL);
 #else
     out_video_stream = avformat_new_stream(m_out.m_pFormat_ctx, output_codec);
 #endif
     if (!out_video_stream) {
-        mp3fs_error("FFMPEG transcoder: Could not allocate stream.");
+        mp3fs_error("FFmpeg transcoder: Could not allocate stream.");
         return AVERROR(ENOMEM);
     }
     out_video_stream->id = m_out.m_pFormat_ctx->nb_streams-1;
-#if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFMPEG 3
+#if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFmpeg 3
     codec_ctx = avcodec_alloc_context3(output_codec);
     if (!codec_ctx) {
-        mp3fs_error("FFMPEG transcoder: Could not alloc an encoding context.");
+        mp3fs_error("FFmpeg transcoder: Could not alloc an encoding context.");
         return AVERROR(ENOMEM);
     }
 #else
@@ -449,7 +449,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         if (params.audiosamplerate && codec_ctx->sample_rate > (int)params.audiosamplerate)
         {
             // Limit sample rate
-            mp3fs_info("FFMPEG transcoder: Limiting audio sample rate from %i Hz to %i Hz.\n", codec_ctx->sample_rate, params.audiosamplerate);
+            mp3fs_info("FFmpeg transcoder: Limiting audio sample rate from %i Hz to %i Hz.\n", codec_ctx->sample_rate, params.audiosamplerate);
             codec_ctx->sample_rate          = params.audiosamplerate;
         }
         codec_ctx->sample_fmt               = output_codec->sample_fmts[0];
@@ -461,8 +461,8 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         out_video_stream->time_base.den     = codec_ctx->sample_rate;
         out_video_stream->time_base.num     = 1;
 
-#if (LIBAVCODEC_VERSION_MAJOR <= 56) // Check for FFMPEG 3
-        // set -strict -2 for aac (required for FFMPEG 2)
+#if (LIBAVCODEC_VERSION_MAJOR <= 56) // Check for FFmpeg 3
+        // set -strict -2 for aac (required for FFmpeg 2)
         av_dict_set(&opt, "strict", "-2", 0);
         // Allow the use of the experimental AAC encoder
         codec_ctx->strict_std_compliance = FF_COMPLIANCE_EXPERIMENTAL;
@@ -513,7 +513,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
             // Rescal image if required
             const AVPixFmtDescriptor *fmtin = av_pix_fmt_desc_get((AVPixelFormat)in_video_stream->codec->pix_fmt);
             const AVPixFmtDescriptor *fmtout = av_pix_fmt_desc_get(codec_ctx->pix_fmt);
-            mp3fs_debug("FFMPEG transcoder: Initialising pixel format conversion %s to %s.", fmtin != NULL ? fmtin->name : "-", fmtout != NULL ? fmtout->name : "-");
+            mp3fs_debug("FFmpeg transcoder: Initialising pixel format conversion %s to %s.", fmtin != NULL ? fmtin->name : "-", fmtout != NULL ? fmtout->name : "-");
             assert(m_pSws_ctx == NULL);
             m_pSws_ctx = sws_getContext(
                         // Source settings
@@ -527,7 +527,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
                         SWS_BICUBIC, NULL, NULL, NULL);
             if (!m_pSws_ctx)
             {
-                mp3fs_error("FFMPEG transcoder: Could not allocate scaling/conversion context.");
+                mp3fs_error("FFmpeg transcoder: Could not allocate scaling/conversion context.");
                 return AVERROR(ENOMEM);
             }
         }
@@ -606,17 +606,17 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
 
     /** Open the encoder for the audio stream to use it later. */
     if ((ret = avcodec_open2(codec_ctx, output_codec, &opt)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not open audio output codec (error '%s').", ffmpeg_geterror(ret).c_str());
+        mp3fs_error("FFmpeg transcoder: Could not open audio output codec (error '%s').", ffmpeg_geterror(ret).c_str());
         avcodec_free_context(&codec_ctx);
         return ret;
     }
 
-    mp3fs_debug("FFMPEG transcoder: successfully opened %s output codec.", get_codec_name(codec_id));
+    mp3fs_debug("FFmpeg transcoder: successfully opened %s output codec.", get_codec_name(codec_id));
 
-#if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFMPEG 3
+#if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFmpeg 3
     ret = avcodec_parameters_from_context(out_video_stream->codecpar, codec_ctx);
     if (ret < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not initialise stream parameters (error '%s').", ffmpeg_geterror(ret).c_str());
+        mp3fs_error("FFmpeg transcoder: Could not initialise stream parameters (error '%s').", ffmpeg_geterror(ret).c_str());
         avcodec_free_context(&codec_ctx);
         return ret;
     }
@@ -660,16 +660,16 @@ int FFMPEG_Transcoder::open_output_filestreams(Buffer *buffer)
     }
     else
     {
-        mp3fs_error("FFMPEG transcoder: Unknown format type \"%s\"", type);
+        mp3fs_error("FFmpeg transcoder: Unknown format type \"%s\"", type);
         return -1;
     }
 
-    mp3fs_debug("FFMPEG transcoder: Opening format type \"%s\"", type);
+    mp3fs_debug("FFmpeg transcoder: Opening format type \"%s\"", type);
 
     /** Create a new format context for the output container format. */
     avformat_alloc_output_context2(&m_out.m_pFormat_ctx, NULL, ext, NULL);
     if (!m_out.m_pFormat_ctx) {
-        mp3fs_error("FFMPEG transcoder: Could not allocate output format context.");
+        mp3fs_error("FFmpeg transcoder: Could not allocate output format context.");
         return AVERROR(ENOMEM);
     }
 
@@ -744,7 +744,7 @@ void FFMPEG_Transcoder::init_packet(AVPacket *packet)
 int FFMPEG_Transcoder::init_input_frame(AVFrame **frame)
 {
     if (!(*frame = av_frame_alloc())) {
-        mp3fs_error("FFMPEG transcoder: Could not allocate input frame.");
+        mp3fs_error("FFmpeg transcoder: Could not allocate input frame.");
         return AVERROR(ENOMEM);
     }
     return 0;
@@ -768,7 +768,7 @@ int FFMPEG_Transcoder::init_resampler()
 
         /** Create a resampler context for the conversion. */
         if (!(m_pAudio_resample_ctx = avresample_alloc_context())) {
-            mp3fs_error("FFMPEG transcoder: Could not allocate resample context");
+            mp3fs_error("FFmpeg transcoder: Could not allocate resample context");
             return AVERROR(ENOMEM);
         }
 
@@ -787,7 +787,7 @@ int FFMPEG_Transcoder::init_resampler()
 
         /** Open the resampler with the specified parameters. */
         if ((ret = avresample_open(m_pAudio_resample_ctx)) < 0) {
-            mp3fs_error("FFMPEG transcoder: Could not open resampler context (error '%s').", ffmpeg_geterror(ret).c_str());
+            mp3fs_error("FFmpeg transcoder: Could not open resampler context (error '%s').", ffmpeg_geterror(ret).c_str());
             avresample_free(&m_pAudio_resample_ctx);
             m_pAudio_resample_ctx = NULL;
             return ret;
@@ -801,7 +801,7 @@ int FFMPEG_Transcoder::init_fifo()
 {
     /** Create the FIFO buffer based on the specified output sample format. */
     if (!(m_pAudioFifo = av_audio_fifo_alloc(m_out.m_pAudio_codec_ctx->sample_fmt, m_out.m_pAudio_codec_ctx->channels, 1))) {
-        mp3fs_error("FFMPEG transcoder: Could not allocate FIFO");
+        mp3fs_error("FFmpeg transcoder: Could not allocate FIFO");
         return AVERROR(ENOMEM);
     }
     return 0;
@@ -861,7 +861,7 @@ int FFMPEG_Transcoder::write_output_file_header()
     if (avformat_init_output(m_out.m_pFormat_ctx, &dict) == AVSTREAM_INIT_IN_WRITE_HEADER) {
 #endif // AVSTREAM_INIT_IN_WRITE_HEADER
         if ((error = avformat_write_header(m_out.m_pFormat_ctx, &dict)) < 0) {
-            mp3fs_error("FFMPEG transcoder: Could not write output file header (error '%s').", ffmpeg_geterror(error).c_str());
+            mp3fs_error("FFmpeg transcoder: Could not write output file header (error '%s').", ffmpeg_geterror(error).c_str());
             return error;
         }
 #ifdef AVSTREAM_INIT_IN_WRITE_HEADER
@@ -887,7 +887,7 @@ AVFrame *FFMPEG_Transcoder::alloc_picture(AVPixelFormat pix_fmt, int width, int 
     /* allocate the buffers for the frame data */
     ret = av_frame_get_buffer(picture, 32);
     if (ret < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not allocate frame data.");
+        mp3fs_error("FFmpeg transcoder: Could not allocate frame data.");
         av_frame_free(&picture);
         return NULL;
     }
@@ -923,7 +923,7 @@ int FFMPEG_Transcoder::decode_frame(AVPacket *input_packet, int *data_present)
         ret = avcodec_decode_audio4(m_in.m_pAudio_codec_ctx, input_frame, data_present, input_packet);
         if (ret < 0 && ret != AVERROR_INVALIDDATA) {
             av_frame_free(&input_frame);
-            mp3fs_error("FFMPEG transcoder: Could not decode audio frame (error '%s').", ffmpeg_geterror(ret).c_str());
+            mp3fs_error("FFmpeg transcoder: Could not decode audio frame (error '%s').", ffmpeg_geterror(ret).c_str());
             return ret;
         }
 
@@ -1006,7 +1006,7 @@ cleanup2:
         ret = avcodec_decode_video2(m_in.m_pVideo_codec_ctx, input_frame, data_present, input_packet);
 
         if (ret < 0) {
-            mp3fs_error("FFMPEG transcoder: Could not decode video frame (error '%s').", ffmpeg_geterror(ret).c_str());
+            mp3fs_error("FFmpeg transcoder: Could not decode video frame (error '%s').", ffmpeg_geterror(ret).c_str());
             // unused frame
             av_frame_free(&input_frame);
             return ret;
@@ -1113,7 +1113,7 @@ int FFMPEG_Transcoder::init_converted_samples(uint8_t ***converted_input_samples
      * channels (although it may be NULL for interleaved formats).
      */
     if (!(*converted_input_samples = (uint8_t **)calloc(m_out.m_pAudio_codec_ctx->channels, sizeof(**converted_input_samples)))) {
-        mp3fs_error("FFMPEG transcoder: Could not allocate converted input sample pointers");
+        mp3fs_error("FFmpeg transcoder: Could not allocate converted input sample pointers");
         return AVERROR(ENOMEM);
     }
 
@@ -1125,7 +1125,7 @@ int FFMPEG_Transcoder::init_converted_samples(uint8_t ***converted_input_samples
                                   m_out.m_pAudio_codec_ctx->channels,
                                   frame_size,
                                   m_out.m_pAudio_codec_ctx->sample_fmt, 0)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not allocate converted input samples (error '%s').", ffmpeg_geterror(error).c_str());
+        mp3fs_error("FFmpeg transcoder: Could not allocate converted input samples (error '%s').", ffmpeg_geterror(error).c_str());
         av_freep(&(*converted_input_samples)[0]);
         free(*converted_input_samples);
         return error;
@@ -1146,7 +1146,7 @@ int FFMPEG_Transcoder::convert_samples(uint8_t **input_data, const int in_sample
 
         /** Convert the samples using the resampler. */
         if ((ret = avresample_convert(m_pAudio_resample_ctx, converted_data, 0, *out_samples, input_data, 0, in_samples)) < 0) {
-            mp3fs_error("FFMPEG transcoder: Could not convert input samples (error '%s').", ffmpeg_geterror(ret).c_str());
+            mp3fs_error("FFmpeg transcoder: Could not convert input samples (error '%s').", ffmpeg_geterror(ret).c_str());
             return ret;
         }
 
@@ -1158,7 +1158,7 @@ int FFMPEG_Transcoder::convert_samples(uint8_t **input_data, const int in_sample
           * If the sample rates differ, this case has to be handled differently
           */
         if (avresample_available(m_pAudio_resample_ctx)) {
-            mp3fs_error("FFMPEG transcoder: Converted samples left over");
+            mp3fs_error("FFmpeg transcoder: Converted samples left over");
             return AVERROR_EXIT;
         }
     }
@@ -1190,14 +1190,14 @@ int FFMPEG_Transcoder::add_samples_to_fifo(uint8_t **converted_input_samples, co
      * the old and the new samples.
      */
     if ((error = av_audio_fifo_realloc(m_pAudioFifo, av_audio_fifo_size(m_pAudioFifo) + frame_size)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not reallocate FIFO");
+        mp3fs_error("FFmpeg transcoder: Could not reallocate FIFO");
         return error;
     }
 
     /** Store the new samples in the FIFO buffer. */
     if (av_audio_fifo_write(m_pAudioFifo, (void **)converted_input_samples,
                             frame_size) < frame_size) {
-        mp3fs_error("FFMPEG transcoder: Could not write data to FIFO");
+        mp3fs_error("FFmpeg transcoder: Could not write data to FIFO");
         return AVERROR_EXIT;
     }
     return 0;
@@ -1225,7 +1225,7 @@ int FFMPEG_Transcoder::read_decode_convert_and_store(int *finished)
         }
         else
         {
-            mp3fs_error("FFMPEG transcoder: Could not read frame (error '%s').", ffmpeg_geterror(ret).c_str());
+            mp3fs_error("FFmpeg transcoder: Could not read frame (error '%s').", ffmpeg_geterror(ret).c_str());
             goto cleanup;
         }
     }
@@ -1288,7 +1288,7 @@ int FFMPEG_Transcoder::init_audio_output_frame(AVFrame **frame, int frame_size)
 
     /** Create a new frame to store the audio samples. */
     if (!(*frame = av_frame_alloc())) {
-        mp3fs_error("FFMPEG transcoder: Could not allocate output frame");
+        mp3fs_error("FFmpeg transcoder: Could not allocate output frame");
         return AVERROR_EXIT;
     }
 
@@ -1309,7 +1309,7 @@ int FFMPEG_Transcoder::init_audio_output_frame(AVFrame **frame, int frame_size)
      * sure that the audio frame can hold as many samples as specified.
      */
     if ((error = av_frame_get_buffer(*frame, 0)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could allocate output frame samples (error '%s').", ffmpeg_geterror(error).c_str());
+        mp3fs_error("FFmpeg transcoder: Could allocate output frame samples (error '%s').", ffmpeg_geterror(error).c_str());
         av_frame_free(frame);
         return error;
     }
@@ -1354,7 +1354,7 @@ int FFMPEG_Transcoder::encode_audio_frame(AVFrame *frame, int *data_present)
       * The output audio stream encoder is used to do this.
       */
     if ((error = avcodec_encode_audio2(m_out.m_pAudio_codec_ctx, &output_packet, frame, data_present)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not encode audio frame (error '%s').", ffmpeg_geterror(error).c_str());
+        mp3fs_error("FFmpeg transcoder: Could not encode audio frame (error '%s').", ffmpeg_geterror(error).c_str());
         av_packet_unref(&output_packet);
         return error;
     }
@@ -1366,7 +1366,7 @@ int FFMPEG_Transcoder::encode_audio_frame(AVFrame *frame, int *data_present)
         produce_dts(&output_packet, &m_out.m_nAudio_pts);
 
         if ((error = av_interleaved_write_frame(m_out.m_pFormat_ctx, &output_packet)) < 0) {
-            mp3fs_error("FFMPEG transcoder: Could not write audio frame (error '%s').", ffmpeg_geterror(error).c_str());
+            mp3fs_error("FFmpeg transcoder: Could not write audio frame (error '%s').", ffmpeg_geterror(error).c_str());
             av_packet_unref(&output_packet);
             return error;
         }
@@ -1414,7 +1414,7 @@ int FFMPEG_Transcoder::encode_video_frame(AVFrame *frame, int *data_present)
      * The output video stream encoder is used to do this.
              */
     if ((error = avcodec_encode_video2(m_out.m_pVideo_codec_ctx, &output_packet, frame, data_present)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not encode video frame (error '%s').", ffmpeg_geterror(error).c_str());
+        mp3fs_error("FFmpeg transcoder: Could not encode video frame (error '%s').", ffmpeg_geterror(error).c_str());
         av_packet_unref(&output_packet);
         return error;
     }
@@ -1437,7 +1437,7 @@ int FFMPEG_Transcoder::encode_video_frame(AVFrame *frame, int *data_present)
                     output_packet.pts != (int64_t)AV_NOPTS_VALUE &&
                     output_packet.dts > output_packet.pts) {
 
-                mp3fs_warning("FFMPEG transcoder: Invalid DTS: %" PRId64 " PTS: %" PRId64 " in video output, replacing by guess", output_packet.dts, output_packet.pts);
+                mp3fs_warning("FFmpeg transcoder: Invalid DTS: %" PRId64 " PTS: %" PRId64 " in video output, replacing by guess", output_packet.dts, output_packet.pts);
 
                 output_packet.pts =
                         output_packet.dts = output_packet.pts + output_packet.dts + m_out.m_last_mux_dts + 1
@@ -1449,7 +1449,7 @@ int FFMPEG_Transcoder::encode_video_frame(AVFrame *frame, int *data_present)
                 int64_t max = m_out.m_last_mux_dts + !(m_out.m_pFormat_ctx->oformat->flags & AVFMT_TS_NONSTRICT);
                 if (output_packet.dts < max) {
 
-                    mp3fs_warning("FFMPEG transcoder: Non-monotonous DTS in video output stream; previous: %" PRId64 ", current: %" PRId64 "; changing to %" PRId64 ". This may result in incorrect timestamps in the output file.", m_out.m_last_mux_dts, output_packet.dts, max);
+                    mp3fs_warning("FFmpeg transcoder: Non-monotonous DTS in video output stream; previous: %" PRId64 ", current: %" PRId64 "; changing to %" PRId64 ". This may result in incorrect timestamps in the output file.", m_out.m_last_mux_dts, output_packet.dts, max);
 
                     if (output_packet.pts >= output_packet.dts)
                         output_packet.pts = FFMAX(output_packet.pts, max);
@@ -1461,7 +1461,7 @@ int FFMPEG_Transcoder::encode_video_frame(AVFrame *frame, int *data_present)
 
         error = av_interleaved_write_frame(m_out.m_pFormat_ctx, &output_packet);
         if (error < 0) {
-            mp3fs_error("FFMPEG transcoder: Could not write video frame (error '%s').", ffmpeg_geterror(error).c_str());
+            mp3fs_error("FFmpeg transcoder: Could not write video frame (error '%s').", ffmpeg_geterror(error).c_str());
             av_packet_unref(&output_packet);
             return error;
         }
@@ -1497,7 +1497,7 @@ int FFMPEG_Transcoder::load_encode_and_write()
      * The samples are stored in the frame temporarily.
      */
     if (av_audio_fifo_read(m_pAudioFifo, (void **)output_frame->data, frame_size) < frame_size) {
-        mp3fs_error("FFMPEG transcoder: Could not read data from FIFO");
+        mp3fs_error("FFmpeg transcoder: Could not read data from FIFO");
         av_frame_free(&output_frame);
         return AVERROR_EXIT;
     }
@@ -1516,7 +1516,7 @@ int FFMPEG_Transcoder::write_output_file_trailer()
 {
     int error;
     if ((error = av_write_trailer(m_out.m_pFormat_ctx)) < 0) {
-        mp3fs_error("FFMPEG transcoder: Could not write output file trailer (error '%s').", ffmpeg_geterror(error).c_str());
+        mp3fs_error("FFmpeg transcoder: Could not write output file trailer (error '%s').", ffmpeg_geterror(error).c_str());
         return error;
     }
     return 0;
@@ -1527,7 +1527,7 @@ time_t FFMPEG_Transcoder::mtime() const {
 }
 
 /*
- * Process the metadata in the FFMPEG file. This should be called at the
+ * Process the metadata in the FFmpeg file. This should be called at the
  * beginning, before reading audio data. The set_text_tag() and
  * set_picture_tag() methods of the given Encoder will be used to set the
  * metadata, with results going into the given Buffer. This function will also
@@ -1586,11 +1586,11 @@ void FFMPEG_Transcoder::copy_metadata(AVDictionary *metadata, AVStream * stream,
 
 int FFMPEG_Transcoder::process_metadata() {
 
-    mp3fs_debug("FFMPEG transcoder: processing metadata");
+    mp3fs_debug("FFmpeg transcoder: processing metadata");
 
     copy_metadata(m_in.m_pFormat_ctx->metadata, NULL, false);
 
-    // For some formats (namely ogg) ffmpeg returns the tags, odd enough, with streams...
+    // For some formats (namely ogg) FFmpeg returns the tags, odd enough, with streams...
     if (m_in.m_pAudio_stream)
     {
         copy_metadata(m_in.m_pAudio_stream->metadata, m_in.m_pAudio_stream, false);
@@ -1782,7 +1782,7 @@ size_t FFMPEG_Transcoder::calculate_size() {
             }
             default:
             {
-                mp3fs_error("FFMPEG transcoder: Internal error - unsupported audio codec %s.", get_codec_name(audio_codec_id));
+                mp3fs_error("FFmpeg transcoder: Internal error - unsupported audio codec %s.", get_codec_name(audio_codec_id));
                 break;
             }
             }
@@ -1808,7 +1808,7 @@ size_t FFMPEG_Transcoder::calculate_size() {
                 }
                 default:
                 {
-                    mp3fs_error("FFMPEG transcoder: Internal error - unsupported video codec %s.", get_codec_name(video_codec_id));
+                    mp3fs_error("FFmpeg transcoder: Internal error - unsupported video codec %s.", get_codec_name(video_codec_id));
                     break;
                 }
                 }
@@ -1838,7 +1838,7 @@ int FFMPEG_Transcoder::encode_finish() {
     ret = write_output_file_trailer();
     if (ret < 0)
     {
-        mp3fs_error("FFMPEG transcoder: Error writing trailer (error '%s').", ffmpeg_geterror(ret).c_str());
+        mp3fs_error("FFmpeg transcoder: Error writing trailer (error '%s').", ffmpeg_geterror(ret).c_str());
         ret = -1;
     }
 
@@ -1918,7 +1918,7 @@ int64_t FFMPEG_Transcoder::seek(void * pOpaque, int64_t i4Offset, int nWhence)
     return i64ResOffset;
 }
 
-/* Close the open FFMPEG file
+/* Close the open FFmpeg file
  */
 void FFMPEG_Transcoder::close()
 {
@@ -2029,7 +2029,7 @@ void FFMPEG_Transcoder::close()
         m_in.m_pFormat_ctx = NULL;
     }
 
-    mp3fs_debug("FFMPEG trancoder: closed.");
+    mp3fs_debug("FFmpeg trancoder: closed.");
 }
 
 #pragma GCC diagnostic pop

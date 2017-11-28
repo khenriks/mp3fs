@@ -38,7 +38,7 @@ Cache_Entry::Cache_Entry(const char *filename)
 {
     char dir[PATH_MAX];
 
-    tempdir(dir, sizeof(dir));
+    cache_path(dir, sizeof(dir));
 
     m_filename = filename;
 
@@ -197,7 +197,11 @@ bool Cache_Entry::read_info()
     }
     catch (int error)
     {
-        mp3fs_warning("Unable to read file '%s': %s", info_file().c_str(), strerror(error));
+        // Issue warning unless file simply does not exists. Continue and rebuild cache.
+        if (error != ENOENT)
+        {
+            mp3fs_warning("Unable to read cache info file '%s': %s", info_file().c_str(), strerror(error));
+        }
         reset();
         success = false;
     }

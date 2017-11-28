@@ -42,6 +42,7 @@ typedef struct tagThread_Data {
 
 static Cache *cache;
 static volatile bool thread_exit;
+static volatile int thread_count;
 
 static void *decoder_thread(void *arg);
 static int transcode_finish(struct Cache_Entry* cache_entry);
@@ -87,7 +88,7 @@ static int transcode_finish(struct Cache_Entry* cache_entry) {
     cache_entry->m_is_decoding = false;
 
     if (!cache_entry->m_buffer->reserve(cache_entry->m_info.m_encoded_filesize)) {
-        mp3fs_warning("FFMPEG transcoder: Unable to truncate buffer.");
+        mp3fs_warning("FFmpeg transcoder: Unable to truncate buffer.");
     }
 
     mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu, diff: %zi.", cache_entry->calculate_size(), cache_entry->m_info.m_encoded_filesize, cache_entry->m_info.m_encoded_filesize - cache_entry->calculate_size());
@@ -175,6 +176,23 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
 
         if (!cache_entry->m_is_decoding && !cache_entry->m_info.m_finished)
         {
+            if (params.max_threads && thread_count >= params.max_threads)
+            {
+                mp3fs_debug("Too many active threads. Unable to start new thread.");
+
+                while (!thread_exit && thread_count >= params.max_threads)
+                {
+                    sleep(0);
+                }
+
+                if (thread_count >= params.max_threads)
+                {
+                    mp3fs_error("Unable to start new thread. Cancelling transcode.");
+                    errno = EBUSY; // Report resource busy
+                    throw false;
+                }
+            }
+
             /* Create transcoder object. */
 
             mp3fs_debug("Ready to initialise decoder.");
@@ -357,6 +375,8 @@ static void *decoder_thread(void *arg)
     bool timeout = false;
     bool success = true;
 
+    thread_count++;
+
     try
     {
         if (!cache_entry->open())
@@ -372,7 +392,7 @@ static void *decoder_thread(void *arg)
         thread_data->m_initialised = true;
         pthread_cond_signal(&thread_data->m_cond);  // signal that we are running
 
-        mp3fs_debug("Output file opened. Beginning transcoding.");
+        mp3fs_debug("Output file opened. Beginning transcoding for file '%s'.", cache_entry->m_filename.c_str());
 
         while (!cache_entry->m_info.m_finished && !(timeout = cache_entry->decode_timeout()) && !thread_exit) {
             int stat = cache_entry->m_transcoder->process_single_fr();
@@ -381,6 +401,22 @@ static void *decoder_thread(void *arg)
                 errno = EIO;
                 success = false;
                 break;
+            }
+
+            if (cache_entry->suspend_timeout())
+            {
+                mp3fs_debug("Suspend timeout. Transcoding suspended for file '%s'.", cache_entry->m_filename.c_str());
+                while (cache_entry->suspend_timeout() && !(timeout = cache_entry->decode_timeout()))
+                {
+                    sleep(1);
+                }
+
+                if (timeout)
+                {
+                    break;
+                }
+
+                mp3fs_debug("Transcoding resumed for file '%s'.", cache_entry->m_filename.c_str());
             }
         }
     }
@@ -415,8 +451,10 @@ static void *decoder_thread(void *arg)
         cache_entry->m_info.m_error = !success;
         cache_entry->close();
 
-        mp3fs_debug("Transcoding complete.");
+        mp3fs_debug("Transcoding complete for file '%s'.", cache_entry->m_filename.c_str());
     }
+
+    thread_count--;
 
     return NULL;
 }

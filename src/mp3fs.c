@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/sysinfo.h>
 
 #include "transcode.h"
 
@@ -40,33 +41,37 @@
 #include "ffmpeg_utils.h"
 
 struct mp3fs_params params = {
-    .basepath           	= NULL,
-    .mountpath          	= NULL,
+    .basepath           	= NULL,                     // required parameter
+    .mountpath          	= NULL,                     // required parameter
 
-    .desttype           	= "mp4",
+    .desttype           	= "mp4",                    // default: encode to mp4
 #ifndef DISABLE_ISMV
-    .enable_ismv			= 0,
+    .enable_ismv			= 0,                        // default: do not use ISMV
 #endif
 
-    .audiobitrate       	= 128,
-    .audiosamplerate      	= 44100,
+    .audiobitrate       	= 128,                      // default: 128 kBit
+    .audiosamplerate      	= 44100,                    // default: 44.1 kHz
 
-    .videobitrate       	= 2000,
+    .videobitrate       	= 2000,                     // default: 2 MBit
 #ifndef DISABLE_AVFILTER
-    .deinterlace            = 0,
-    .videowidth             = 0,
-    .videoheight           	= 0,
+    .deinterlace            = 0,                        // default: no interlace
+    .videowidth             = 0,                        // default: do not change width
+    .videoheight           	= 0,                        // default: do not change height
 #endif
 
-    .debug              	= 0,
-    .log_maxlevel       	= "INFO",
-    .log_stderr         	= 0,
-    .log_syslog         	= 0,
-    .logfile            	= "",
+    .debug              	= 0,                        // default: no debug messages
+    .log_maxlevel       	= "INFO",                   // default: INFO level
+    .log_stderr         	= 0,                        // default: do not log to stderr
+    .log_syslog         	= 0,                        // default: do not use syslog
+    .logfile            	= "",                       // default: none
 
     .expiry_time            = (60*60*24 /* d */) * 7,	// default: 1 week
     .max_inactive_suspend   = (60 /* m */) * 2,         // default: 2 minutes
     .max_inactive_abort     = (60 /* m */) * 25,        // default: 5 minutes
+    .max_cache_size         = 0,                        // default: no limit
+    .max_threads            = 0,                        // default: 4 * cpu cores (set later)
+    .cachepath              = NULL                      // default: /tmp
+
 };
 
 enum {
@@ -112,6 +117,10 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("max_inactive_suspend=%u",    max_inactive_suspend, 0),
     MP3FS_OPT("--max_inactive_abort=%u",    max_inactive_abort, 0),
     MP3FS_OPT("max_inactive_abort=%u",      max_inactive_abort, 0),
+    MP3FS_OPT("--max_cache_size=%u",        max_cache_size, 0),
+    MP3FS_OPT("max_cache_size=%u",          max_cache_size, 0),
+    MP3FS_OPT("--max_threads=%u",           max_threads, 0),
+    MP3FS_OPT("max_threads=%u",             max_threads, 0),
     MP3FS_OPT("--cachepath=%s",             cachepath, 0),
     MP3FS_OPT("cachepath=%s",               cachepath, 0),
 
@@ -169,7 +178,7 @@ void usage(char *name) {
                "                           sample rate is more it will be downsampled automatically.\n"
                "                           Typical values are 8000, 11025, 22050, 44100,\n"
                "                           48000, 96000, 192000. Set to 0 to keep source rate.\n"
-               "                           Default: 44100 Hz\n"
+               "                           Default: 44.1 kHz\n"
                "\n"
                "Video Options:\n"
                "\n"
@@ -177,7 +186,7 @@ void usage(char *name) {
                "                           Video encoding bit rate (in kbit). Acceptable values for RATE\n"
                "                           range between 500 and 250000. Setting this too high or low may.\n"
                "                           cause transcoding to fail.\n"
-               "                           Default: 2000 kbit\n"
+               "                           Default: 2 Mbit\n"
       #ifndef DISABLE_AVFILTER
                "    --videoheight=HEIGHT, -ovideoheight=HEIGHT\n"
                "                           Sets the height of the target video.\n"
@@ -213,6 +222,12 @@ void usage(char *name) {
                "                           in the background. When the client quits transcoding will continue\n"
                "                           until this time out, and the transcoder thread quits\n"
                "                           Default: 5 minutes\n"
+//               "     --max_cache_size=BYTES, -o max_cache_size=BYTES
+//               "                           Default: unlimited\n"
+               "     --max_threads=COUNT, -o max_threads=COUNT\n"
+               "                           Limit concurrent transcoder threads. Set to 0 for unlimited threads."
+               "                           Reasonable values are up to 4 times number of CPU cores."
+               "                           Default: 4 times number of detected cpu cores\n"
                "     --cachepath=DIR, -o cachepath=DIR\n"
                "                           Sets the disk cache directory to DIR. Will be created if not existing.\n"
                "                           The user running mp3fs must have write access to the location.\n"
@@ -287,6 +302,9 @@ static int mp3fs_opt_proc(void* data, const char* arg, int key, struct fuse_args
 
 void cleanup()
 {
+    mp3fs_debug("%s V%s terminating", PACKAGE_NAME, PACKAGE_VERSION);
+    printf("%s V%s terminating\n", PACKAGE_NAME, PACKAGE_VERSION);
+
     cache_delete();
 }
 
@@ -299,22 +317,24 @@ int main(int argc, char *argv[]) {
     printf("%s V%s\n", PACKAGE_NAME, PACKAGE_VERSION);
     printf("Copyright (C) 2006-2008 David Collett\n"
            "Copyright (C) 2008-2012 K. Henriksson\n"
-           "FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivion-software.de)\n\n");
+           "Copyright (C) 2017 FFmpeg supplementals by Norbert Schlia (nschlia@oblivion-software.de)\n\n");
 
     /* register the termination function */
     atexit(cleanup);
 
     cache_new();
 
-    // Configure FFMPEG
+    // Configure FFmpeg
     /* register all the codecs */
     avcodec_register_all();
     av_register_all();
     //show_formats_devices(0);
 #ifndef USING_LIBAV
-    // Redirect FFMPEG logs
+    // Redirect FFmpeg logs
     av_log_set_callback(ffmpeg_log);
 #endif
+
+    params.max_threads = get_nprocs() * 4;
 
     if (fuse_opt_parse(&args, &params, mp3fs_opts, mp3fs_opt_proc)) {
         fprintf(stderr, "ERROR: parsing options.\n\n");
