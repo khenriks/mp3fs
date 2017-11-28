@@ -88,6 +88,6 @@ If you run into this error:
       See the Autoconf documentation.
     autoreconf: /usr/bin/autoconf failed with exit status: 1
 
-You are probabibly missing out on pkg-config, either it is not installed or
+You are probably missing out on pkg-config, either it is not installed or
 not in path. "apt-get install pkg-config" (on Debian or equivalent on other
 Linux distributions) should help.
