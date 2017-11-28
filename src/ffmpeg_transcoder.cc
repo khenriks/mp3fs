@@ -1,8 +1,8 @@
 /*
- * FFMPEG decoder class source for mp3fs
+ * FFmpeg decoder class source for mp3fs
  *
  * Copyright (C) 2015 Thomas Schwarzenberger
- * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivion-software.de)
+ * Copyright (C) 2017 FFmpeg supplementals by Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

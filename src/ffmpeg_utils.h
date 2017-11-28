@@ -1,8 +1,8 @@
 /*
- * FFMPEG decoder class header for mp3fs
+ * FFmpeg decoder class header for mp3fs
  *
  * Copyright (C) 2015 Thomas Schwarzenberger
- * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivion-software.de)
+ * Copyright (C) 2017 FFmpeg supplementals by Norbert Schlia (nschlia@oblivion-software.de)
 
  *
  * This program is free software; you can redistribute it and/or modify
@@ -42,7 +42,7 @@ extern "C" {
 #include <libavutil/audio_fifo.h>
 #include "libavutil/avstring.h"
 #if LIBAVUTIL_VERSION_MICRO >= 100
-// Does not exist in libav
+// Does not exist in Libav
 #include "libavutil/ffversion.h"
 #endif
 
@@ -69,18 +69,18 @@ extern "C" {
 #error "LIBAVUTIL_VERSION_MICRO not defined. Missing include header?"
 #endif
 
-// LIBAV detection:
-// FFMPEG has library micro version >= 100
-// LIBAV  has library micro version < 100
-// So if micro < 100, it's LIBAV, else it's FFMPEG.
+// Libav detection:
+// FFmpeg has library micro version >= 100
+// Libav  has library micro version < 100
+// So if micro < 100, it's Libav, else it's FFmpeg.
 #if LIBAVUTIL_VERSION_MICRO < 100
 #define USING_LIBAV
 #endif
 
 // Minumum version required for special functionality
-// Please note that I am not 100% sure from which FFMPEG version on this works, so lower
+// Please note that I am not 100% sure from which FFmpeg version on this works, so lower
 // versions may also work.
-// Also as this was not 100% tested with Libav this only applies to FFMPEG. With Libav
+// Also as this was not 100% tested with Libav this only applies to FFmpeg. With Libav
 // none of the extensions will be used.
 #define LIBAVCODEC_MIN_VERSION_INT      AV_VERSION_INT( 57, 64, 101 )
 #define LIBAVFORMAT_MIN_VERSION_INT     AV_VERSION_INT( 57, 25, 100 )
@@ -122,7 +122,7 @@ int mktree(const char *path, mode_t mode);
 void tempdir(char *dir, size_t size);
 
 #ifdef USING_LIBAV
-// LIBAV does not have these functions
+// Libav does not have these functions
 int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat, const char *format, const char *filename);
 const char *avcodec_get_name(enum AVCodecID id);
 #endif
