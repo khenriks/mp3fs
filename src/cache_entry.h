@@ -1,7 +1,7 @@
 /*
  * FFMPEG transcoder class header for mp3fs
  *
- * Copyright (C) 2017 Norbert Schlia (nschlia@oblivon-software.de)
+ * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ struct Cache_Entry {
 protected:
     explicit Cache_Entry(const char *filename);
     virtual ~Cache_Entry();
-    
+
 public:
     std::string info_file() const;
     bool read_info();

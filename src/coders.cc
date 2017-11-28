@@ -2,7 +2,7 @@
  * Encoder and Decoder class source for mp3fs
  *
  * Copyright (C) 2013 K. Henriksson
- * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
+ * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by

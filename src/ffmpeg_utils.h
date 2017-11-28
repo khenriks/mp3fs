@@ -2,8 +2,8 @@
  * FFMPEG decoder class header for mp3fs
  *
  * Copyright (C) 2015 Thomas Schwarzenberger
- * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
- 
+ * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivion-software.de)
+
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +35,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
-#include <libavresample/avresample.h>	
+#include <libavresample/avresample.h>
 #include <libavutil/imgutils.h>
 #include <libavutil/opt.h>
 #include <libavutil/error.h>

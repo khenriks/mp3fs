@@ -1,9 +1,9 @@
 /*
  * FFMPEG decoder class header for mp3fs
  *
- * Copyright (C) 2017 Norbert Schlia (nschlia@oblivon-software.de)
+ * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  * Copyright (C) 2015 Thomas Schwarzenberger
- * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivon-software.de)
+ * FFMPEG supplementals (c) 2017 by Norbert Schlia (nschlia@oblivion-software.de)
 
  *
  * This program is free software; you can redistribute it and/or modify
