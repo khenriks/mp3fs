@@ -34,24 +34,54 @@ If building from git, you'll also need:
 
 The commands to install just the first prerequisites follow.
 
+Please read the "Supported Linux Distributions" chapter in README.md 
+for details.
+
 On Debian:
 
     aptitude install gcc g++
 
     aptitude install libfuse-dev libavcodec-dev libavformat-dev libavresample-dev libavutil-dev libswscale-dev
 
-On Suse (please read notes before continueing:
+On Ubuntu use the same command with `apt-get` in place of `aptitude`.
+
+On Suse (please read notes before continuing):
 
     zypper install gcc gcc-c++
 
     zypper install fuse-devel libavcodec-devel libavformat-devel libavresample-devel libavutil-devel libswscale-devel
 
-On Ubuntu use the same command with `apt-get` in place of `aptitude`.
-    
-Notes:
+Suse includes non-proprietary codecs with FFmpeg, namely mp3, AAC and H264 
+are *not* avaibable which renders this library usesless. But FFmpeg can be
+built from source, see https://trac.ffmpeg.org/wiki/CompilationGuide and check
+"FFmpeg compile notes" below.
 
-Please read the "Supported Linux Distributions" chapter in README.md 
-for details.
+On Red Hat:
+
+    yum install gcc g++
+
+    yum install fuse-devel
+
+Red Hat does not provide FFmpeg from its repositories. It must be built 
+from source code, see this guide: https://trac.ffmpeg.org/wiki/CompilationGuide/Centos
+
+If you want to build the documentation you will find "asciidoc" missing from
+the Red Hat repositories. To get it use a beta repository:
+
+    yum --enablerepo=rhel-7-server-optional-beta-rpms install asciidoc
+
+FFmpeg compile notes:
+
+FFmpeg must be built with at least libx264, libfdk_aac and libmp3lame support. 
+Other libraries, e.g. ogg, Windows Media or FLAC must be added when these
+formats should be used as source.
+
+libavresample will not be built by default. Add "--enable-avresample" to the configure
+command line to include it.
+
+If you run into this "ERROR: libmp3lame >= 3.98.3 not found" although you have built 
+and installed libmp3lame you may find a solution here: 
+https://stackoverflow.com/questions/35937403/error-libmp3lame-3-98-3-not-found
 
 Installation
 ------------

@@ -19,7 +19,6 @@ For installation instructions see the [install](INSTALL.md) file.
 
 RESTRICTIONS:
 
-* MP4 support is highly experimental.
 * Cover arts are not yet supported.
 * The current version is in alpha state and input is limited to:
   avi, flac, flv, m2ts, mkv, mov, mpg, oga, ogg, ogv, rm, ts, vob, 
@@ -52,8 +51,9 @@ Tested with:
 * `Ubuntu 16.04.3 LTS` **FFmpeg 2.8.11-0ubuntu0.16.04.1**: OK!
 * `Ubuntu 17.10` **FFmpeg 3.3.4-2**: OK!
 * `Suse 42` **FFmpeg 3.3.4**: No H264/AAC support by default
+* `Red Hat 7` **No FFmpeg**: FFmpeg must be compiled from sources
 
-**Tips on other OSs and distributions like Mac or Red-Hat are welcome.**
+**Tips on other OSs and distributions like Mac or other *nixes are welcome.**
 
 Usage
 -----
