@@ -1,9 +1,7 @@
 /*
  * FFmpeg decoder class header for mp3fs
  *
- * Copyright (C) 2015 Thomas Schwarzenberger
- * Copyright (C) 2017 FFmpeg supplementals by Norbert Schlia (nschlia@oblivion-software.de)
-
+ * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,10 +23,23 @@
 
 #pragma once
 
+// Force PRId64 defines 
+#define __STDC_FORMAT_MACROS
+
 // Disable annoying warnings outside our code
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#ifdef __GNUC__
+#  include <features.h>
+#  if __GNUC_PREREQ(5,0)
+ 	// GCC >= 5.0
+#     pragma GCC diagnostic ignored "-Wfloat-conversion"
+#  elif __GNUC_PREREQ(4,8)
+	// GCC >= 4.8
+#  else
+#     error("GCC < 4.8 not supported");
+#  endif
+#endif
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -94,11 +105,20 @@ const char *get_media_type_string(enum AVMediaType media_type);
 
 // Ignore if this is missing
 #ifndef AV_ROUND_PASS_MINMAX
-#define AV_ROUND_PASS_MINMAX 0
+#define AV_ROUND_PASS_MINMAX            0
+#endif
+
+// These once had a different name
+#if !defined(AV_CODEC_CAP_DELAY) && defined(CODEC_CAP_DELAY)
+#define AV_CODEC_CAP_DELAY              CODEC_CAP_DELAY
+#endif
+
+#ifndef AV_CODEC_FLAG_GLOBAL_HEADER
+#define AV_CODEC_FLAG_GLOBAL_HEADER     CODEC_FLAG_GLOBAL_HEADER;
 #endif
 
 #ifndef FF_INPUT_BUFFER_PADDING_SIZE
-#define FF_INPUT_BUFFER_PADDING_SIZE 256
+#define FF_INPUT_BUFFER_PADDING_SIZE    256
 #endif
 
 #ifdef __cplusplus

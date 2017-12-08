@@ -2,9 +2,6 @@
  * FFmpeg decoder class header for mp3fs
  *
  * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
- * Copyright (C) 2015 Thomas Schwarzenberger
- * Copyright (C) 2017 FFmpeg supplementals by Norbert Schlia (nschlia@oblivion-software.de)
-
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -86,6 +83,7 @@ protected:
     int init_converted_samples(uint8_t ***converted_input_samples, int frame_size);
     int convert_samples(uint8_t **input_data, const int in_samples, uint8_t **converted_data, int *out_samples);
     int add_samples_to_fifo(uint8_t **converted_input_samples, const int frame_size);
+    int flush_frames(int stream_index, int *data_present);
     int read_decode_convert_and_store(int *finished);
     int init_audio_output_frame(AVFrame **frame, int frame_size);
     AVFrame *alloc_picture(AVPixelFormat pix_fmt, int width, int height);

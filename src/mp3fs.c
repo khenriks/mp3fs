@@ -33,7 +33,17 @@
 // TODO: Move this elsewehere, so this file can be library agnostic
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#ifdef __GNUC__
+#  include <features.h>
+#  if __GNUC_PREREQ(5,0)
+// GCC >= 5.0
+#     pragma GCC diagnostic ignored "-Wfloat-conversion"
+#  elif __GNUC_PREREQ(4,8)
+// GCC >= 4.8
+#  else
+#     error("GCC < 4.8 not supported");
+#  endif
+#endif
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #pragma GCC diagnostic pop
@@ -60,16 +70,16 @@ struct mp3fs_params params = {
 #endif
 
     .debug              	= 0,                        // default: no debug messages
-    .log_maxlevel       	= "INFO",                   // default: INFO level
+    .log_maxlevel       	= "WARNING",                // default: WARNING level
     .log_stderr         	= 0,                        // default: do not log to stderr
     .log_syslog         	= 0,                        // default: do not use syslog
     .logfile            	= "",                       // default: none
 
     .expiry_time            = (60*60*24 /* d */) * 7,	// default: 1 week
     .max_inactive_suspend   = (60 /* m */) * 2,         // default: 2 minutes
-    .max_inactive_abort     = (60 /* m */) * 25,        // default: 5 minutes
+    .max_inactive_abort     = (60 /* m */) * 5,         // default: 5 minutes
     .max_cache_size         = 0,                        // default: no limit
-    .max_threads            = 0,                        // default: 4 * cpu cores (set later)
+//    .max_threads            = 0,                        // default: 4 * cpu cores (set later)
     .cachepath              = NULL                      // default: /tmp
 
 };
@@ -119,8 +129,8 @@ static struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("max_inactive_abort=%u",      max_inactive_abort, 0),
     MP3FS_OPT("--max_cache_size=%u",        max_cache_size, 0),
     MP3FS_OPT("max_cache_size=%u",          max_cache_size, 0),
-    MP3FS_OPT("--max_threads=%u",           max_threads, 0),
-    MP3FS_OPT("max_threads=%u",             max_threads, 0),
+//    MP3FS_OPT("--max_threads=%u",           max_threads, 0),
+//    MP3FS_OPT("max_threads=%u",             max_threads, 0),
     MP3FS_OPT("--cachepath=%s",             cachepath, 0),
     MP3FS_OPT("cachepath=%s",               cachepath, 0),
 
@@ -222,37 +232,37 @@ void usage(char *name) {
                "                           in the background. When the client quits transcoding will continue\n"
                "                           until this time out, and the transcoder thread quits\n"
                "                           Default: 5 minutes\n"
-//               "     --max_cache_size=BYTES, -o max_cache_size=BYTES
-//               "                           Default: unlimited\n"
-               "     --max_threads=COUNT, -o max_threads=COUNT\n"
-               "                           Limit concurrent transcoder threads. Set to 0 for unlimited threads."
-               "                           Reasonable values are up to 4 times number of CPU cores."
-               "                           Default: 4 times number of detected cpu cores\n"
-               "     --cachepath=DIR, -o cachepath=DIR\n"
-               "                           Sets the disk cache directory to DIR. Will be created if not existing.\n"
-               "                           The user running mp3fs must have write access to the location.\n"
-               "                           Default: temp directory, e.g. /tmp\n"
-               "\n"
-               "Logging:\n"
-               "\n"
-               "    --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL\n"
-               "                           Maximum level of messages to log, either ERROR,\n"
-               "                           INFO, TRACE or DEBUG. Defaults to INFO, and always set\n"
-               "                           to DEBUG in debug mode. Note that the other log\n"
-               "                           flags must also be set to enable logging.\n"
-               "    --log_stderr, -olog_stderr\n"
-               "                           Enable outputting logging messages to stderr.\n"
-               "                           Enabled in debug mode.\n"
-               "    --log_syslog, -olog_syslog\n"
-               "                           Enable outputting logging messages to syslog.\n"
-               "    --logfile=FILE, -ologfile=FILE\n"
-               "                           File to output log messages to. By default, no\n"
-               "                           file will be written.\n"
-               "\n"
-               "General options:\n"
-               "    -h, --help             display this help and exit\n"
-               "    -V, --version          output version information and exit\n"
-               "\n", stdout);
+          //"     --max_cache_size=BYTES, -o max_cache_size=BYTES\n"
+          //"                           Default: unlimited\n"
+          //"     --max_threads=COUNT, -o max_threads=COUNT\n"
+          //"                           Limit concurrent transcoder threads. Set to 0 for unlimited threads."
+          //"                           Reasonable values are up to 4 times number of CPU cores."
+          //"                           Default: 4 times number of detected cpu cores\n"
+          "     --cachepath=DIR, -o cachepath=DIR\n"
+          "                           Sets the disk cache directory to DIR. Will be created if not existing.\n"
+          "                           The user running mp3fs must have write access to the location.\n"
+          "                           Default: temp directory, e.g. /tmp\n"
+          "\n"
+          "Logging:\n"
+          "\n"
+          "    --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL\n"
+          "                           Maximum level of messages to log, either ERROR,\n"
+          "                           INFO, TRACE or DEBUG. Defaults to INFO, and always set\n"
+          "                           to DEBUG in debug mode. Note that the other log\n"
+          "                           flags must also be set to enable logging.\n"
+          "    --log_stderr, -olog_stderr\n"
+          "                           Enable outputting logging messages to stderr.\n"
+          "                           Enabled in debug mode.\n"
+          "    --log_syslog, -olog_syslog\n"
+          "                           Enable outputting logging messages to syslog.\n"
+          "    --logfile=FILE, -ologfile=FILE\n"
+          "                           File to output log messages to. By default, no\n"
+          "                           file will be written.\n"
+          "\n"
+          "General options:\n"
+          "    -h, --help             display this help and exit\n"
+          "    -V, --version          output version information and exit\n"
+          "\n", stdout);
 }
 
 static int mp3fs_opt_proc(void* data, const char* arg, int key, struct fuse_args *outargs) {
@@ -322,8 +332,6 @@ int main(int argc, char *argv[]) {
     /* register the termination function */
     atexit(cleanup);
 
-    cache_new();
-
     // Configure FFmpeg
     /* register all the codecs */
     avcodec_register_all();
@@ -334,7 +342,7 @@ int main(int argc, char *argv[]) {
     av_log_set_callback(ffmpeg_log);
 #endif
 
-    params.max_threads = get_nprocs() * 4;
+//    params.max_threads = get_nprocs() * 4;
 
     if (fuse_opt_parse(&args, &params, mp3fs_opts, mp3fs_opt_proc)) {
         fprintf(stderr, "ERROR: parsing options.\n\n");
@@ -404,6 +412,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if (cache_new())
+    {
+        return 1;
+    }
+
     cache_path(cachepath, sizeof(cachepath));
 
     mp3fs_debug(PACKAGE_NAME " options:\n\n"
@@ -424,10 +437,12 @@ int main(int argc, char *argv[]) {
                              "log_syslog:         %u\n"
                              "logfile:            %s\n"
                              "cache settings:\n"
-                             "cache path:         %s\n"
-                             "expiry:             %zu seconds\n"
-                             "inactivity suspend: %zu seconds\n"
-                             "inactivity abort:   %zu seconds\n",
+                             "expiry:             %lu seconds (TODO)\n"
+                             "inactivity suspend: %lu seconds\n"
+                             "inactivity abort:   %lu seconds\n"
+                             "Max. cache size:    %zu bytes (TODO)\n"
+                             //"Max. threads:       %u\n"
+                             "cache path:         %s\n",
                 params.basepath,
                 params.mountpath,
                 params.desttype,
@@ -444,11 +459,13 @@ int main(int argc, char *argv[]) {
                 params.log_maxlevel,
                 params.log_stderr,
                 params.log_syslog,
-                params.logfile,
-                cachepath,
+                *params.logfile ? params.logfile : "none",
                 params.expiry_time,
                 params.max_inactive_suspend,
-                params.max_inactive_abort);
+                params.max_inactive_abort,
+                params.max_cache_size,
+                //params.max_threads,
+                cachepath);
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);

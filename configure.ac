@@ -62,7 +62,12 @@ AM_CONDITIONAL([HAVE_FFMPEG], [test "x$with_ffmpeg" != xno])
 
 # Error checks
 AS_IF([test "x$with_flac" = no],
-    AC_MSG_ERROR([FFMPEG library not enabled or not found. Please make sure --with-ffmpeg is given.]))
+    AC_MSG_ERROR([FFmpeg library not enabled or not found. Please make sure its development modules are installed.]))
+
+# Checks for sqlite3
+PKG_CHECK_MODULES([sqlite3], [sqlite3 >= 3.7.13])
+AC_SEARCH_LIBS([sqlite3_errstr], [sqlite3], [AC_DEFINE([HAVE_SQLITE_ERRSTR], [1], [libsqlite3 has sqlite3_errstr() function.])], [])
+AC_SEARCH_LIBS([sqlite3_db_cacheflush], [sqlite3], [AC_DEFINE([HAVE_SQLITE_CACHEFLUSH], [1], [libsqlite3 has sqlite3_db_cacheflush() function.])], [])
 
 # Checks for packages which use pkg-config.
 PKG_CHECK_MODULES([fuse], [fuse >= 2.6.0])

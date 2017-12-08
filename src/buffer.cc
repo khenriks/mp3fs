@@ -37,26 +37,28 @@
 using namespace std;
 
 /* Initially Buffer is empty. It will be allocated as needed. */
-Buffer::Buffer(const string &filename, const string &cachefile)
+Buffer::Buffer(const string &filename)
     : m_mutex(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
     , m_filename(filename)
-    , m_cachefile(cachefile)
     , m_buffer_pos(0)
     , m_buffer_watermark(0)
     , m_is_open(false)
     , m_buffer(NULL)
     , m_fd(-1)
 {
+    char cachepath[PATH_MAX];
+
+    cache_path(cachepath, sizeof(cachepath));
+
+    m_cachefile = cachepath;
+    m_cachefile += params.mountpath;
+    m_cachefile += filename;
+    m_cachefile += ".cache";
 }
 
 /* If buffer_data was never allocated, this is a no-op. */
 Buffer::~Buffer() {
     close();
-}
-
-string Buffer::cache_file() const
-{
-    return (m_cachefile + ".cache");
 }
 
 bool Buffer::open(bool erase_cache)
@@ -85,6 +87,8 @@ bool Buffer::open(bool erase_cache)
             free(cachefile);
             throw false;
         }
+        errno = 0;  // reset EEXIST, error can safely be ignored here
+
         free(cachefile);
 
         m_buffer_size = 0;
@@ -92,25 +96,25 @@ bool Buffer::open(bool erase_cache)
         m_buffer_pos = 0;
         m_buffer_watermark = 0;
 
-        if (erase_cache && unlink(cache_file().c_str()) && errno != ENOENT)
+        if (erase_cache && unlink(m_cachefile.c_str()) && errno != ENOENT)
         {
-            mp3fs_warning("Cannot unlink the file '%s': %s", cache_file().c_str(), strerror(errno));
+            mp3fs_warning("Cannot unlink the file '%s': %s", m_cachefile.c_str(), strerror(errno));
         }
 
-        m_fd = ::open(cache_file().c_str(), O_CREAT | O_RDWR, (mode_t)0644);
+        m_fd = ::open(m_cachefile.c_str(), O_CREAT | O_RDWR, (mode_t)0644);
         if (m_fd == -1)
         {
-            mp3fs_error("Error opening cache file '%s': %s", cache_file().c_str(), strerror(errno));
+            mp3fs_error("Error opening cache file '%s': %s", m_cachefile.c_str(), strerror(errno));
             throw false;
         }
 
         if (fstat(m_fd, &sb) == -1) {
-            mp3fs_error("fstat failed for '%s': %s", cache_file().c_str(), strerror(errno));
+            mp3fs_error("fstat failed for '%s': %s", m_cachefile.c_str(), strerror(errno));
             throw false;
         }
 
         if (!S_ISREG(sb.st_mode)) {
-            mp3fs_error("'%s' is not a file.", cache_file().c_str());
+            mp3fs_error("'%s' is not a file.", m_cachefile.c_str());
             throw false;
         }
 
@@ -123,7 +127,7 @@ bool Buffer::open(bool erase_cache)
 
             if (ftruncate(m_fd, filesize) == -1)
             {
-                mp3fs_error("Error calling ftruncate() to 'stretch' the file '%s': %s", cache_file().c_str(), strerror(errno));
+                mp3fs_error("Error calling ftruncate() to 'stretch' the file '%s': %s", m_cachefile.c_str(), strerror(errno));
                 throw false;
             }
         }
@@ -134,7 +138,7 @@ bool Buffer::open(bool erase_cache)
 
         p = mmap(0, filesize, PROT_READ | PROT_WRITE, MAP_SHARED, m_fd, 0);
         if (p == MAP_FAILED) {
-            mp3fs_error("File mapping failed for '%s': %s", cache_file().c_str(), strerror(errno));
+            mp3fs_error("File mapping failed for '%s': %s", m_cachefile.c_str(), strerror(errno));
             throw false;
         }
 
@@ -177,19 +181,22 @@ bool Buffer::close(bool erase_cache)
     flush();
 
     void *p = m_buffer;
+    size_t size = m_buffer_size;
     int fd = m_fd;
 
     m_buffer = NULL;
+    m_buffer_size = 0;
+    m_buffer_pos = 0;
     m_fd = -1;
 
-    if (munmap(p, m_buffer_size) == -1) {
+    if (munmap(p, size) == -1) {
         mp3fs_error("File unmapping failed: %s", strerror(errno));
         success = false;
     }
 
     if (ftruncate(fd, m_buffer_watermark) == -1)
     {
-        mp3fs_error("Error calling ftruncate() to 'stretch' the file '%s': %s", cache_file().c_str(), strerror(errno));
+        mp3fs_error("Error calling ftruncate() to resize and close the file '%s': %s", m_cachefile.c_str(), strerror(errno));
         success = false;
     }
 
@@ -197,9 +204,9 @@ bool Buffer::close(bool erase_cache)
 
     if (erase_cache)
     {
-        if (unlink(cache_file().c_str()) && errno != ENOENT)
+        if (unlink(m_cachefile.c_str()) && errno != ENOENT)
         {
-            mp3fs_warning("Cannot unlink the file '%s': %s", cache_file().c_str(), strerror(errno));
+            mp3fs_warning("Cannot unlink the file '%s': %s", m_cachefile.c_str(), strerror(errno));
         }
         errno = 0;  // ignore this error
     }
@@ -235,11 +242,14 @@ bool Buffer::reserve(size_t size) {
     lock();
 
     m_buffer = (uint8_t*)mremap (m_buffer, m_buffer_size, size,  MREMAP_MAYMOVE);
-    m_buffer_size = size;
+    if (m_buffer != NULL)
+    {
+        m_buffer_size = size;
+    }
 
     if (ftruncate(m_fd, m_buffer_size) == -1)
     {
-        mp3fs_error("Error calling ftruncate() to 'stretch' the file '%s': %s", cache_file().c_str(), strerror(errno));
+       mp3fs_error("Error calling ftruncate() to resize the file '%s': %s", m_cachefile.c_str(), strerror(errno));
         success = false;
     }
 
@@ -323,8 +333,8 @@ size_t Buffer::buffer_watermark() const {
 }
 
 /* Copy buffered data into output buffer. */
-void Buffer::copy(uint8_t* out_data, size_t offset, size_t bufsize) {
-    if (size() >= offset)
+bool Buffer::copy(uint8_t* out_data, size_t offset, size_t bufsize) {
+    if (size() >= offset && m_buffer != NULL)
     {
         lock();
 
@@ -335,6 +345,13 @@ void Buffer::copy(uint8_t* out_data, size_t offset, size_t bufsize) {
 
         memcpy(out_data, m_buffer + offset, bufsize);
         unlock();
+
+        return true;
+    }
+    else
+    {
+        errno = ENOMEM;
+        return false;
     }
 }
 
@@ -352,7 +369,7 @@ bool Buffer::reallocate(size_t newsize) {
             return false;
         }
 
-        mp3fs_trace("Buffer reallocate: %lu -> %lu.", oldsize, newsize);
+        mp3fs_trace("Buffer reallocate: %zu -> %zu.", oldsize, newsize);
     }
     return true;
 }

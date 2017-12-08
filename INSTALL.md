@@ -16,6 +16,7 @@ libraries:
 * gcc and g++ compilers
 
 * fuse (>= 2.6.0)
+* sqlite3 (>= 3.7.13)
 
 * libavutil      (>= 54.3.0)
 * libavcodec     (>= 56.1.0)
@@ -41,7 +42,7 @@ On Debian:
 
     aptitude install gcc g++
 
-    aptitude install libfuse-dev libavcodec-dev libavformat-dev libavresample-dev libavutil-dev libswscale-dev
+    aptitude install libfuse-dev libsqlite3-dev libavcodec-dev libavformat-dev libavresample-dev libavutil-dev libswscale-dev
 
 On Ubuntu use the same command with `apt-get` in place of `aptitude`.
 
@@ -49,7 +50,7 @@ On Suse (please read notes before continuing):
 
     zypper install gcc gcc-c++
 
-    zypper install fuse-devel libavcodec-devel libavformat-devel libavresample-devel libavutil-devel libswscale-devel
+    zypper install fuse-devel libsqlite3-devel libavcodec-devel libavformat-devel libavresample-devel libavutil-devel libswscale-devel
 
 Suse includes non-proprietary codecs with FFmpeg, namely mp3, AAC and H264 
 are *not* avaibable which renders this library usesless. But FFmpeg can be
@@ -60,7 +61,7 @@ On Red Hat:
 
     yum install gcc g++
 
-    yum install fuse-devel
+    yum install fuse-devel sqlite-devel
 
 Red Hat does not provide FFmpeg from its repositories. It must be built 
 from source code, see this guide: https://trac.ffmpeg.org/wiki/CompilationGuide/Centos

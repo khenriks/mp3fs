@@ -29,10 +29,9 @@
 
 class Buffer {
 public:
-    explicit Buffer(const std::string & filename, const std::string & cachefile);
+    explicit Buffer(const std::string & filename);
     virtual ~Buffer();
 
-    std::string cache_file() const;
     bool open(bool erase_cache = false);
     bool close(bool erase_cache = false);
     bool flush();
@@ -42,7 +41,7 @@ public:
     size_t tell() const;
     size_t size() const;
     size_t buffer_watermark() const;
-    void copy(uint8_t* out_data, size_t offset, size_t bufsize);
+    bool copy(uint8_t* out_data, size_t offset, size_t bufsize);
 
     void lock();
     void unlock();
@@ -53,15 +52,15 @@ private:
     bool reallocate(size_t newsize);
 
 private:
-    pthread_mutex_t         m_mutex;
-    const std::string &     m_filename;
-    const std::string &     m_cachefile;
-    size_t                  m_buffer_pos;           // Read/write position
-    size_t                  m_buffer_watermark;     // Number of bytes in buffer
-    volatile bool           m_is_open;
-    size_t                  m_buffer_size;          // Current buffer size
-    uint8_t *               m_buffer;
-    int                     m_fd;
+    pthread_mutex_t     m_mutex;
+    const std::string & m_filename;
+    std::string         m_cachefile;
+    size_t              m_buffer_pos;           // Read/write position
+    size_t              m_buffer_watermark;     // Number of bytes in buffer
+    volatile bool       m_is_open;
+    size_t              m_buffer_size;          // Current buffer size
+    uint8_t *           m_buffer;
+    int                 m_fd;
 };
 
 #endif

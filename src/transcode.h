@@ -63,9 +63,9 @@ extern struct mp3fs_params {
     const char*     logfile;
     // Background recoding/caching
     time_t          expiry_time;                // TODO: Time (seconds) after which an cache entry is deleted
-    time_t          max_inactive_suspend;       // Time (seconds) that must elapse without access until transcoding is suspened
+    time_t          max_inactive_suspend;       // Time (seconds) that must elapse without access until transcoding is suspended
     time_t          max_inactive_abort;         // Time (seconds) that must elapse without access until transcoding is aborted
-    int             max_cache_size;             // TODO: Max. cache size in MB. When exceeded, oldest entries will be pruned
+    size_t          max_cache_size;             // TODO: Max. cache size in MB. When exceeded, oldest entries will be pruned
     int             max_threads;                // Max. number of recoder threads
     const char*     cachepath;                  // Disk cache path, defaults to /tmp
 } params;
@@ -88,7 +88,7 @@ extern "C" {
 #endif
 
 void cache_path(char *dir, size_t size);
-void cache_new(void);
+int cache_new(void);
 void cache_delete(void);
 
 // Simply get encoded file size (do not create the whole encoder/decoder objects)

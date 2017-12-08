@@ -22,6 +22,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#include "transcode.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,8 +32,7 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-#include "transcode.h"
+#include <assert.h>
 
 /*
  * Translate file names from FUSE to the original absolute path. A buffer
@@ -96,8 +97,6 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
 
     mp3fs_trace("readlink %s", path);
 
-    errno = 0;
-
     origpath = translate_path(path);
     if (!origpath) {
         goto translate_fail;
@@ -113,6 +112,8 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
     buf[len] = '\0';
 
     transcoded_name(buf);
+
+    errno = 0;  // Just to make sure - reset any error
 
 readlink_fail:
     free(origpath);
@@ -130,8 +131,6 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     struct dirent *de;
 
     mp3fs_trace("readdir %s", path);
-
-    errno = 0;
 
     origpath = translate_path(path);
     if (!origpath) {
@@ -166,6 +165,8 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
         if (filler(buf, de->d_name, &st, 0)) break;
     }
 
+    errno = 0;  // Just to make sure - reset any error
+
 stat_fail:
     closedir(dp);
 opendir_fail:
@@ -181,7 +182,6 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
 
     mp3fs_trace("getattr %s", path);
 
-    errno = 0;
 
     origpath = translate_path(path);
     if (!origpath) {
@@ -221,6 +221,8 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
             transcoder_delete(cache_entry);
         }
     }
+
+    errno = 0;  // Just to make sure - reset any error
 
 transcoder_fail:
 stat_fail:
@@ -276,6 +278,8 @@ int mp3fs_fgetattr(const char *filename, struct stat * stbuf, struct fuse_file_i
         stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
     }
 
+    errno = 0;  // Just to make sure - reset any error
+
 transcoder_fail:
 stat_fail:
 passthrough:
@@ -290,8 +294,6 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     int fd;
 
     mp3fs_debug("open %s", path);
-
-    errno = 0;
 
     origpath = translate_path(path);
     if (!origpath) {
@@ -342,8 +344,6 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset, st
     struct Cache_Entry* cache_entry;
 
     mp3fs_trace("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
-
-    errno = 0;
 
     origpath = translate_path(path);
     if (!origpath) {
@@ -408,6 +408,8 @@ static int mp3fs_statfs(const char *path, struct statvfs *stbuf) {
     find_original(origpath);
 
     statvfs(origpath, stbuf);
+
+    errno = 0;  // Just to make sure - reset any error
 
 passthrough:
     free(origpath);

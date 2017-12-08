@@ -27,47 +27,40 @@
 #include <fstream>
 #include <iostream>
 #include <libgen.h>
+#include <assert.h>
 
 using namespace std;
 
-Cache_Entry::Cache_Entry(const char *filename)
-    : m_mutex(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
+Cache_Entry::Cache_Entry(Cache *owner, const std::string & filename)
+    : m_owner(owner)
+    , m_mutex(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
     , m_thread_id(0)
     , m_ref_count(0)
     , m_transcoder(new FFMPEG_Transcoder)
 {
-    char dir[PATH_MAX];
+	m_cache_info.m_filename = filename;
+    
+    m_cache_info.m_target_format[0] = '\0';
+    strncat(m_cache_info.m_target_format, params.desttype, sizeof(m_cache_info.m_target_format) - 1);
 
-    cache_path(dir, sizeof(dir));
+    m_buffer = new Buffer(m_cache_info.m_filename);
 
-    m_filename = filename;
-
-    m_cachefile = dir;
-    m_cachefile += "/mp3fs";
-    m_cachefile += params.mountpath;
-    //    m_cachefile += "/";
-    //    char *p = strdup(filename);
-    //    m_cachefile += basename(p);
-    //    free(p);
-    m_cachefile += filename;
-
-    m_buffer = new Buffer(m_filename, m_cachefile);
-
-    reset();
+    clear();
 
     mp3fs_debug("Created new Cache_Entry.");
 }
 
 Cache_Entry::~Cache_Entry()
 {
-    if (m_thread_id)
+    if (m_thread_id && m_thread_id != pthread_self())
     {
+        // If not same thread, wait for other to finish
         mp3fs_debug("Waiting for thread id %zx to terminate.", m_thread_id);
 
         int s = pthread_join(m_thread_id, NULL);
         if (s != 0)
         {
-            mp3fs_error("Error joining thread id %zx: %s", m_thread_id, strerror(s));
+            mp3fs_error("Error joining thread id %zu: %s", m_thread_id, strerror(s));
         }
         else
         {
@@ -75,214 +68,54 @@ Cache_Entry::~Cache_Entry()
         }
     }
 
+    //assert(errno == 0); // DEBUG
+
     delete m_buffer;
     delete m_transcoder;
     mp3fs_debug("Deleted Cache_Entry.");
 }
 
-string Cache_Entry::info_file() const
-{
-    return (m_cachefile + ".info");
-}
-
-void Cache_Entry::reset(int fetch_file_time)
+void Cache_Entry::clear(int fetch_file_time)
 {
     struct stat sb;
 
     m_is_decoding = false;
 
-    m_info.m_encoded_filesize = 0;
-    m_info.m_finished = false;
-    m_info.m_access_time = m_info.m_creation_time = time(NULL);
-    m_info.m_error = false;
+    m_cache_info.m_encoded_filesize = 0;
+    m_cache_info.m_finished = false;
+    m_cache_info.m_access_time = m_cache_info.m_creation_time = time(NULL);
+    m_cache_info.m_error = false;
 
     if (fetch_file_time) {
-        if (stat(m_filename.c_str(), &sb) == -1) {
-            m_info.m_file_time = 0;
-            m_info.m_file_size = 0;
+        if (stat(filename().c_str(), &sb) == -1) {
+            m_cache_info.m_file_time = 0;
+            m_cache_info.m_file_size = 0;
         }
         else {
-            m_info.m_file_time = sb.st_mtime;
-            m_info.m_file_size = sb.st_size;
+            m_cache_info.m_file_time = sb.st_mtime;
+            m_cache_info.m_file_size = sb.st_size;
         }
     }
 }
 
 bool Cache_Entry::read_info()
 {
-    bool success = true;
-    FILE *fpi = NULL;
-
-    reset();
-
-    // Removed C++ ifstream code, cause ABI troubles, see https://github.com/Alexpux/MINGW-packages/issues/747
-
-    try
-    {
-        time_t file_time = m_info.m_file_time;
-        uint64_t file_size = m_info.m_file_size;
-        size_t n;
-
-        reset();
-
-        fpi = fopen(info_file().c_str(), "rb");
-        if (fpi == NULL)
-        {
-            throw (int)errno;
-        }
-
-        n = fread((char*)&m_info.m_encoded_filesize, 1, sizeof(m_info.m_encoded_filesize), fpi);
-        if (n != sizeof(m_info.m_encoded_filesize))
-        {
-            throw (int)ferror(fpi);
-        }
-
-        n = fread((char*)&m_info.m_finished, 1, sizeof(m_info.m_finished), fpi);
-        if (n != sizeof(m_info.m_finished))
-        {
-            throw (int)ferror(fpi);
-        }
-
-        n = fread((char*)&m_info.m_error, 1, sizeof(m_info.m_error), fpi);
-        if (n != sizeof(m_info.m_error))
-        {
-            throw (int)ferror(fpi);
-        }
-
-        n = fread((char*)&m_info.m_creation_time, 1, sizeof(m_info.m_creation_time), fpi);
-        if (n != sizeof(m_info.m_creation_time))
-        {
-            throw (int)ferror(fpi);
-        }
-
-        n = fread((char*)&m_info.m_access_time, 1, sizeof(m_info.m_access_time), fpi);
-        if (n != sizeof(m_info.m_access_time))
-        {
-            throw (int)ferror(fpi);
-        }
-
-        n = fread((char*)&m_info.m_file_time, 1, sizeof(m_info.m_file_time), fpi);
-        if (n != sizeof(m_info.m_file_time))
-        {
-            throw (int)ferror(fpi);
-        }
-
-        if (file_time != m_info.m_file_time)
-        {
-            reset(false);
-
-            m_info.m_file_time = file_time;
-
-            mp3fs_info("File date changed '%s': rebuilding file.", info_file().c_str());
-
-            success = false;
-        }
-
-        n = fread((char*)&m_info.m_file_size, 1, sizeof(m_info.m_file_size), fpi);
-        if (n != sizeof(m_info.m_file_size))
-        {
-            throw (int)ferror(fpi);
-        }
-
-        if (file_size != m_info.m_file_size)
-        {
-            reset(false);
-
-            m_info.m_file_size = file_size;
-
-            mp3fs_info("File size changed '%s': rebuilding file.", info_file().c_str());
-
-            success = false;
-        }
-    }
-    catch (int error)
-    {
-        // Issue warning unless file simply does not exists. Continue and rebuild cache.
-        if (error != ENOENT)
-        {
-            mp3fs_warning("Unable to read cache info file '%s': %s", info_file().c_str(), strerror(error));
-        }
-        reset();
-        success = false;
-    }
-
-    if (fpi != NULL)
-    {
-        fclose(fpi);
-    }
-
-    return success;
+    return m_owner->read_info(m_cache_info);
 }
 
 bool Cache_Entry::write_info()
 {
-    bool success = true;
-    FILE *fpo = NULL;
+    return m_owner->write_info(m_cache_info);
+}
 
-    try {
-        size_t n;
+bool Cache_Entry::delete_info()
+{
+    return m_owner->delete_info(m_cache_info);
+}
 
-        fpo = fopen(info_file().c_str(), "wb");
-        if (fpo == NULL)
-        {
-            throw (int)errno;
-        }
-
-        n = fwrite((char*)&m_info.m_encoded_filesize, 1, sizeof(m_info.m_encoded_filesize), fpo);
-        if (n != sizeof(m_info.m_encoded_filesize))
-        {
-            throw (int)ferror(fpo);
-        }
-
-        n = fwrite((char*)&m_info.m_finished, 1, sizeof(m_info.m_finished), fpo);
-        if (n != sizeof(m_info.m_finished))
-        {
-            throw (int)ferror(fpo);
-        }
-
-        n = fwrite((char*)&m_info.m_error, 1, sizeof(m_info.m_error), fpo);
-        if (n != sizeof(m_info.m_error))
-        {
-            throw (int)ferror(fpo);
-        }
-
-        n = fwrite((char*)&m_info.m_creation_time, 1, sizeof(m_info.m_creation_time), fpo);
-        if (n != sizeof(m_info.m_creation_time))
-        {
-            throw (int)ferror(fpo);
-        }
-
-        n = fwrite((char*)&m_info.m_access_time, 1, sizeof(m_info.m_access_time), fpo);
-        if (n != sizeof(m_info.m_access_time))
-        {
-            throw (int)ferror(fpo);
-        }
-
-        n = fwrite((char*)&m_info.m_file_time, 1, sizeof(m_info.m_file_time), fpo);
-        if (n != sizeof(m_info.m_file_time))
-        {
-            throw (int)ferror(fpo);
-        }
-
-        n = fwrite((char*)&m_info.m_file_size, 1, sizeof(m_info.m_file_size), fpo);
-        if (n != sizeof(m_info.m_file_size))
-        {
-            throw (int)ferror(fpo);
-        }
-    }
-    catch (int error)
-    {
-        mp3fs_warning("Unable to update file '%s': %s", info_file().c_str(), strerror(error));
-        reset();
-        success = false;
-    }
-
-    if (fpo != NULL)
-    {
-        fclose(fpo);
-    }
-
-    return success;
+void Cache_Entry::update_access()
+{
+    m_cache_info.m_access_time = time(NULL);
 }
 
 bool Cache_Entry::open(bool create_cache /*= true*/)
@@ -298,12 +131,12 @@ bool Cache_Entry::open(bool create_cache /*= true*/)
         return true;
     }
 
+    bool erase_cache = !read_info();
+
     if (!create_cache)
     {
         return true;
     }
-
-    bool erase_cache = !read_info();
 
     // Open the cache
     if (m_buffer->open(erase_cache))
@@ -312,13 +145,15 @@ bool Cache_Entry::open(bool create_cache /*= true*/)
     }
     else
     {
-        reset(false);
+        clear(false);
         return false;
     }
 }
 
 bool Cache_Entry::close(bool erase_cache /*= false*/)
-{
+{    
+    write_info();
+
     if (m_buffer == NULL)
     {
         errno = EINVAL;
@@ -341,14 +176,12 @@ bool Cache_Entry::close(bool erase_cache /*= false*/)
     {
         if (erase_cache)
         {
-            if (unlink(info_file().c_str()) && errno != ENOENT)
-            {
-                mp3fs_warning("Cannot unlink the file '%s': %s", info_file().c_str(), strerror(errno));
-            }
-            errno = 0;  // ignore this error
+            return delete_info();
         }
-
-        return true;
+        else
+        {
+            return true;
+        }
     }
     else
     {
@@ -387,27 +220,32 @@ const ID3v1 * Cache_Entry::id3v1tag() const
 
 time_t Cache_Entry::age() const
 {
-    return (time(NULL) - m_info.m_creation_time);
+    return (time(NULL) - m_cache_info.m_creation_time);
 }
 
 time_t Cache_Entry::last_access() const
 {
-    return m_info.m_access_time;
+    return m_cache_info.m_access_time;
 }
 
 bool Cache_Entry::expired() const
 {
-    return ((time(NULL) - m_info.m_creation_time) > params.expiry_time);
+    return (age() > params.expiry_time);
 }
 
 bool Cache_Entry::suspend_timeout() const
 {
-    return ((time(NULL) - m_info.m_access_time) > params.max_inactive_suspend);
+    return ((time(NULL) - m_cache_info.m_access_time) > params.max_inactive_suspend);
 }
 
 bool Cache_Entry::decode_timeout() const
 {
-    return ((time(NULL) - m_info.m_access_time) > params.max_inactive_abort);
+    return ((time(NULL) - m_cache_info.m_access_time) > params.max_inactive_abort);
+}
+
+const std::string & Cache_Entry::filename()
+{
+    return m_cache_info.m_filename;
 }
 
 void Cache_Entry::lock()

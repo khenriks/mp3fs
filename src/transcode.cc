@@ -32,6 +32,7 @@
 #include <cstring>
 #include <limits>
 #include <unistd.h>
+#include <assert.h>
 
 typedef struct tagThread_Data {
     pthread_mutex_t  m_mutex;
@@ -56,7 +57,7 @@ static bool transcode_until(struct Cache_Entry* cache_entry, off_t offset, size_
     size_t end = offset + len;
     bool success = true;
 
-    if (cache_entry->m_info.m_finished || cache_entry->m_buffer->tell() >= end)
+    if (cache_entry->m_cache_info.m_finished || cache_entry->m_buffer->tell() >= end)
     {
         return true;
     }
@@ -64,10 +65,10 @@ static bool transcode_until(struct Cache_Entry* cache_entry, off_t offset, size_
     // Wait until decoder thread has reached the desired position
     if (cache_entry->m_is_decoding)
     {
-        while (!cache_entry->m_info.m_finished && !cache_entry->m_info.m_error && cache_entry->m_buffer->tell() < end) {
+        while (!cache_entry->m_cache_info.m_finished && !cache_entry->m_cache_info.m_error && cache_entry->m_buffer->tell() < end) {
             sleep(0);
         }
-        success = !cache_entry->m_info.m_error;
+        success = !cache_entry->m_cache_info.m_error;
     }
     return success;
 }
@@ -83,15 +84,15 @@ static int transcode_finish(struct Cache_Entry* cache_entry) {
     }
 
     /* Check encoded buffer size. */
-    cache_entry->m_info.m_encoded_filesize = cache_entry->m_buffer->buffer_watermark();
-    cache_entry->m_info.m_finished = true;
+    cache_entry->m_cache_info.m_encoded_filesize = cache_entry->m_buffer->buffer_watermark();
+    cache_entry->m_cache_info.m_finished = true;
     cache_entry->m_is_decoding = false;
 
-    if (!cache_entry->m_buffer->reserve(cache_entry->m_info.m_encoded_filesize)) {
-        mp3fs_warning("FFmpeg transcoder: Unable to truncate buffer.");
+    if (!cache_entry->m_buffer->reserve(cache_entry->m_cache_info.m_encoded_filesize)) {
+        mp3fs_warning("Unable to truncate buffer.");
     }
 
-    mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu, diff: %zi.", cache_entry->calculate_size(), cache_entry->m_info.m_encoded_filesize, cache_entry->m_info.m_encoded_filesize - cache_entry->calculate_size());
+    mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu, diff: %zi.", cache_entry->calculate_size(), cache_entry->m_cache_info.m_encoded_filesize, cache_entry->m_cache_info.m_encoded_filesize - cache_entry->calculate_size());
 
     cache_entry->flush();
 
@@ -107,26 +108,46 @@ void cache_path(char *dir, size_t size)
     {
         *dir = 0;
         strncat(dir, params.cachepath, size - 1);
-        return;
+    }
+    else
+    {
+        tempdir(dir, size);
     }
 
-    tempdir(dir, size);
+    if (*dir && *(dir + strlen(dir)) != '/')
+    {
+        strncat(dir, "/", size - 1);
+    }
+    strncat(dir, "mp3fs", size - 1);
 }
 
-void cache_new(void)
+int cache_new(void)
 {
     if (cache == NULL)
     {
         mp3fs_debug("Creating media file cache.");
         cache = new Cache;
+        if (cache == NULL)
+        {
+            mp3fs_error("ERROR: creating media file cache. Out of memory.");
+            fprintf(stderr, "ERROR: creating media file cache. Out of memory.\n");
+            return -1;
+        }
+
+        if (!cache->load_index())
+        {
+            fprintf(stderr, "ERROR: creating media file cache.\n");
+            return -1;
+        }
     }
+    return 0;
 }
 
 void cache_delete(void)
 {
     Cache *p = cache;
     cache = NULL;
-    if ( p!= NULL)
+    if (p != NULL)
     {
         mp3fs_debug("Deleting media file cache.");
         delete p;
@@ -134,14 +155,14 @@ void cache_delete(void)
 }
 
 int transcoder_cached_filesize(const char* filename, struct stat *stbuf) {
-    mp3fs_debug("Retrieving encoded size for %s.", filename);
+    mp3fs_debug("Retrieving encoded size for '%s'.", filename);
 
     Cache_Entry* cache_entry = cache->open(filename);
     if (!cache_entry) {
         return false;
     }
 
-    size_t encoded_filesize = cache_entry->m_info.m_encoded_filesize;
+    size_t encoded_filesize = cache_entry->m_cache_info.m_encoded_filesize;
 
     if (encoded_filesize)
     {
@@ -174,27 +195,28 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
             throw false;
         }
 
-        if (!cache_entry->m_is_decoding && !cache_entry->m_info.m_finished)
+        if (!cache_entry->m_is_decoding && !cache_entry->m_cache_info.m_finished)
         {
-            if (params.max_threads && thread_count >= params.max_threads)
-            {
-                mp3fs_debug("Too many active threads. Unable to start new thread.");
+            //            if (params.max_threads && thread_count >= params.max_threads)
+            //            {
+            //                mp3fs_debug("Too many active threads. Unable to start new thread.");
 
-                while (!thread_exit && thread_count >= params.max_threads)
-                {
-                    sleep(0);
-                }
+            //                while (!thread_exit && thread_count >= params.max_threads)
+            //                {
+            //                    sleep(0);
+            //                }
 
-                if (thread_count >= params.max_threads)
-                {
-                    mp3fs_error("Unable to start new thread. Cancelling transcode.");
-                    errno = EBUSY; // Report resource busy
-                    throw false;
-                }
-            }
+            //                if (thread_count >= params.max_threads)
+            //                {
+            //                    mp3fs_error("Unable to start new thread. Cancelling transcode.");
+            //                    fprintf(stderr, "Unable to start new thread. Cancelling transcode."); fflush(stderr);
+            //                    errno = EBUSY; // Report resource busy
+            //                    throw false;
+            //                }
+            //            }
 
             /* Create transcoder object. */
-
+			
             mp3fs_debug("Ready to initialise decoder.");
 
             if (cache_entry->m_transcoder->open_input_file(filename) < 0) {
@@ -203,11 +225,17 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
 
             mp3fs_debug("Transcoder initialised successfully.");
 
-            if (begin_transcode && !cache_entry->m_info.m_finished)
+            if (begin_transcode && !cache_entry->m_cache_info.m_finished)
             {
                 pthread_attr_t attr;
                 // int stack_size;
                 int s;
+
+                if (cache_entry->m_cache_info.m_error)
+                {
+                    // If error occurred last time, clear cache
+                    cache_entry->clear();
+                }
 
                 // Must decode the file, otherwise simply use cache
                 cache_entry->m_is_decoding = true;
@@ -264,6 +292,11 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
                 }
             }
         }
+        else
+        {
+            // Store access time
+            cache_entry->update_access();
+        }
 
         cache_entry->unlock();
     }
@@ -283,6 +316,9 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
     mp3fs_trace("Reading %zu bytes from offset %jd.", len, (intmax_t)offset);
 
     cache_entry->lock();
+
+    // Store access time
+    cache_entry->update_access();
 
     try
     {
@@ -304,7 +340,7 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
         }
 
         // Set last access time
-        cache_entry->m_info.m_access_time = time(NULL);
+        cache_entry->m_cache_info.m_access_time = time(NULL);
 
         bool success = transcode_until(cache_entry, offset, len);
 
@@ -323,7 +359,12 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
             len = cache_entry->m_buffer->tell() - offset;
         }
 
-        cache_entry->m_buffer->copy((uint8_t*)buff, offset, len);
+        if (!cache_entry->m_buffer->copy((uint8_t*)buff, offset, len))
+        {
+            len = 0;
+            //    throw -1;
+        }
+        errno = 0;
     }
     catch (int _len)
     {
@@ -339,7 +380,7 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
 
 void transcoder_delete(struct Cache_Entry* cache_entry) {
 
-	if (!cache_entry->m_is_decoding && cache_entry->m_transcoder->is_open())
+    if (!cache_entry->m_is_decoding && cache_entry->m_transcoder->is_open())
     {
         cache_entry->m_transcoder->close();
     }
@@ -349,8 +390,8 @@ void transcoder_delete(struct Cache_Entry* cache_entry) {
 
 /* Return size of output file, as computed by Encoder. */
 size_t transcoder_get_size(struct Cache_Entry* cache_entry) {
-    if (cache_entry->m_info.m_encoded_filesize != 0) {
-        return cache_entry->m_info.m_encoded_filesize;
+    if (cache_entry->m_cache_info.m_encoded_filesize != 0) {
+        return cache_entry->m_cache_info.m_encoded_filesize;
     } else
         return cache_entry->calculate_size();
 }
@@ -392,9 +433,9 @@ static void *decoder_thread(void *arg)
         thread_data->m_initialised = true;
         pthread_cond_signal(&thread_data->m_cond);  // signal that we are running
 
-        mp3fs_debug("Output file opened. Beginning transcoding for file '%s'.", cache_entry->m_filename.c_str());
+        mp3fs_debug("Output file opened. Beginning transcoding for file '%s'.", cache_entry->filename().c_str());
 
-        while (!cache_entry->m_info.m_finished && !(timeout = cache_entry->decode_timeout()) && !thread_exit) {
+        while (!cache_entry->m_cache_info.m_finished && !(timeout = cache_entry->decode_timeout()) && !thread_exit) {
             int stat = cache_entry->m_transcoder->process_single_fr();
 
             if (stat == -1 || (stat == 1 && transcode_finish(cache_entry) == -1)) {
@@ -405,8 +446,9 @@ static void *decoder_thread(void *arg)
 
             if (cache_entry->suspend_timeout())
             {
-                mp3fs_debug("Suspend timeout. Transcoding suspended for file '%s'.", cache_entry->m_filename.c_str());
-                while (cache_entry->suspend_timeout() && !(timeout = cache_entry->decode_timeout()))
+                mp3fs_debug("Suspend timeout. Transcoding suspended for file '%s'.", cache_entry->filename().c_str());
+
+                while (cache_entry->suspend_timeout() && !(timeout = cache_entry->decode_timeout()) && !thread_exit)
                 {
                     sleep(1);
                 }
@@ -416,7 +458,7 @@ static void *decoder_thread(void *arg)
                     break;
                 }
 
-                mp3fs_debug("Transcoding resumed for file '%s'.", cache_entry->m_filename.c_str());
+                mp3fs_debug("Transcoding resumed for file '%s'.", cache_entry->filename().c_str());
             }
         }
     }
@@ -432,26 +474,26 @@ static void *decoder_thread(void *arg)
     if (timeout || thread_exit)
     {
         cache_entry->m_is_decoding = false;
-        cache_entry->m_info.m_finished = false;
-        cache_entry->m_info.m_error = true;
+        cache_entry->m_cache_info.m_finished = false;
+        cache_entry->m_cache_info.m_error = true;
 
         if (timeout)
         {
-            mp3fs_debug("Timeout! Transcoding aborted for file '%s'.", cache_entry->m_filename.c_str());
+            mp3fs_debug("Timeout! Transcoding aborted for file '%s'.", cache_entry->filename().c_str());
             cache->close(&cache_entry, true);  // After timeout need to delete this here
         }
         else
         {
-            mp3fs_debug("Thread exit! Transcoding aborted for file '%s'.", cache_entry->m_filename.c_str());
+            mp3fs_debug("Thread exit! Transcoding aborted for file '%s'.", cache_entry->filename().c_str());
             cache_entry->close();
         }
     }
     else
     {
-        cache_entry->m_info.m_error = !success;
+        cache_entry->m_cache_info.m_error = !success;
         cache_entry->close();
 
-        mp3fs_debug("Transcoding complete for file '%s'.", cache_entry->m_filename.c_str());
+        mp3fs_debug("Transcoding complete for file '%s'. Success = %i", cache_entry->filename().c_str(), success);
     }
 
     thread_count--;

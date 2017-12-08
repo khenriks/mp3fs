@@ -1,5 +1,5 @@
 /*
- * FFMPEG transcoder class header for mp3fs
+ * FFmpeg transcoder class header for mp3fs
  *
  * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
@@ -23,6 +23,8 @@
 
 #pragma once
 
+#include "cache.h"
+
 #include <string>
 
 class Buffer;
@@ -34,16 +36,14 @@ struct Cache_Entry {
     friend class Cache;
 
 protected:
-    explicit Cache_Entry(const char *filename);
+    explicit Cache_Entry(Cache *owner, const std::string & filename);
     virtual ~Cache_Entry();
 
 public:
-    std::string info_file() const;
-    bool read_info();
-    bool write_info();
     bool open(bool create_cache = true);
     bool close(bool erase_cache = false);
     bool flush();
+    void clear(int fetch_file_time = true);
     time_t mtime() const;
     size_t calculate_size() const;
     const ID3v1 * id3v1tag() const;
@@ -52,33 +52,27 @@ public:
     bool expired() const;
     bool suspend_timeout() const;
     bool decode_timeout() const;
+    const std::string & filename();
+    void update_access();
 
     void lock();
     void unlock();
 
 protected:
-    void reset(int fetch_file_time = true);
+    bool read_info();
+    bool write_info();
+    bool delete_info();
 
 public:
+    Cache *             m_owner;
     pthread_mutex_t     m_mutex;
 
     Buffer *            m_buffer;
-    std::string         m_filename;
-    std::string         m_cachefile;
     bool                m_is_decoding;
     pthread_t           m_thread_id;
     int                 m_ref_count;
 
-    struct
-    {
-        size_t          m_encoded_filesize;
-        bool            m_finished;
-        bool            m_error;
-        time_t          m_creation_time;
-        time_t          m_access_time;
-        time_t          m_file_time;
-        uint64_t        m_file_size;
-    } m_info;
+    t_cache_info        m_cache_info;
 
     //protected:
     FFMPEG_Transcoder * m_transcoder;
