@@ -39,11 +39,11 @@ AC_ARG_WITH([ffmpeg],
 # May work with older versions but this is not guaranteed.
 
 AS_IF([test "x$with_ffmpeg" != xno],
-    [PKG_CHECK_MODULES([libavutil], [libavutil >= 52.3.0],
-		[PKG_CHECK_MODULES([libavcodec], [libavcodec >= 54.35.0],
-			[PKG_CHECK_MODULES([libavformat], [libavformat >= 54.20.4],
-				[PKG_CHECK_MODULES([libavresample], [libavresample >= 1.0.1],
-						[PKG_CHECK_MODULES([libswscale], [libswscale >= 2.1.1],
+    [PKG_CHECK_MODULES([libavutil], [libavutil >= 54.3.0],
+		[PKG_CHECK_MODULES([libavcodec], [libavcodec >= 56.1.0],
+			[PKG_CHECK_MODULES([libavformat], [libavformat >= 56.1.0],
+				[PKG_CHECK_MODULES([libavresample], [libavresample >= 2.1.0],
+						[PKG_CHECK_MODULES([libswscale], [libswscale >= 3.0.0],
 							[AC_DEFINE([HAVE_FFMPEG], [1], [Use FFMPEG libraries.])]
 						)
 						]
