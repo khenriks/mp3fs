@@ -77,7 +77,7 @@ following entry in `/etc/fstab`:
     mp3fs#/mnt/music /mnt/mp3fs fuse allow_other,ro,bitrate=128 0 0
 
 At this point files like `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
-show up as `/mnt/mp3fs/**.MP4`.
+show up as `/mnt/mp3fs/**.mp4`.
 
 Note that the "allow_other" option by default can only be used by root.
 You must either run mp3fs as root or better add a "user_allow_other" key 
@@ -86,7 +86,7 @@ to /etc/fuse.conf.
 "allow_other" is required to allow any user access to the mount, by
 default this is only possible for the user who launched mp3fs.
 
-How it Works
+HOW IT WORKS
 ------------
 
 When a file is opened, the decoder and encoder are initialised and
@@ -124,7 +124,7 @@ which scan for id3v1 tags do not have to wait for the whole file to be
 transcoded before reading the tag. This *dramatically* speeds up such
 applications.
 
-Supported Output Formats
+SUPPORTED OUTPUT FORMATS
 ------------------------
 
 A few words to the supported output formats which are MP3 and MP4 
@@ -181,7 +181,7 @@ So there is a lot of work to be put into MP4 support, still.
 The output format must be selectable for the desired audience, for
 streaming or opening the files locally, for example.
 
-Development
+DEVELOPMENT
 -----------
 
 mp3fs uses Git for revision control. You can obtain the full repository
@@ -204,7 +204,7 @@ Future Plans
 * Create a windows version
 * Add DVD/Bluray support
 
-Authors
+AUTHORS
 -------
 
 This fork with FFmpeg support is maintained by Norbert Schlia 
@@ -215,7 +215,7 @@ David Collett (from 2006 to 2008).
 
 Much thanks to them for the original work!
 
-License
+LICENSE
 -------
 
 This program can be distributed under the terms of the GNU GPL version 3
@@ -226,7 +226,7 @@ This file and other documentation files can be distributed under the terms of
 the GNU Free Documentation License 1.3 or later. It can be found
 [online](http://www.gnu.org/licenses/fdl-1.3.html) or in the COPYING.DOC file.
 
-FFmpeg License
+FFMPEG LICENSE
 --------------
 
 FFmpeg is licensed under the GNU Lesser General Public License (LGPL) 
@@ -236,3 +236,22 @@ License (GPL) version 2 or later. If those parts get used the GPL
 applies to all of FFmpeg. 
 
 See https://www.ffmpeg.org/legal.html for details.
+
+COPYRIGHT
+---------
+
+This fork with FFmpeg support copyright \(C) 2017 Norbert Schlia
+(nschlia@oblivion-software.de).
+
+Based on work Copyright \(C) 2006-2008 David Collett, 2008-2013 
+K. Henriksson.
+
+Much thanks to them for the original work!
+
+This is free software: you are free to change and redistribute it under
+the terms of the GNU General Public License (GPL) version 3 or later.
+
+This manual is copyright \(C) 2010-2011 K. Henriksson and 2017 N. Schlia 
+and may be distributed under GNU Free Documentation License 1.3 or later.
+
+
