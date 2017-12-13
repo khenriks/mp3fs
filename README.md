@@ -1,8 +1,6 @@
 mp3fs
 =====
 
-[![Build Status](https://travis-ci.org/nschlia/mp3fs.svg?branch=master)](https://travis-ci.org/nschlia/mp3fs)
-
 Web site:<br />
 **Original Version:** http://khenriks.github.io/mp3fs/<br />
 **FFmpeg Version:** https://github.com/nschlia/mp3fs<br />
