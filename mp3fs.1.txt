@@ -27,27 +27,39 @@ format upon access.
 OPTIONS
 -------
 
-If the following options are capitalised or max** is used, they set 
-maximum values for the respective option. This is the preferred selection 
-as it increases the probability that no recoding takes place if input and 
-output codecs match, resulting in faster processing.
+Usage: ./src/mp3fs [OPTION]... IN_DIR OUT_DIR
 
-*-W -omaxwidth*='WIDTH'::
-    Set the maximum video width. If the source video width is higher,
-    it will be sized down. If it is lower, it will be left unchanged.
-*-w -owidth*='WIDTH'::
-    Set the video width. If the source video width is higher, it will 
-    be sized down. If it is lower, it will sized up.
-*-H -omaxheight*='HEIGHT'::
-    Set the maximum video height. If the source video height is higher,
-    it will be sized down. If it is lower, it will be left unchanged.
-*-h -oheight*='HEIGHT'::
-    Set the video height. If the source video height is higher, it will 
-    be sized down. If it is lower, it will sized up.
-*-B, -omaxbitrate*='RATE'::
-    Set the maximum bitrate to use for encoding. 
-*-b, -obitrate*='RATE'::
-    Set the bitrate to use for encoding.
+Mount IN_DIR on OUT_DIR, converting audio/video files to MP3/MP4 upon access.
+
+Encoding options:
+
+*--desttype*=TYPE, *-odesttype*=TYPE::
+                           Select destination format. Can currently be
+                           either mp3 or mp4. To stream videos, mp4 must be
+                           selected.
+                           Default: mp4
+
+Audio Options:
+
+*--audiobitrate*=RATE, *-oaudiobitrate*=RATE::
+                           Audio encoding bitrate (in kbit): Acceptable values for RATE
+                           include 96, 112, 128, 160, 192, 224, 256, and
+                           320.
+                           Default: 128 kbit
+*--audiosamplerate*=Hz, *-oaudiosamplerate*=Hz::
+                           Limits the output sample rate to Hz. If the source file
+                           sample rate is more it will be downsampled automatically.
+                           Typical values are 8000, 11025, 22050, 44100,
+                           48000, 96000, 192000. Set to 0 to keep source rate.
+                           Default: 44.1 kHz
+
+Video Options:
+
+*--videobitrate*=RATE, *-ovideobitrate*=RATE::
+                           Video encoding bit rate (in kbit). Acceptable values for RATE
+                           range between 500 and 250000. Setting this too high or low may.
+                           cause transcoding to fail.
+                           Default: 2 Mbit
 +
 Acceptable values for 'RATE':
 +
@@ -71,7 +83,57 @@ For sampling frequencies of 16, 22.05, and 24 kHz, 'RATE' can be among 8,
 When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
 160, 192, 224, 256, and 320. If not specified, 'RATE' defaults to 128.
 
-*-d, -odebug*::
+Cache Options:
+
+ *--expiry_time*=SECONDS, *-o expiry_time*=SECONDS::
+                           Cache entries expire after SECONDS and will be deleted
+                           to save disk space.
+                           Default: 1 week
+ *--max_inactive_suspend*=SECONDS, *-o max_inactive_suspend*=SECONDS::
+                           While being accessed the file is transcoded to the target format
+                           in the background. When the client quits transcoding will continue
+                           until this time out. Transcoding is suspended until it is
+                           accessed again, and transcoding will continue.
+                           Default: 2 minutes
+ *--max_inactive_abort*=SECONDS, *-o max_inactive_abort*=SECONDS::
+                           While being accessed the file is transcoded to the target format
+                           in the background. When the client quits transcoding will continue
+                           until this time out, and the transcoder thread quits
+                           Default: 5 minutes
+ *--max_cache_size*=BYTES, *-o max_cache_size*=BYTES::
+                           Set the maximum diskspace used by the cache. If the cache would grow
+                           beyond this limit when a file is transcoded, old entries will be deleted
+                           to keep the cache within the size limit.
+                           Default: unlimited
+ *--min_diskspace*=BYTES, *-o min_diskspace*=BYTES::
+                           Set the required diskspace on the cachepath mount. If the remaining
+                           space would fall below BYTES when a file is transcoded, old entries will
+                           be deleted to keep the diskspace within the limit.
+                           Default: 0 (no minimum space)
+ *--cachepath*=DIR, *-o cachepath*=DIR::
+                           Sets the disk cache directory to DIR. Will be created if not existing.
+                           The user running mp3fs must have write access to the location.
+                           Default: temp directory, e.g. /tmp
+
+Logging:
+
+*--log_maxlevel*=LEVEL, *-olog_maxlevel*=LEVEL::
+                           Maximum level of messages to log, either ERROR,
+                           INFO, TRACE or DEBUG. Defaults to INFO, and always set
+                           to DEBUG in debug mode. Note that the other log
+                           flags must also be set to enable logging.
+*--log_stderr*, *-olog_stderr*::
+                           Enable outputting logging messages to stderr.
+                           Enabled in debug mode.
+*--log_syslog*, *-olog_syslog*::
+                           Enable outputting logging messages to syslog.
+*--logfile*=FILE, *-ologfile*=FILE::
+                           File to output log messages to. By default, no
+                           file will be written.
+
+General/FUSE options:
+
+*-d*, *-odebug*::
     Enable debug output. This will result in a large quantity of
     diagnostic information being printed to stderr as the program runs.
     This option will normally not be used. It implies *-f*.
@@ -79,14 +141,15 @@ When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
 *-f*::
     Run in foreground instead of detaching from the terminal.
 
-*-h, --help*::
+*-h*, *--help*::
     Print usage information.
+
+*-V*, *--version*::
+    Output version information.
 
 *-s*::
     Force single-threaded operation.
 
-*-V, --version*::
-    Output version information.
 
 Usage
 -----
@@ -108,8 +171,8 @@ At this point files like `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
 show up as `/mnt/mp3fs/**.mp4`.
 
 Note that the "allow_other" option by default can only be used by root.
-You must either run mp3fs as root or add a "user_allow_other" key to
-/etc/fuse.conf.
+You must either run mp3fs as root or better add a "user_allow_other" key 
+to /etc/fuse.conf.
 
 "allow_other" is required to allow any user access to the mount, by
 default this is only possible for the user who launched mp3fs.
@@ -119,41 +182,53 @@ HOW IT WORKS
 
 When a file is opened, the decoder and encoder are initialised and
 the file metadata is read. At this time the final filesize can be
-determined approximately. This works well for mp3 output files,
-but only fair to good for mp4.
+determined approximately. This works well for MP3 output files,
+but only fair to good for MP4.
 
 As the file is read, it is transcoded into an internal per-file
 buffer. This buffer continues to grow while the file is being read
-until the whole file is transcoded in memory. The memory is freed
-only when the file is closed. This simplifies the implementation.
+until the whole file is transcoded in memory. Once decoded the 
+file is kept in a disk buffer and can be accessed very fast.
+
+Transcoding is done in an extra thread, so if other processes should
+access the same file they will share the same transcoded data, saving
+CPU time. If the first process abandons the file before its end,
+transconding will continue for some time. If the file is accessed
+again before the timeout, transcoding will go on, if not it stops 
+and the chunk created so far discarded to save disk space.
 
 Seeking within a file will cause the file to be transcoded up to the
 seek point (if not already done). This is not usually a problem
 since most programs will read a file from start to finish. Future
-enhancements may provide true random seeking.
+enhancements may provide true random seeking (But if this is feasible
+is yet unclear due to restrictions to positioning inside compressed
+streams).
 
-ID3 version 2.4 and 1.1 tags are created from the vorbis comments in
-the FLAC, Ogg Vorbis file or equivalent informaton. They are located at 
-the start and end of the file respectively.
+MP3: ID3 version 2.4 and 1.1 tags are created from the comments in the 
+source file. They are located at the start and end of the file 
+respectively. 
 
-A special optimisation is made so that applicatins which scan for
-id3v1 tags do not have to wait for the whole file to be transcoded
-before reading the tag. This *dramatically* speeds up such
+MP4: Same applies to meta atoms in MP4 containers.
+
+MP3 target only: A special optimisation is made so that applications 
+which scan for id3v1 tags do not have to wait for the whole file to be 
+transcoded before reading the tag. This *dramatically* speeds up such
 applications.
 
 SUPPORTED OUTPUT FORMATS
 ------------------------
 
-A few words to the supported output formats which are mp3 and mp4 
-currently. There is not much to say about the mp3 output as these 
-are regular mp3 files with no strings attached. They should play 
+A few words to the supported output formats which are MP3 and MP4 
+currently. There is not much to say about the MP3 output as these 
+are regular MP3 files with no strings attached. They should play 
 well in any modern player.
 
-The mp4 files created are special, though, as mp4 is not quite suited
-for live streaming. Reason being that the start block of an mp4 
+The MP4 files created are special, though, as MP4 is not quite suited
+for live streaming. Reason being that the start block of an MP4 
 contains a field with the size of the compressed data section. Suffice
 to say that this field cannot be filled in until the size is known,
-which means that compression must be completed first. 
+which means compression must be completed first, a seek done to the
+beginning, and the size atom updated.
 
 Alas, for a continous live stream, that size will never be known or
 for our transcoded files one would have to wait for the whole file
@@ -161,28 +236,38 @@ to be recoded. If that was not enough some important pieces of
 information are located at the end of the file, including meta tags
 with artist, album, etc.
 
+Subsequently many applications will go to the end of an MP4 to read
+important information before going back to the head of the file and
+start playing. This will break the whole transcode-on-demand idea
+of mp3fs.
+
 To get around the restriction several extensions have been developed,
 one of which is called "faststart" that relocates the afformentioned
-data from the end to the beginning of the mp4. Additonally, the size field 
+data from the end to the beginning of the MP4. Additonally, the size field 
 can be left empty (0). isml (smooth live streaming) is another extension.
+
+For direct to stream transcoding several new features in MP4 need to
+be used (ISMV, faststart, separate_moof/empty_moov to name them) 
+which are not implemented in older versions (or if available, not 
+working properly). 
 
 By default faststart files will be created with an empty size field so 
 that the file can be started to be written out at once instead of 
 decoding it as a whole before this is possible. That would mean it would 
 take some time before playback can start.
 
-The data part is divided into chunks of about 1 second length each, 
+The data part is divided into chunks of about 5 seconds length each, 
 this allowing to fill in the size fields early enough.
 
 As a draw back not all players support the format, or play back with 
 strange side effects. VLC plays the file, but updates the time display 
-every second only. When streamed over HTML5 video tags, there will be no
+every 5 seconds only. When streamed over HTML5 video tags, there will be no
 total time shown, but that is OK, as it is yet unknown. The playback
 cannot be positioned past the current playback position, only backwards.
 
 But that's the price of starting playback, fast.
 
-So there is a lot of work to be put into mp4 support, still.
+So there is a lot of work to be put into MP4 support, still.
 
 The output format must be selectable for the desired audience, for
 streaming or opening the files locally, for example.
@@ -193,28 +278,27 @@ DEVELOPMENT
 mp3fs uses Git for revision control. You can obtain the full repository
 with:
 
+    git clone https://github.com/nschlia/mp3fs.git (this FFmpeg enabled version)
     git clone https://github.com/khenriks/mp3fs.git (original version)
-    git clone https://github.com/nschlia/mp3fs.git (FFMPEG enabled version)
 
 mp3fs is written in a mixture of C and C++ and uses the following libraries:
 
 * [FUSE](http://fuse.sourceforge.net/)
 
-If using the FFMPEG support (Libav works as well):
+If using the FFmpeg support (Libav works as well, but FFmpeg is recommended):
 
-* [FFMPEG](https://www.ffmpeg.org/) or [LIBAV](https://www.libav.org/)
+* [FFmpeg](https://www.FFmpeg.org/) or [Libav](https://www.Libav.org/)
 
-These are only required if not using FFMPEG:
+Future Plans
+------------
 
-* [FLAC](http://flac.sourceforge.net/)
-* [libvorbis](http://www.xiph.org/vorbis/)
-* [LAME](http://lame.sourceforge.net/)
-* [libid3tag](http://www.underbit.com/products/mad/)
+* Create a windows version
+* Add DVD/Bluray support
 
 AUTHORS
 -------
 
-This fork with FFMPEG support is maintained by Norbert Schlia 
+This fork with FFmpeg support is maintained by Norbert Schlia 
 (nschlia@oblivion-software.de) since 2017.
 
 Based on work by K. Henriksson (from 2008 to 2017) and the original author 
@@ -247,7 +331,7 @@ See https://www.ffmpeg.org/legal.html for details.
 COPYRIGHT
 ---------
 
-This fork with FFMPEG support copyright \(C) 2017 Norbert Schlia
+This fork with FFmpeg support copyright \(C) 2017 Norbert Schlia
 (nschlia@oblivion-software.de).
 
 Based on work Copyright \(C) 2006-2008 David Collett, 2008-2013 
