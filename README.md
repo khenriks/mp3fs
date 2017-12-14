@@ -1,8 +1,12 @@
 mp3fs
 =====
 
-[![Build Status](https://www.oblivion-secure.de/jenkins/buildStatus/icon?job=ffmpegfs%20(github))](https://github.com/nschlia/mp3fs/) 
-*gcc version 4.9.2/Libav 11.1*
+| Compiler | Library | Build State |
+| ------------- | ------------- | ------------- |
+| gcc 4.9.2 | Libav 11.1 | [![Build Status](https://www.oblivion-secure.de/jenkins/buildStatus/icon?job=ffmpegfs%20(github))](https://github.com/nschlia/mp3fs/) |
+| gcc 4.9.2 | FFmpeg | coming soon |
+
+*clang, gcc 5/6 and other FFmpeg/Libav versions are also planned...*
 
 Web site:<br />
 **Original Version:** http://khenriks.github.io/mp3fs/<br />
