@@ -1,11 +1,19 @@
 mp3fs NEWS
 
-Important changes in 0.92-FFmpeg (2017-11-28)
+Important changes in 0.92-FFmpeg (2017-12-14)
 
 Changes in this release:
 * Files will now be decoded to /tmp/ instead of memory.
 * Full support for video files (mp4 target only).
 * Removed --statcachesize option as caching will be handled by new disk cache.
+* Fixed sync problems while accessing the same file concurrently
+* Fixed many crashes due to incorrect usage of FFmpeg
+* Cache directory user defineable
+* Delete cache entries after predefined time
+* Detect if file has changed and re-transcode
+* Limit cache size
+* Suspend transcode after n seconds
+* Exit transcode after n seconds
 * TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
   that already represents a H264 video stream it would be possible to 
   simply repackage it to a mp4 container without recoding.
