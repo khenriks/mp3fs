@@ -1885,7 +1885,6 @@ size_t FFMPEG_Transcoder::calculate_size() {
                 {
                 case AV_CODEC_ID_H264:
                 {
-                    //Math.round(s*parseFloat(document.Calc.RTotal.value)*125);
                     size += (size_t)(duration * 1.025  * (double)videobitrate / 8); // add 2.5% for overhead
                     break;
                 }
@@ -1905,7 +1904,7 @@ size_t FFMPEG_Transcoder::calculate_size() {
         m_nCalculated_size = size;
     }
 
-    return m_nCalculated_size; // * 0.2;
+    return m_nCalculated_size;
 }
 
 /*
