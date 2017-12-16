@@ -31,7 +31,7 @@ namespace {
     Logging* logging;
 }
 
-Logging::Logging(std::string logfile, level max_level, bool to_stderr,
+Logging::Logging(string logfile, level max_level, bool to_stderr,
                  bool to_syslog) :
     max_level_(max_level), to_stderr_(to_stderr), to_syslog_(to_syslog) {
     if (!logfile.empty()) {
@@ -46,22 +46,22 @@ Logging::Logger::~Logger() {
     if (!logging_ || loglevel_ > logging_->max_level_) return;
 
     // Construct string containing time
-    std::time_t now = std::time(nullptr);
-    std::string time_string(30, '\0');
-    time_string.resize(std::strftime(&time_string[0], time_string.size(),
-                                     "%F %T", std::localtime(&now)));
+    time_t now = time(nullptr);
+    string time_string(30, '\0');
+    time_string.resize(strftime(&time_string[0], time_string.size(),
+                                     "%F %T", localtime(&now)));
 
-    std::string msg = "[" + time_string + "] " +
+    string msg = "[" + time_string + "] " +
         level_name_map_.at(loglevel_) + ": " + str();
 
     if (logging_->to_syslog_) {
         syslog(syslog_level_map_.at(loglevel_), "%s", msg.c_str());
     }
-    if (logging_->logfile_.is_open()) logging_->logfile_ << msg << std::endl;
-    if (logging_->to_stderr_) std::clog << msg << std::endl;
+    if (logging_->logfile_.is_open()) logging_->logfile_ << msg << endl;
+    if (logging_->to_stderr_) clog << msg << endl;
 }
 
-const std::map<Logging::level,int> Logging::Logger::syslog_level_map_ = {
+const map<Logging::level,int> Logging::Logger::syslog_level_map_ = {
     {ERROR,     LOG_ERR},
     {WARNING,   LOG_WARNING},
     {INFO,      LOG_INFO},
@@ -69,7 +69,7 @@ const std::map<Logging::level,int> Logging::Logger::syslog_level_map_ = {
     {TRACE,     LOG_DEBUG},
 };
 
-const std::map<Logging::level,std::string> Logging::Logger::level_name_map_ = {
+const map<Logging::level,string> Logging::Logger::level_name_map_ = {
     {ERROR,     "ERROR"},
     {WARNING,   "WARNING"},
     {INFO,      "INFO"},
@@ -81,7 +81,7 @@ Logging::Logger Log(Logging::level lev) {
     return {lev, logging};
 }
 
-bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr, bool to_syslog) {
+bool InitLogging(string logfile, Logging::level max_level, bool to_stderr, bool to_syslog) {
     logging = new Logging(logfile, max_level, to_stderr, to_syslog);
     return !logging->GetFail();
 }
@@ -97,10 +97,29 @@ void log_with_level(Logging::level level, const char* prefix, const char* format
     va_copy(ap2, ap);
 
     int size = vsnprintf(nullptr, 0, format, ap);
-    std::string buffer(size, '\0');
+    string buffer(size, '\0');
     vsnprintf(&buffer[0], buffer.size() + 1, format, ap2);
 
     va_end(ap2);
+	
+//#ifndef NDEBUG
+//    if (level == Logging::level::TRACE)
+//    {
+//        cerr << "TRACE: " << buffer << endl;
+//    }
+    if (level == Logging::level::DEBUG)
+    {
+        cerr << "DEBUG: " << buffer << endl;
+    }
+    if (level == Logging::level::WARNING)
+    {
+        cerr << "WARNING: " << buffer << endl;
+    }
+    if (level == Logging::level::ERROR)
+    {
+        cerr << "ERROR: " << buffer << endl;
+    }
+//#endif
 
     Log(level) << prefix << buffer;
 }

@@ -36,12 +36,11 @@ struct Cache_Entry {
     friend class Cache;
 
 protected:
-    explicit Cache_Entry(Cache *owner, const std::string & filename);
+    explicit Cache_Entry(Cache *owner, const string & filename);
     virtual ~Cache_Entry();
 
 public:
     bool open(bool create_cache = true);
-    bool close(bool erase_cache = false);
     bool flush();
     void clear(int fetch_file_time = true);
     time_t mtime() const;
@@ -52,13 +51,16 @@ public:
     bool expired() const;
     bool suspend_timeout() const;
     bool decode_timeout() const;
-    const std::string & filename();
-    void update_access();
+    const string & filename();
+    bool update_access(bool bUpdateDB = false);
 
     void lock();
     void unlock();
 
 protected:
+    bool close(int flags);
+    void close_buffer(int flags);
+
     bool read_info();
     bool write_info();
     bool delete_info();

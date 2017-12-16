@@ -113,6 +113,14 @@ const char *get_media_type_string(enum AVMediaType media_type);
 #define AV_CODEC_CAP_DELAY              CODEC_CAP_DELAY
 #endif
 
+#if !defined(AV_CODEC_CAP_TRUNCATED) && defined(CODEC_CAP_TRUNCATED)
+#define AV_CODEC_CAP_TRUNCATED          CODEC_CAP_TRUNCATED
+#endif
+
+#if !defined(AV_CODEC_FLAG_TRUNCATED) && defined(CODEC_FLAG_TRUNCATED)
+#define AV_CODEC_FLAG_TRUNCATED         CODEC_FLAG_TRUNCATED
+#endif
+
 #ifndef AV_CODEC_FLAG_GLOBAL_HEADER
 #define AV_CODEC_FLAG_GLOBAL_HEADER     CODEC_FLAG_GLOBAL_HEADER;
 #endif
@@ -121,10 +129,20 @@ const char *get_media_type_string(enum AVMediaType media_type);
 #define FF_INPUT_BUFFER_PADDING_SIZE    256
 #endif
 
+typedef enum _tagOUTPUTTYPE
+{
+    TYPE_UNKNOWN,
+    TYPE_MP3,
+    TYPE_MP4
+} OUTPUTTYPE;
+
 #ifdef __cplusplus
 #include <string>
 #include <libavutil/rational.h>
-std::string ffmpeg_geterror(int errnum);
+
+using namespace std;
+
+string ffmpeg_geterror(int errnum);
 double ffmpeg_cvttime(int64_t ts, const AVRational & time_base);
 #endif
 
@@ -134,6 +152,8 @@ extern "C" {
 void ffmpeg_libinfo(char * buffer, size_t maxsize);
 int show_formats_devices(int device_only);
 const char * get_codec_name(enum AVCodecID codec_id);
+const char * get_codecs(const char * type, OUTPUTTYPE * output_type, enum AVCodecID * audio_codecid, enum AVCodecID * video_codecid, int enable_ismv);
+
 #ifdef __cplusplus
 }
 #endif

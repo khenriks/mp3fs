@@ -24,7 +24,9 @@
 #include "transcode.h"
 #include "ffmpeg_utils.h"
 
+#include <sys/statvfs.h>
 #include <assert.h>
+#include <vector>
 
 #ifndef HAVE_SQLITE_ERRSTR
 #define sqlite3_errstr(rc)  ""
@@ -136,7 +138,7 @@ bool Cache::load_index()
             throw false;
         }
 
-        sql =   "SELECT target_format, encoded_filesize, finished, error, strftime('%s', creation_time), strftime('%s', access_time), strftime('%s', file_time), file_size FROM cache_entry WHERE filename = ?\n";
+        sql =   "SELECT target_format, encoded_filesize, finished, error, strftime('%s', creation_time), strftime('%s', access_time), strftime('%s', file_time), file_size FROM cache_entry WHERE filename = ?;\n";
 
         if (SQLITE_OK != (ret = sqlite3_prepare_v2(m_cacheidx_db, sql, -1, &m_cacheidx_select_stmt, NULL)))
         {
@@ -144,7 +146,7 @@ bool Cache::load_index()
             throw false;
         }
 
-        sql =   "DELETE FROM cache_entry WHERE filename = ?\n";
+        sql =   "DELETE FROM cache_entry WHERE filename = ?;\n";
 
         if (SQLITE_OK != (ret = sqlite3_prepare_v2(m_cacheidx_db, sql, -1, &m_cacheidx_delete_stmt, NULL)))
         {
@@ -338,7 +340,7 @@ bool Cache::write_info(const t_cache_info & cache_info)
     return success;
 }
 
-bool Cache::delete_info(const t_cache_info & cache_info)
+bool Cache::delete_info(const string & filename)
 {
     int ret;
     bool success = true;
@@ -355,7 +357,7 @@ bool Cache::delete_info(const t_cache_info & cache_info)
     {
         assert(sqlite3_bind_parameter_count(m_cacheidx_delete_stmt) == 1);
 
-        if (SQLITE_OK != (ret = sqlite3_bind_text(m_cacheidx_delete_stmt, 1, cache_info.m_filename.c_str(), -1, NULL)))
+        if (SQLITE_OK != (ret = sqlite3_bind_text(m_cacheidx_delete_stmt, 1, filename.c_str(), -1, NULL)))
         {
             mp3fs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
             throw false;
@@ -403,11 +405,47 @@ void Cache::close_index()
     sqlite3_shutdown();
 }
 
+Cache_Entry* Cache::create_entry(const string & filename)
+{
+    Cache_Entry* cache_entry = new Cache_Entry(this, filename);
+    if (cache_entry == NULL)
+    {
+        mp3fs_error("Out of memory for file '%s'.", filename.c_str());
+        return NULL;
+    }
+    m_cache.insert(make_pair(filename, cache_entry));
+    return cache_entry;
+}
+
+bool Cache::delete_entry(Cache_Entry ** cache_entry, int flags)
+{
+    if (*cache_entry == NULL)
+    {
+        return true;
+    }
+
+    if ((*cache_entry)->close(flags))
+    {
+        // If CLOSE_CACHE_FREE is set, also free memory
+        if (CACHE_CHECK_BIT(CLOSE_CACHE_FREE, flags))
+        {
+            m_cache.erase((*cache_entry)->m_cache_info.m_filename);
+
+            delete (*cache_entry);
+            *cache_entry = NULL;
+
+            return true; // Freed entry
+        }
+    }
+
+    return false;   // Kept entry
+}
+
 Cache_Entry* Cache::open(const char *filename)
 {
     Cache_Entry* cache_entry = NULL;
-	char resolved_name[PATH_MAX];
-	string sanitised_name;
+    char resolved_name[PATH_MAX];
+    string sanitised_name;
 
     if (realpath(filename, resolved_name) == NULL)
     {
@@ -421,13 +459,7 @@ Cache_Entry* Cache::open(const char *filename)
     cache_t::iterator p = m_cache.find(sanitised_name);
     if (p == m_cache.end()) {
         mp3fs_debug("Created new transcoder for file '%s'.", sanitised_name.c_str());
-        cache_entry = new Cache_Entry(this, sanitised_name);
-        if (cache_entry == NULL)
-        {
-            mp3fs_error("Out of memory for file '%s'.", sanitised_name.c_str());
-            return NULL;
-        }
-        m_cache.insert(std::make_pair(sanitised_name, cache_entry));
+        cache_entry = create_entry(sanitised_name);
     } else {
         mp3fs_debug("Reusing cached transcoder for file '%s'.", sanitised_name.c_str());
         cache_entry = p->second;
@@ -436,37 +468,204 @@ Cache_Entry* Cache::open(const char *filename)
     return cache_entry;
 }
 
-void Cache::close(Cache_Entry **cache_entry, bool erase_cache)
+bool Cache::close(Cache_Entry **cache_entry, int flags /*= CLOSE_CACHE_DELETE*/)
 {
     if ((*cache_entry) == NULL)
     {
-        return;
+        return true;
     }
 
-    std::string filename((*cache_entry)->filename());
-    if ((*cache_entry)->m_cache_info.m_error || (!(*cache_entry)->m_is_decoding && !(*cache_entry)->m_cache_info.m_finished))
+    string filename((*cache_entry)->filename());
+    if (delete_entry(cache_entry, flags))
     {
-        cache_t::iterator p = m_cache.find(filename);
-        if (p == m_cache.end()) {
-            mp3fs_warning("Unable to delete unknown cache entry for file '%s'.", filename.c_str());
-        } else {
-            mp3fs_debug("Deleted cache entry for file '%s'.", filename.c_str());
-            m_cache.erase(p);
-
-            (*cache_entry)->close(erase_cache);
-
-            delete *cache_entry;
-        }
-
-        *cache_entry = NULL;
+        mp3fs_debug("Freed cache entry for file '%s'.", filename.c_str());
+        return true;
     }
     else
     {
-        //(*cache_entry)->flush();
-        (*cache_entry)->close();
-
-        mp3fs_debug("Keeping transcoder for file '%s'.", filename.c_str());
+        mp3fs_debug("Keeping cache entry for file '%s'.", filename.c_str());
+        return false;
     }
+}
+
+bool Cache::prune_expired()
+{
+    if (params.expiry_time <= 0)
+    {
+        // There's no limit.
+        return true;
+    }
+
+    vector<string> filenames;
+    sqlite3_stmt * stmt;
+    time_t now = time(NULL);
+    char sql[1024];
+
+    //fprintf(stderr, "Pruning expired cache entries older than %zu seconds...\n", params.expiry_time); fflush(stderr);
+
+    sprintf(sql, "SELECT filename, strftime('%%s', access_time) FROM cache_entry WHERE strftime('%%s', access_time) + %zu < %zu;\n", params.expiry_time, now);
+
+    sqlite3_prepare(m_cacheidx_db, sql, -1, &stmt, NULL);
+
+    int ret_code = 0;
+    while((ret_code = sqlite3_step(stmt)) == SQLITE_ROW)
+    {
+        const char *filename = (const char *) sqlite3_column_text(stmt, 0);
+        filenames.push_back(filename);
+        //fprintf(stderr, "Found %zu seconds old entry: %s\n", now - (time_t)sqlite3_column_int64(stmt, 1), filename); fflush(stderr);
+    }
+
+    //fprintf(stderr, "%zu expired cache entries found.\n", filenames.size()); fflush(stderr);
+
+    if (ret_code == SQLITE_DONE)
+    {
+        for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); it++)
+        {
+            const string & filename = *it;
+            //fprintf(stderr, "Pruning: %s\n", filename.c_str()); fflush(stderr);
+
+            cache_t::iterator p = m_cache.find(filename);
+            if (p != m_cache.end())
+            {
+                delete_entry(&p->second, CLOSE_CACHE_DELETE);
+            }
+
+            delete_info(filename);
+        }
+    }
+    else
+    {
+        //this error handling could be done better, but it works
+        printf("ERROR: while performing sql: %s\n", sqlite3_errmsg(m_cacheidx_db));
+        printf("ret_code = %d\n", ret_code);
+    }
+
+    sqlite3_finalize(stmt);
+
+    return true;
+}
+
+bool Cache::prune_cache_size()
+{
+    if (!params.max_cache_size)
+    {
+        // There's no limit.
+        return true;
+    }
+
+    vector<string> filenames;
+    vector<size_t> filesizes;
+    sqlite3_stmt * stmt;
+    const char * sql;
+
+    //fprintf(stderr, "Pruning oldest cache entries exceeding %zu bytes cache size...\n", params.max_cache_size); fflush(stderr);
+
+    sql = "SELECT filename, encoded_filesize FROM cache_entry ORDER BY access_time ASC;\n";
+
+    sqlite3_prepare(m_cacheidx_db, sql, -1, &stmt, NULL);
+
+    int ret_code = 0;
+    size_t total_size = 0;
+    while((ret_code = sqlite3_step(stmt)) == SQLITE_ROW)
+    {
+        const char *filename = (const char *) sqlite3_column_text(stmt, 0);
+        size_t size = (size_t)sqlite3_column_int64(stmt, 1);
+        filenames.push_back(filename);
+        filesizes.push_back(size);
+        total_size += size;
+    }
+
+    //fprintf(stderr, "%zu bytes in cache.\n", total_size); fflush(stderr);
+
+    if (total_size > params.max_cache_size)
+    {
+        if (ret_code == SQLITE_DONE)
+        {
+            int n = 0;
+            for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); it++)
+            {
+                const string & filename = *it;
+                //fprintf(stderr, "Pruning: %s\n", filename.c_str()); fflush(stderr);
+
+                cache_t::iterator p = m_cache.find(filename);
+                if (p != m_cache.end())
+                {
+                    delete_entry(&p->second, CLOSE_CACHE_DELETE);
+                }
+
+                delete_info(filename);
+
+                total_size -= filesizes[n++];
+
+                if (total_size <= params.max_cache_size)
+                {
+                    break;
+                }
+            }
+
+            //fprintf(stderr, "%zu bytes left in cache.\n", total_size); fflush(stderr);
+        }
+        else
+        {
+            //this error handling could be done better, but it works
+            printf("ERROR: while performing sql: %s\n", sqlite3_errmsg(m_cacheidx_db));
+            printf("ret_code = %d\n", ret_code);
+        }
+    }
+
+    sqlite3_finalize(stmt);
+
+    return true;
+}
+
+bool Cache::prune_disk_space(size_t predicted_filesize)
+{
+    char cachepath[PATH_MAX];
+    struct statvfs buf;
+
+    cache_path(cachepath, sizeof(cachepath));
+
+    if (statvfs(cachepath, &buf))
+    {
+        //fprintf(stderr, "prune_disk_space() cannot determine free disk space: %s\n", strerror(errno));
+        return false;
+    }
+
+    size_t free_bytes = buf.f_bfree * buf.f_bsize;
+
+    //fprintf(stderr, "Disk space: %zu bytes\n", free_bytes);
+
+    if (free_bytes < params.min_diskspace + predicted_filesize)
+    {
+        //fprintf(stderr, "Pruning oldest cache entries to keep disk space above %zu bytes limit...\n", params.min_diskspace); fflush(stderr);
+
+
+    }
+
+    return true;
+}
+
+bool Cache::prune_cache(size_t predicted_filesize)
+{
+    bool bSuccess = true;
+
+    lock();
+
+    // TODO #2255: Time (seconds) after which an cache entry is deleted
+    // Find and remove expired cache entries
+    bSuccess &= prune_expired();
+
+    // TODO #2237: Max. cache size in MB. When exceeded, oldest entries will be pruned
+    // Check max. cache size
+    bSuccess &= prune_cache_size();
+
+    // TODO #2234: Min. diskspace required for cache
+    // Check min. diskspace required for cache
+    bSuccess &= prune_disk_space(predicted_filesize);
+
+    unlock();
+
+    return bSuccess;
 }
 
 void Cache::lock()

@@ -27,13 +27,21 @@
 #include <cstddef>
 #include <string>
 
+#define CACHE_CHECK_BIT(mask, var)  ((mask) == (mask & (var)))
+
+#define CLOSE_CACHE_NOOPT   0x00                        // Dummy, do nothing special
+#define CLOSE_CACHE_FREE    0x01                        // Free memory for cache entry
+#define CLOSE_CACHE_DELETE  (0x02 | CLOSE_CACHE_FREE)   // Delete cache entry, will unlink cached file! Implies CLOSE_CACHE_FREE.
+
+using namespace std;
+
 class Buffer {
 public:
-    explicit Buffer(const std::string & filename);
+    explicit Buffer(const string & filename);
     virtual ~Buffer();
 
-    bool open(bool erase_cache = false);
-    bool close(bool erase_cache = false);
+    bool open(bool erase_cache = false);                // Open cache, if erase_cache = true delete old file before opening
+    bool close(int flags = CLOSE_CACHE_NOOPT);
     bool flush();
     bool reserve(size_t size);
     size_t write(const uint8_t* data, size_t length);
@@ -46,21 +54,24 @@ public:
     void lock();
     void unlock();
     
+protected:
+    bool remove_file();
+    
 private:
     uint8_t* write_prepare(size_t length);
     void increment_pos(ptrdiff_t increment);
     bool reallocate(size_t newsize);
 
 private:
-    pthread_mutex_t     m_mutex;
-    const std::string & m_filename;
-    std::string         m_cachefile;
-    size_t              m_buffer_pos;           // Read/write position
-    size_t              m_buffer_watermark;     // Number of bytes in buffer
-    volatile bool       m_is_open;
-    size_t              m_buffer_size;          // Current buffer size
-    uint8_t *           m_buffer;
-    int                 m_fd;
+    pthread_mutex_t m_mutex;
+    const string &  m_filename;
+    string          m_cachefile;
+    size_t          m_buffer_pos;           // Read/write position
+    size_t          m_buffer_watermark;     // Number of bytes in buffer
+    volatile bool   m_is_open;
+    size_t          m_buffer_size;          // Current buffer size
+    uint8_t *       m_buffer;
+    int             m_fd;
 };
 
 #endif

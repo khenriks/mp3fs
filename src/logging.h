@@ -29,6 +29,8 @@
 #include <ostream>
 #include <sstream>
 
+using namespace std;
+
 class Logging {
 public:
     enum class level
@@ -48,12 +50,12 @@ public:
      *   to_stderr: Whether to write log output to stderr.
      *   to_syslog: Whether to write log output to syslog.
      */
-    explicit Logging(std::string logfile, level max_level, bool to_stderr, bool to_syslog);
+    explicit Logging(string logfile, level max_level, bool to_stderr, bool to_syslog);
 
     bool GetFail() const { return logfile_.fail(); }
 
 private:
-    class Logger : public std::ostringstream {
+    class Logger : public ostringstream {
     public:
         Logger(level loglevel, Logging* logging) :
             loglevel_(loglevel), logging_(logging) {}
@@ -65,20 +67,20 @@ private:
 
         Logging* logging_;
 
-        static const std::map<level,int> syslog_level_map_;
-        static const std::map<level,std::string> level_name_map_;
+        static const map<level,int> syslog_level_map_;
+        static const map<level,string> level_name_map_;
     };
 
     friend Logger Log(level lev);
     friend Logger;
 
-    std::ofstream logfile_;
+    ofstream logfile_;
     const level max_level_;
     const bool to_stderr_;
     const bool to_syslog_;
 };
 
-bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr, bool to_syslog);
+bool InitLogging(string logfile, Logging::level max_level, bool to_stderr, bool to_syslog);
 
 constexpr auto ERROR = Logging::level::ERROR;
 constexpr auto WARNING = Logging::level::WARNING;

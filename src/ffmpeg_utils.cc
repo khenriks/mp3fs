@@ -1,5 +1,5 @@
 /*
- * FFMPEG utilities for mp3fs
+ * FFmpeg utilities for mp3fs
  *
  * Copyright (C) 2017 by Norbert Schlia (nschlia@oblivion-software.de)
  *
@@ -47,7 +47,7 @@ static int is_device(const AVClass *avclass);
 #define AV_ERROR_MAX_STRING_SIZE 128
 #endif // AV_ERROR_MAX_STRING_SIZE
 
-std::string ffmpeg_geterror(int errnum)
+string ffmpeg_geterror(int errnum)
 {
     char error[AV_ERROR_MAX_STRING_SIZE];
     av_strerror(errnum, error, AV_ERROR_MAX_STRING_SIZE);
@@ -80,7 +80,7 @@ const char *get_media_type_string(enum AVMediaType media_type)
 }
 #endif
 
-static std::string ffmpeg_libinfo(
+static string ffmpeg_libinfo(
         bool bLibExists,
         unsigned int /*nVersion*/,
         const char * /*pszCfg*/,
@@ -89,7 +89,7 @@ static std::string ffmpeg_libinfo(
         int nVersionMicro,
         const char * pszLibname)
 {
-    std::string info;
+    string info;
 
     if (bLibExists)
     {
@@ -113,7 +113,7 @@ void ffmpeg_libinfo(char * buffer, size_t maxsize)
     ffmpeg_libinfo(true, libname##_version(), libname##_configuration(), \
     LIB##LIBNAME##_VERSION_MAJOR, LIB##LIBNAME##_VERSION_MINOR, LIB##LIBNAME##_VERSION_MICRO, #libname)
 
-    std::string info;
+    string info;
 
 #ifdef USING_LIBAV
     info = "Libav Version       :\n";
@@ -289,6 +289,34 @@ void tempdir(char *dir, size_t size)
     strncpy(dir, "/tmp", size);
 }
 
+const char * get_codecs(const char * type, OUTPUTTYPE * output_type, AVCodecID * audio_codecid, AVCodecID * video_codecid, int enable_ismv)
+{
+    if (!strcasecmp(type, "mp3"))
+    {
+        *audio_codecid = AV_CODEC_ID_MP3;
+        *video_codecid = AV_CODEC_ID_PNG;
+        if (output_type != NULL)
+        {
+            *output_type = TYPE_MP3;
+        }
+        return "mp3";
+    }
+    else if (!strcasecmp(type, "mp4"))
+    {
+        *audio_codecid = AV_CODEC_ID_AAC;
+        *video_codecid = AV_CODEC_ID_H264;
+        if (output_type != NULL)
+        {
+            *output_type = TYPE_MP4;
+        }
+        return enable_ismv ? "ismv" : "mp4";
+    }
+    else
+    {
+        return NULL;
+    }
+}
+
 #ifdef USING_LIBAV
 int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat, const char *format, const char *filename)
 {
@@ -360,5 +388,64 @@ const char *avcodec_get_name(enum AVCodecID id)
     if (codec)
         return codec->name;
     return "unknown_codec";
+}
+#endif
+
+
+#if 0
+#include <stdio.h>
+//#include <stdlib.h>
+//#include <sys/types.h>
+#include <sys/stat.h>
+//#include <unistd.h>
+#include <mntent.h>
+#include <errno.h>
+#include <sys/statvfs.h>
+
+long available_space(const char* path)
+{
+  struct statvfs stat;
+
+  if (statvfs(path, &stat) != 0) {
+    // error happens, just quits here
+    return -1;
+  }
+
+  // the available size is f_bsize * f_bavail
+  return stat.f_bsize * stat.f_bavail;
+}
+
+struct mntent *mountpoint(char *filename, struct mntent *mnt, char *buf, size_t bufsize)
+{
+    struct stat s;
+    FILE *      fp;
+    dev_t       dev;
+
+    if (stat(filename, &s) != 0) {
+        return NULL;
+    }
+
+    dev = s.st_dev;
+
+    if ((fp = setmntent("/proc/mounts", "r")) == NULL) {
+        return NULL;
+    }
+
+    while (getmntent_r(fp, mnt, buf, bufsize)) {
+        if (stat(mnt->mnt_dir, &s) != 0) {
+            continue;
+        }
+
+        if (s.st_dev == dev) {
+            endmntent(fp);
+            return mnt;
+        }
+    }
+
+    endmntent(fp);
+
+    // Should never reach here.
+    errno = EINVAL;
+    return NULL;
 }
 #endif

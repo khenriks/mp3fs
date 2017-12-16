@@ -31,14 +31,14 @@
 
 using namespace std;
 
-Cache_Entry::Cache_Entry(Cache *owner, const std::string & filename)
+Cache_Entry::Cache_Entry(Cache *owner, const string & filename)
     : m_owner(owner)
     , m_mutex(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
     , m_thread_id(0)
     , m_ref_count(0)
     , m_transcoder(new FFMPEG_Transcoder)
 {
-	m_cache_info.m_filename = filename;
+    m_cache_info.m_filename = filename;
     
     m_cache_info.m_target_format[0] = '\0';
     strncat(m_cache_info.m_target_format, params.desttype, sizeof(m_cache_info.m_target_format) - 1);
@@ -67,8 +67,6 @@ Cache_Entry::~Cache_Entry()
             mp3fs_debug("Thread id %zx has terminated.", m_thread_id);
         }
     }
-
-    //assert(errno == 0); // DEBUG
 
     delete m_buffer;
     delete m_transcoder;
@@ -110,12 +108,21 @@ bool Cache_Entry::write_info()
 
 bool Cache_Entry::delete_info()
 {
-    return m_owner->delete_info(m_cache_info);
+    return m_owner->delete_info(m_cache_info.m_filename);
 }
 
-void Cache_Entry::update_access()
+bool Cache_Entry::update_access(bool bUpdateDB /*= false*/)
 {
     m_cache_info.m_access_time = time(NULL);
+
+    if (bUpdateDB)
+    {
+        return m_owner->write_info(m_cache_info);
+    }
+    else
+    {
+        return true;
+    }
 }
 
 bool Cache_Entry::open(bool create_cache /*= true*/)
@@ -131,12 +138,15 @@ bool Cache_Entry::open(bool create_cache /*= true*/)
         return true;
     }
 
-    bool erase_cache = !read_info();
+    bool erase_cache = !read_info();    // If read_info fails, rebuild cache entry
 
     if (!create_cache)
     {
         return true;
     }
+
+    // Store access time
+    update_access(true);
 
     // Open the cache
     if (m_buffer->open(erase_cache))
@@ -150,7 +160,19 @@ bool Cache_Entry::open(bool create_cache /*= true*/)
     }
 }
 
-bool Cache_Entry::close(bool erase_cache /*= false*/)
+void Cache_Entry::close_buffer(int flags)
+{
+    if (m_buffer->close(flags))
+    {
+        if (flags)
+        {
+            delete_info();
+        }
+    }
+}
+
+// Returns true if entry may be deleted, false if still in use
+bool Cache_Entry::close(int flags)
 {    
     write_info();
 
@@ -160,8 +182,14 @@ bool Cache_Entry::close(bool erase_cache /*= false*/)
         return false;
     }
 
+    //lock();
+
     if (!m_ref_count)
     {
+        close_buffer(flags);
+
+        //unlock();
+
         return true;
     }
 
@@ -169,24 +197,14 @@ bool Cache_Entry::close(bool erase_cache /*= false*/)
     {
         // Just flush to disk
         flush();
-        return true;
-    }
-
-    if (m_buffer->close(erase_cache))
-    {
-        if (erase_cache)
-        {
-            return delete_info();
-        }
-        else
-        {
-            return true;
-        }
-    }
-    else
-    {
         return false;
     }
+
+    close_buffer(flags);
+
+    //unlock();
+
+    return true;
 }
 
 bool Cache_Entry::flush()
@@ -243,7 +261,7 @@ bool Cache_Entry::decode_timeout() const
     return ((time(NULL) - m_cache_info.m_access_time) > params.max_inactive_abort);
 }
 
-const std::string & Cache_Entry::filename()
+const string & Cache_Entry::filename()
 {
     return m_cache_info.m_filename;
 }

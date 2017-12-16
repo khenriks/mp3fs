@@ -97,6 +97,8 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
 
     mp3fs_trace("readlink %s", path);
 
+    //errno = 0;
+
     origpath = translate_path(path);
     if (!origpath) {
         goto translate_fail;
@@ -131,6 +133,8 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     struct dirent *de;
 
     mp3fs_trace("readdir %s", path);
+
+    //errno = 0;
 
     origpath = translate_path(path);
     if (!origpath) {
@@ -182,6 +186,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
 
     mp3fs_trace("getattr %s", path);
 
+    //errno = 0;
 
     origpath = translate_path(path);
     if (!origpath) {
@@ -190,6 +195,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
 
     /* pass-through for regular files */
     if (lstat(origpath, stbuf) == 0) {
+        errno = 0;
         goto passthrough;
     } else {
         /* Not really an error. */
@@ -295,6 +301,8 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
 
     mp3fs_debug("open %s", path);
 
+    //errno = 0;
+
     origpath = translate_path(path);
     if (!origpath) {
         goto translate_fail;
@@ -344,6 +352,8 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset, st
     struct Cache_Entry* cache_entry;
 
     mp3fs_trace("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
+
+    //errno = 0;
 
     origpath = translate_path(path);
     if (!origpath) {

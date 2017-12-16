@@ -216,7 +216,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
             //            }
 
             /* Create transcoder object. */
-			
+
             mp3fs_debug("Ready to initialise decoder.");
 
             if (cache_entry->m_transcoder->open_input_file(filename) < 0) {
@@ -225,11 +225,16 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
 
             mp3fs_debug("Transcoder initialised successfully.");
 
-            if (begin_transcode && !cache_entry->m_cache_info.m_finished)
+            if (begin_transcode)
             {
                 pthread_attr_t attr;
                 // int stack_size;
                 int s;
+
+                if (!cache->prune_cache(cache_entry->m_transcoder->calculate_size()))
+                {
+                    throw false;
+                }
 
                 if (cache_entry->m_cache_info.m_error)
                 {
@@ -292,10 +297,12 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode) {
                 }
             }
         }
-        else
+        else if (begin_transcode)
         {
-            // Store access time
-            cache_entry->update_access();
+            if (!cache->prune_cache(0))
+            {
+                throw false;
+            }
         }
 
         cache_entry->unlock();
@@ -323,11 +330,11 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
     try
     {
         /*
-     * If we are encoding to MP3 and the requested data overlaps the ID3v1 tag
-     * at the end of the file, do not encode data first up to that position.
-     * This optimizes the case where applications read the end of the file
-     * first to read the ID3v1 tag.
-     */
+              * If we are encoding to MP3 and the requested data overlaps the ID3v1 tag
+              * at the end of the file, do not encode data first up to that position.
+              * This optimizes the case where applications read the end of the file
+              * first to read the ID3v1 tag.
+              */
         if (strcmp(params.desttype, "mp3") == 0 &&
                 (size_t)offset > cache_entry->m_buffer->tell()
                 && offset + len >
@@ -436,6 +443,7 @@ static void *decoder_thread(void *arg)
         mp3fs_debug("Output file opened. Beginning transcoding for file '%s'.", cache_entry->filename().c_str());
 
         while (!cache_entry->m_cache_info.m_finished && !(timeout = cache_entry->decode_timeout()) && !thread_exit) {
+
             int stat = cache_entry->m_transcoder->process_single_fr();
 
             if (stat == -1 || (stat == 1 && transcode_finish(cache_entry) == -1)) {
@@ -444,7 +452,7 @@ static void *decoder_thread(void *arg)
                 break;
             }
 
-            if (cache_entry->suspend_timeout())
+            if (cache_entry->suspend_timeout()) // TODO: AN DATEI OFFEN BINDEN (FREIGABE WENN mp3fs_release AUFREGERUFEN WURDE!)
             {
                 mp3fs_debug("Suspend timeout. Transcoding suspended for file '%s'.", cache_entry->filename().c_str());
 
@@ -480,21 +488,20 @@ static void *decoder_thread(void *arg)
         if (timeout)
         {
             mp3fs_debug("Timeout! Transcoding aborted for file '%s'.", cache_entry->filename().c_str());
-            cache->close(&cache_entry, true);  // After timeout need to delete this here
         }
         else
         {
             mp3fs_debug("Thread exit! Transcoding aborted for file '%s'.", cache_entry->filename().c_str());
-            cache_entry->close();
         }
     }
     else
     {
         cache_entry->m_cache_info.m_error = !success;
-        cache_entry->close();
 
         mp3fs_debug("Transcoding complete for file '%s'. Success = %i", cache_entry->filename().c_str(), success);
     }
+
+    cache->close(&cache_entry, timeout);
 
     thread_count--;
 
@@ -589,7 +596,7 @@ void ffmpeg_log(void *ptr, int level, const char *fmt, va_list vl)
 
 int init_logging(const char* logfile, const char* max_level, int to_stderr,
                  int to_syslog) {
-    static const std::map<std::string, Logging::level> level_map = {
+    static const map<string, Logging::level> level_map = {
         {"DEBUG", DEBUG},
         {"WARNING", WARNING},
         {"INFO", INFO},

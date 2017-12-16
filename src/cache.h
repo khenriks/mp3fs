@@ -23,29 +23,33 @@
 
 #pragma once
 
+#include "buffer.h"
+
 #include <cstddef>
 #include <string>
 #include <map>
 
 #include <sqlite3.h>
 
+using namespace std;
+
 typedef struct
 {
-    std::string     m_filename;
-    char            m_target_format[11];
-    size_t          m_encoded_filesize;
-    bool            m_finished;
-    bool            m_error;
-    time_t          m_creation_time;
-    time_t          m_access_time;
-    time_t          m_file_time;
-    uint64_t        m_file_size;
+    string      m_filename;
+    char        m_target_format[11];
+    size_t      m_encoded_filesize;
+    bool        m_finished;
+    bool        m_error;
+    time_t      m_creation_time;
+    time_t      m_access_time;
+    time_t      m_file_time;
+    uint64_t    m_file_size;
 } t_cache_info;
 
 class Cache_Entry;
 
 class Cache {
-    typedef std::map<std::string, Cache_Entry *> cache_t;
+    typedef map<string, Cache_Entry *> cache_t;
 
     friend class Cache_Entry;
 
@@ -54,7 +58,7 @@ public:
     ~Cache();
 
     Cache_Entry *open(const char *filename);
-    void close(Cache_Entry **cache_entry, bool erase_cache = false);
+    bool close(Cache_Entry **cache_entry, int flags = CLOSE_CACHE_NOOPT);
 
     bool load_index();
 #ifdef HAVE_SQLITE_CACHEFLUSH
@@ -64,16 +68,25 @@ public:
     void lock();
     void unlock();
 
+    bool prune_cache(size_t predicted_filesize);
+
 protected:
     bool read_info(t_cache_info & cache_info);
     bool write_info(const t_cache_info & cache_info);
-    bool delete_info(const t_cache_info & cache_info);
+    bool delete_info(const string &filename);
+
+    Cache_Entry* create_entry(const string & filename);
+    bool delete_entry(Cache_Entry **cache_entry, int flags);
 
     void close_index();
 
+    bool prune_expired();
+    bool prune_cache_size();
+    bool prune_disk_space(size_t predicted_filesize);
+    
 private:
     pthread_mutex_t m_mutex;
-    std::string     m_cacheidx_file;
+    string          m_cacheidx_file;
     sqlite3*        m_cacheidx_db;
     sqlite3_stmt *  m_cacheidx_select_stmt;
     sqlite3_stmt *  m_cacheidx_insert_stmt;

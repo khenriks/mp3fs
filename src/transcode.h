@@ -43,7 +43,7 @@ extern struct mp3fs_params {
     // Output type
     const char*     desttype;
 #ifndef DISABLE_ISMV
-    int             enable_ismv;    // TODO: produces rediculuosly large files
+    int             enable_ismv;                // TODO #2240: produces ridiculously large files
 #endif
     // Audio
     unsigned int    audiobitrate;
@@ -51,9 +51,9 @@ extern struct mp3fs_params {
     // Video
     unsigned int    videobitrate;
 #ifndef DISABLE_AVFILTER
-    unsigned int    videowidth;     // TODO
-    unsigned int    videoheight;    // TODO
-    int             deinterlace;    // TODO
+    unsigned int    videowidth;                 // TODO #2243
+    unsigned int    videoheight;                // TODO #2243
+    int             deinterlace;                // TODO #2227: deinterlace video
 #endif
     // mp3fs options
     int             debug;
@@ -62,11 +62,12 @@ extern struct mp3fs_params {
     int             log_syslog;
     const char*     logfile;
     // Background recoding/caching
-    time_t          expiry_time;                // TODO: Time (seconds) after which an cache entry is deleted
+    time_t          expiry_time;                // Time (seconds) after which an cache entry is deleted
     time_t          max_inactive_suspend;       // Time (seconds) that must elapse without access until transcoding is suspended
     time_t          max_inactive_abort;         // Time (seconds) that must elapse without access until transcoding is aborted
-    size_t          max_cache_size;             // TODO: Max. cache size in MB. When exceeded, oldest entries will be pruned
-    int             max_threads;                // Max. number of recoder threads
+    size_t          max_cache_size;             // TODO #2237: Max. cache size in MB. When exceeded, oldest entries will be pruned
+    size_t          min_diskspace;              // TODO #2234: Min. diskspace required for cache
+    //int             max_threads;              // TODO #2250: Max. number of recoder threads
     const char*     cachepath;                  // Disk cache path, defaults to /tmp
 } params;
 

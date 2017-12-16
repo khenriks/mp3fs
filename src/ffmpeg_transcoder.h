@@ -27,6 +27,8 @@
 
 #include <queue>
 
+using namespace std;
+
 class Buffer;
 
 struct ID3v1
@@ -43,13 +45,6 @@ struct ID3v1
 };
 
 #define ID3V1_TAG_LENGTH sizeof(ID3v1)  // 128 bytes
-
-typedef enum _tagOUTPUTTYPE
-{
-    TYPE_UNKNOWN,
-    TYPE_MP3,
-    TYPE_MP4
-} OUTPUTTYPE;
 
 class FFMPEG_Transcoder {
 public:
@@ -109,7 +104,7 @@ private:
 
     // Video conversion and buffering
     SwsContext *                m_pSws_ctx;
-    std::queue<AVFrame*>        m_VideoFifo;
+    queue<AVFrame*>             m_VideoFifo;
     int64_t                     m_pts;
     int64_t                     m_pos;
 

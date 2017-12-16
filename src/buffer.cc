@@ -53,7 +53,8 @@ Buffer::Buffer(const string &filename)
     m_cachefile = cachepath;
     m_cachefile += params.mountpath;
     m_cachefile += filename;
-    m_cachefile += ".cache";
+    m_cachefile += ".cache.";
+    m_cachefile += params.desttype;
 }
 
 /* If buffer_data was never allocated, this is a no-op. */
@@ -96,9 +97,10 @@ bool Buffer::open(bool erase_cache)
         m_buffer_pos = 0;
         m_buffer_watermark = 0;
 
-        if (erase_cache && unlink(m_cachefile.c_str()) && errno != ENOENT)
+        if (erase_cache)
         {
-            mp3fs_warning("Cannot unlink the file '%s': %s", m_cachefile.c_str(), strerror(errno));
+            remove_file();
+            errno = 0;  // ignore this error
         }
 
         m_fd = ::open(m_cachefile.c_str(), O_CREAT | O_RDWR, (mode_t)0644);
@@ -164,12 +166,18 @@ bool Buffer::open(bool erase_cache)
     return success;
 }
 
-bool Buffer::close(bool erase_cache)
+bool Buffer::close(int flags /*= CLOSE_CACHE_NOOPT*/)
 {
     bool success = true;
 
     if (!m_is_open)
     {
+        if (CACHE_CHECK_BIT(CLOSE_CACHE_DELETE, flags))
+        {
+            remove_file();
+            errno = 0;  // ignore this error
+        }
+
         return true;
     }
 
@@ -202,18 +210,28 @@ bool Buffer::close(bool erase_cache)
 
     ::close(fd);
 
-    if (erase_cache)
+    if (CACHE_CHECK_BIT(CLOSE_CACHE_DELETE, flags))
     {
-        if (unlink(m_cachefile.c_str()) && errno != ENOENT)
-        {
-            mp3fs_warning("Cannot unlink the file '%s': %s", m_cachefile.c_str(), strerror(errno));
-        }
+        remove_file();
         errno = 0;  // ignore this error
     }
 
     unlock();
 
     return success;
+}
+
+bool Buffer::remove_file()
+{
+    if (unlink(m_cachefile.c_str()) && errno != ENOENT)
+    {
+        mp3fs_warning("Cannot unlink the file '%s': %s", m_cachefile.c_str(), strerror(errno));
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 bool Buffer::flush()

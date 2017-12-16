@@ -316,13 +316,13 @@ int FFMPEG_Transcoder::open_input_file(const char* filename) {
 
         m_bIsVideo = is_video();
 
-#ifdef CODEC_CAP_TRUNCATED
-        if(m_in.m_pVideo_codec_ctx->codec->capabilities & CODEC_CAP_TRUNCATED)
+#ifdef AV_CODEC_CAP_TRUNCATED
+        if(m_in.m_pVideo_codec_ctx->codec->capabilities & AV_CODEC_CAP_TRUNCATED)
         {
-            m_in.m_pVideo_codec_ctx->flags|= CODEC_FLAG_TRUNCATED; /* we do not send complete frames */
+            m_in.m_pVideo_codec_ctx->flags|= AV_CODEC_FLAG_TRUNCATED; /* we do not send complete frames */
         }
 #else
-#warning "Your FFMPEG distribution is missing CODEC_CAP_TRUNCATED flag. Probably requires fixing!"
+#warning "Your FFMPEG distribution is missing AV_CODEC_CAP_TRUNCATED flag. Probably requires fixing!"
 #endif
     }
 
@@ -632,39 +632,25 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
  */
 int FFMPEG_Transcoder::open_output_filestreams(Buffer *buffer)
 {
-    AVIOContext *   output_io_context   = NULL;
-    AVCodecID       audio_codecid;
-    AVCodecID       video_codecid;
-    const char*     type = params.desttype;
+    AVIOContext *   output_io_context = NULL;
+    AVCodecID       audio_codecid = AV_CODEC_ID_NONE;
+    AVCodecID       video_codecid = AV_CODEC_ID_NONE;
     const char *    ext;
-    int             ret                 = 0;
+    int             ret = 0;
 
-    if (!strcasecmp(type, "mp3"))
-    {
-        ext = "mp3";
-        audio_codecid = AV_CODEC_ID_MP3;
-        video_codecid = AV_CODEC_ID_PNG;
-        m_out.m_output_type = TYPE_MP3;
-    }
-    else if (!strcasecmp(type, "mp4"))
-    {
 #ifndef DISABLE_ISMV
-        ext = params.enable_ismv ? "ismv" : "mp4";
+    ext = get_codecs(params.desttype, &m_out.m_output_type, &audio_codecid, &video_codecid, params.enable_ismv);
 #else
-        ext = "mp4";
+    ext = get_codecs(params.desttype, &m_out.m_output_type, &audio_codecid, &video_codecid, 0);
 #endif
-        audio_codecid = AV_CODEC_ID_AAC;
-        video_codecid = AV_CODEC_ID_H264;
-        // video_codecid = AV_CODEC_ID_MJPEG;
-        m_out.m_output_type = TYPE_MP4;
-    }
-    else
+
+    if (ext == 0)
     {
-        mp3fs_error("Unknown format type '%s' for '%s'.", type, m_in.m_pFormat_ctx->filename);
+        mp3fs_error("Unknown format type '%s' for '%s'.", params.desttype, m_in.m_pFormat_ctx->filename);
         return -1;
     }
 
-    mp3fs_debug("Opening format type '%s' for '%s'.", type, m_in.m_pFormat_ctx->filename);
+    mp3fs_debug("Opening format type '%s' for '%s'.", params.desttype, m_in.m_pFormat_ctx->filename);
 
     /** Create a new format context for the output container format. */
     avformat_alloc_output_context2(&m_out.m_pFormat_ctx, NULL, ext, NULL);
