@@ -644,8 +644,6 @@ int main(int argc, char *argv[])
               #endif
                   cachepath);
 
-    return 0;
-
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &ffmpegfs_ops, NULL);
 
