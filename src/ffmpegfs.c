@@ -400,7 +400,6 @@ static int get_samplerate(const char * arg, unsigned int * value)
 
     if (ptr)
     {
-        regex_t regex;
         int reti;
 
         ptr++;
@@ -414,40 +413,12 @@ static int get_samplerate(const char * arg, unsigned int * value)
         }
         else if (!reti)
         {
-            fprintf(stderr, "Could not compile regex\n");
-            return -1;
-        }
-
-        reti = regexec(&regex, ptr, 0, NULL, 0);
-
-        regfree(&regex);
-
-        if (reti == -1)
-        {
-            return -1;
-        }
-        else if (!reti)
-        {
             *value = (unsigned int)atol(ptr);
             return 0;   // OK
         }
 
         // Check for number with optional descimal point and K modifier
         reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?K$");
-
-        if (reti == -1)
-        {
-            return -1;
-        }
-        else if (!reti)
-        {
-            fprintf(stderr, "Could not compile regex\n");
-            return -1;
-        }
-
-        reti = regexec(&regex, ptr, 0, NULL, 0);
-
-        regfree(&regex);
 
         if (reti == -1)
         {
