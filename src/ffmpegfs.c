@@ -934,8 +934,6 @@ int main(int argc, char *argv[])
 
     print_params();
 
-    return 0;
-
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &ffmpegfs_ops, NULL);
 
