@@ -421,66 +421,98 @@ void init_id3v1(ID3v1 *id3v1)
     id3v1->m_bGenre = 0;
 }
 
-#if 0
-#include <stdio.h>
-//#include <stdlib.h>
-//#include <sys/types.h>
-#include <sys/stat.h>
-//#include <unistd.h>
-#include <mntent.h>
-#include <errno.h>
-#include <sys/statvfs.h>
-
-long available_space(const char* path)
+void format_bitrate(char *output, size_t size, unsigned int value)
 {
-    struct statvfs stat;
-
-    if (statvfs(path, &stat) != 0)
+    if (value > 1000000)
     {
-        // error happens, just quits here
-        return -1;
+        snprintf(output, size, "%.2f Mbps", (double)value / 1000000);
     }
-
-    // the available size is f_bsize * f_bavail
-    return stat.f_bsize * stat.f_bavail;
+    else if (value > 1000)
+    {
+        snprintf(output, size, "%.1f kbps", (double)value / 1000);
+    }
+    else
+    {
+        snprintf(output, size, "%u bps", value);
+    }
 }
 
-struct mntent *mountpoint(char *filename, struct mntent *mnt, char *buf, size_t bufsize)
+void format_samplerate(char *output, size_t size, unsigned int value)
 {
-    struct stat s;
-    FILE *      fp;
-    dev_t       dev;
-
-    if (stat(filename, &s) != 0)
+    if (value < 1000)
     {
-        return NULL;
+        snprintf(output, size, "%u Hz", value);
     }
-
-    dev = s.st_dev;
-
-    if ((fp = setmntent("/proc/mounts", "r")) == NULL)
+    else
     {
-        return NULL;
+        snprintf(output, size, "%.3f kHz", (double)value / 1000);
     }
-
-    while (getmntent_r(fp, mnt, buf, bufsize))
-    {
-        if (stat(mnt->mnt_dir, &s) != 0)
-        {
-            continue;
-        }
-
-        if (s.st_dev == dev)
-        {
-            endmntent(fp);
-            return mnt;
-        }
-    }
-
-    endmntent(fp);
-
-    // Should never reach here.
-    errno = EINVAL;
-    return NULL;
 }
-#endif
+
+void format_time(char *output, size_t size, time_t value)
+{
+    int weeks;
+    int days;
+    int hours;
+    int mins;
+    int secs;
+    int pos;
+
+    weeks = (int)(value / (60*60*24*7));
+    value -= weeks * (60*60*24*7);
+    days = (int)(value / (60*60*24));
+    value -= days * (60*60*24);
+    hours = (int)(value / (60*60));
+    value -= hours * (60*60);
+    mins = (int)(value / (60));
+    value -= mins * (60);
+    secs = (int)(value);
+
+    *output = '0';
+    pos = 0;
+    if (weeks)
+    {
+        pos += snprintf(output, size, "%iw ", weeks);
+    }
+    if (days)
+    {
+        pos += snprintf(output + pos, size - pos, "%id ", days);
+    }
+    if (hours)
+    {
+        pos += snprintf(output + pos, size - pos, "%ih ", hours);
+    }
+    if (mins)
+    {
+        pos += snprintf(output + pos, size - pos, "%im ", mins);
+    }
+    if (secs)
+    {
+        pos += snprintf(output + pos, size - pos, "%is", secs);
+    }
+
+}
+
+void format_size(char *output, size_t size, size_t value)
+{
+    if (value > 1024*1024*1024*1024LL)
+    {
+        snprintf(output, size, "%.3f TB", (double)value / (1024*1024*1024*1024LL));
+    }
+    else if (value > 1024*1024*1024)
+    {
+        snprintf(output, size, "%.2f GB", (double)value / (1024*1024*1024));
+    }
+    else if (value > 1024*1024)
+    {
+        snprintf(output, size, "%.1f MB", (double)value / (1024*1024));
+    }
+    else if (value > 1024)
+    {
+        snprintf(output, size, "%.1f KB", (double)value / (1024));
+    }
+    else
+    {
+        snprintf(output, size, "%zu bytes", value);
+    }
+}

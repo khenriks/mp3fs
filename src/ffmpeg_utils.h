@@ -154,6 +154,11 @@ int show_formats_devices(int device_only);
 const char * get_codec_name(enum AVCodecID codec_id);
 const char * get_codecs(const char * type, OUTPUTTYPE * output_type, enum AVCodecID * audio_codecid, enum AVCodecID * video_codecid, int m_enable_ismv);
 
+void format_bitrate(char *output, size_t size, unsigned int value);
+void format_samplerate(char *output, size_t size, unsigned int value);
+void format_time(char *output, size_t size, time_t value);
+void format_size(char *output, size_t size, size_t value);
+
 #ifdef __cplusplus
 }
 #endif

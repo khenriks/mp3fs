@@ -413,8 +413,6 @@ int64_t FFMPEG_Transcoder::get_output_bit_rate(AVStream *in_stream, int64_t max_
 {
     int64_t real_bit_rate = in_stream->codec->bit_rate != 0 ? in_stream->codec->bit_rate : m_in.m_pFormat_ctx->bit_rate;
 
-    max_bit_rate *= 1000;   // kbit -> bit
-
     if (real_bit_rate > max_bit_rate)
     {
         real_bit_rate = max_bit_rate;

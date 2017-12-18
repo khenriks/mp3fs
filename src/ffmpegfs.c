@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/sysinfo.h>
+#include <regex.h>
 
 #include "transcode.h"
 
@@ -60,10 +61,10 @@ struct ffmpegfs_params params =
     .m_enable_ismv          = 0,                        // default: do not use ISMV
 #endif
 
-    .m_audiobitrate       	= 128,                      // default: 128 kBit
+    .m_audiobitrate       	= 128000,                   // default: 128 kBit
     .m_audiosamplerate      = 44100,                    // default: 44.1 kHz
 
-    .m_videobitrate       	= 2000,                     // default: 2 MBit
+    .m_videobitrate       	= 2000000,                  // default: 2 MBit
 #ifndef DISABLE_AVFILTER
     .m_videowidth           = 0,                        // default: do not change width
     .m_videoheight          = 0,                        // default: do not change height
@@ -173,10 +174,15 @@ static struct fuse_opt ffmpegfs_opts[] =
     FUSE_OPT_END
 };
 
-static unsigned int get_bitrate(const char * arg, unsigned int *value);
-static unsigned int get_samplerate(const char * arg, unsigned int *value);
-static unsigned int get_time(const char * arg, time_t *value);
+static int compare(const char *value, const char *pattern);
+static int get_bitrate(const char * arg, unsigned int *value);
+static int get_samplerate(const char * arg, unsigned int *value);
+static int get_time(const char * arg, time_t *value);
 static int get_size(const char * arg, size_t *value);
+
+static int ffmpegfs_opt_proc(void* data, const char* arg, int key, struct fuse_args *outargs);
+static void cleanup();
+static void print_params();
 static void usage(char *name);
 
 #define INFO "Mount IN_DIR on OUT_DIR, converting audio/video files to MP3/MP4 upon access."
@@ -310,49 +316,242 @@ static void usage(char *name)
                "\n", stdout);
 }
 
-static unsigned int get_bitrate(const char * arg, unsigned int *value)
+static int compare(const char *value, const char *pattern)
 {
-    const char * ptr = strchr(arg, '=');
+    regex_t regex;
+    int reti;
 
-    if (ptr)
+    reti = regcomp(&regex, pattern, REG_EXTENDED | REG_ICASE);
+    if (reti)
     {
-        *value = (unsigned int)atol(ptr + 1);
-        return 0;
-    }
-    else
-    {
+        fprintf(stderr, "Could not compile regex\n");
         return -1;
     }
+
+    reti = regexec(&regex, value, 0, NULL, 0);
+
+    regfree(&regex);
+
+    return reti;
 }
 
-static unsigned int get_samplerate(const char * arg, unsigned int * value)
+static int get_bitrate(const char * arg, unsigned int *value)
 {
     const char * ptr = strchr(arg, '=');
 
     if (ptr)
     {
-        *value = (unsigned int)atol(ptr + 1);
-        return 0;
+        int reti;
+
+        ptr++;
+
+        // Check for decimal number
+        reti = compare(ptr, "^([1-9][0-9]*|0)?$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (unsigned int)atol(ptr);
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and K modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?K$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (unsigned int)(atof(ptr) * 1000);
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and M modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?M$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (unsigned int)(atof(ptr) * 1000000);
+            return 0;   // OK
+        }
+
+        fprintf(stderr, "Invalid bit rate '%s'\n", ptr);
     }
     else
     {
-        return -1;
+        fprintf(stderr, "Invalid bit rate\n");
     }
+
+    return -1;
 }
 
-static unsigned int get_time(const char * arg, time_t *value)
+static int get_samplerate(const char * arg, unsigned int * value)
 {
     const char * ptr = strchr(arg, '=');
 
     if (ptr)
     {
-        *value = (time_t)atol(ptr + 1);
-        return 0;
+        regex_t regex;
+        int reti;
+
+        ptr++;
+
+        // Check for decimal number
+        reti = compare(ptr, "^([1-9][0-9]*|0)?$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            fprintf(stderr, "Could not compile regex\n");
+            return -1;
+        }
+
+        reti = regexec(&regex, ptr, 0, NULL, 0);
+
+        regfree(&regex);
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (unsigned int)atol(ptr);
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and K modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?K$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            fprintf(stderr, "Could not compile regex\n");
+            return -1;
+        }
+
+        reti = regexec(&regex, ptr, 0, NULL, 0);
+
+        regfree(&regex);
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (unsigned int)(atof(ptr) * 1000);
+            return 0;   // OK
+        }
+
+        fprintf(stderr, "Invalid sample rate '%s'\n", ptr);
     }
     else
     {
-        return -1;
+        fprintf(stderr, "Invalid sample rate\n");
     }
+
+    return -1;
+}
+
+static int get_time(const char * arg, time_t *value)
+{
+    const char * ptr = strchr(arg, '=');
+
+    if (ptr)
+    {
+        int reti;
+
+        ptr++;
+
+        // Check for decimal number
+        reti = compare(ptr, "^([1-9][0-9]*|0)?$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (unsigned int)atol(ptr);
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and m modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?m$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (time_t)atol(ptr) * 60;
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and h modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?h$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (time_t)atol(ptr) * 60 * 60;
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and d modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?d$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (time_t)atol(ptr) * 60 * 60 * 24;
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and w modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?w$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (time_t)atol(ptr) * 60 * 60 * 24 * 7;
+            return 0;   // OK
+        }
+
+        fprintf(stderr, "Invalid time format '%s'\n", ptr);
+    }
+    else
+    {
+        fprintf(stderr, "Invalid time format\n");
+    }
+
+    return -1;
 }
 
 static int get_size(const char * arg, size_t *value)
@@ -361,21 +560,89 @@ static int get_size(const char * arg, size_t *value)
 
     if (ptr)
     {
-        *value = (size_t)atol(ptr + 1);
-        return 0;
+        int reti;
+
+        ptr++;
+
+        // Check for decimal number
+        reti = compare(ptr, "^([1-9][0-9]*|0)?$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (size_t)atol(ptr);
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and K modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?K$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (size_t)(atof(ptr) * 1024);
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and M modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?M$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (size_t)(atof(ptr) * 1024 * 1024);
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and G modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?G$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (size_t)(atof(ptr) * 1024 * 1024 * 1024);
+            return 0;   // OK
+        }
+
+        // Check for number with optional descimal point and T modifier
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?T$");
+
+        if (reti == -1)
+        {
+            return -1;
+        }
+        else if (!reti)
+        {
+            *value = (size_t)(atof(ptr) * 1024 * 1024 * 1024 * 1024);
+            return 0;   // OK
+        }
+
+        fprintf(stderr, "Invalid size '%s'\n", ptr);
     }
     else
     {
-        return -1;
+        fprintf(stderr, "Invalid size\n");
     }
+
+    return -1;
 }
 
 static int ffmpegfs_opt_proc(void* data, const char* arg, int key, struct fuse_args *outargs)
 {
     static int n;
     (void)data;
-
-    printf("key = %i, data = %s, arg = %s\n", key, (const char*)data, arg);
 
     switch(key)
     {
@@ -454,7 +721,7 @@ static int ffmpegfs_opt_proc(void* data, const char* arg, int key, struct fuse_a
     return 1;
 }
 
-void cleanup()
+static void cleanup()
 {
     ffmpegfs_debug("%s V%s terminating", PACKAGE_NAME, PACKAGE_VERSION);
     printf("%s V%s terminating\n", PACKAGE_NAME, PACKAGE_VERSION);
@@ -462,11 +729,100 @@ void cleanup()
     cache_delete();
 }
 
-int main(int argc, char *argv[])
+static void print_params()
 {
     char cachepath[PATH_MAX];
     enum AVCodecID audio_codecid = AV_CODEC_ID_NONE;
     enum AVCodecID video_codecid = AV_CODEC_ID_NONE;
+    char audiobitrate[100];
+    char audiosamplerate[100];
+    char videobitrate[100];
+    char expiry_time[100];
+    char max_inactive_suspend[100];
+    char max_inactive_abort[100];
+    char max_cache_size[100];
+    char min_diskspace[100];
+
+    cache_path(cachepath, sizeof(cachepath));
+
+#ifndef DISABLE_ISMV
+    get_codecs(params.m_desttype, NULL, &audio_codecid, &video_codecid, params.m_enable_ismv);
+#else
+    get_codecs(params.m_desttype, NULL, &audio_codecid, &video_codecid, 0);
+#endif
+
+    format_bitrate(audiobitrate, sizeof(audiobitrate), params.m_audiobitrate);
+    format_samplerate(audiosamplerate, sizeof(audiosamplerate), params.m_audiosamplerate);
+    format_bitrate(videobitrate, sizeof(videobitrate), params.m_videobitrate);
+    format_time(expiry_time, sizeof(expiry_time), params.m_expiry_time);
+    format_time(max_inactive_suspend, sizeof(expiry_time), params.m_max_inactive_suspend);
+    format_time(max_inactive_abort, sizeof(max_inactive_abort), params.m_max_inactive_abort);
+    format_size(max_cache_size, sizeof(max_cache_size), params.m_max_cache_size);
+    format_size(min_diskspace, sizeof(min_diskspace), params.m_min_diskspace);
+
+    ffmpegfs_info(PACKAGE_NAME " options:\n\n"
+                               "Base Path         : %s\n"
+                               "Mount Path        : %s\n\n"
+                               "Destination Type  : %s\n"
+              #ifndef DISABLE_ISMV
+                               "Use ISMV          : %s\n"
+              #endif
+                               "Audio Format      : %s\n"
+                               "Audio Bitrate     : %s\n"
+                               "Audio Sample Rate : %s\n"
+              #ifndef DISABLE_AVFILTER
+                               "Video Size        : %ux%u pixels\n"
+                               "Deinterlace       : %s\n"
+              #endif
+                               "Video Format      : %s\n"
+                               "Video Bitrate     : %s\n"
+                               "Max. Log Level    : %s\n"
+                               "Log to stderr     : %u\n"
+                               "Log to syslog     : %u\n"
+                               "Logfile           : %s\n"
+                               "\nCache Settings\n\n"
+                               "Expiry Time       : %s\n"
+                               "Inactivity Suspend: %s\n"
+                               "Inactivity Abort  : %s\n"
+                               "Max. Cache Size   : %s\n"
+                               "Min. Disk Space   : %s\n"
+              #ifndef DISABLE_MAX_THREADS
+                               "Max. Threads      : %u\n"
+              #endif
+                               "Cache Path        : %s\n",
+                  params.m_basepath,
+                  params.m_mountpath,
+                  params.m_desttype,
+              #ifndef DISABLE_ISMV
+                  params.m_enable_ismv ? "yes" : "no",
+              #endif
+                  get_codec_name(audio_codecid),
+                  audiobitrate,
+                  audiosamplerate,
+              #ifndef DISABLE_AVFILTER
+                  params.m_videowidth,
+                  params.m_videoheight,
+                  params.m_deinterlace ? "yes" : "no",
+              #endif
+                  get_codec_name(video_codecid),
+                  videobitrate,
+                  params.m_log_maxlevel,
+                  params.m_log_stderr,
+                  params.m_log_syslog,
+                  *params.m_logfile ? params.m_logfile : "none",
+                  expiry_time,
+                  max_inactive_suspend,
+                  max_inactive_abort,
+                  max_cache_size,
+                  min_diskspace,
+              #ifndef DISABLE_MAX_THREADS
+                  params.m_max_threads,
+              #endif
+                  cachepath);
+}
+
+int main(int argc, char *argv[])
+{
     int ret;
 
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
@@ -495,8 +851,8 @@ int main(int argc, char *argv[])
 
     if (fuse_opt_parse(&args, &params, ffmpegfs_opts, ffmpegfs_opt_proc))
     {
-        fprintf(stderr, "ERROR: parsing options.\n\n");
-        usage(argv[0]);
+        fprintf(stderr, "ERROR: Parsing options.\n\n");
+        //usage(argv[0]);
         return 1;
     }
 
@@ -576,73 +932,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    cache_path(cachepath, sizeof(cachepath));
+    print_params();
 
-#ifndef DISABLE_ISMV
-    get_codecs(params.m_desttype, NULL, &audio_codecid, &video_codecid, params.m_enable_ismv);
-#else
-    get_codecs(params.m_desttype, NULL, &audio_codecid, &video_codecid, 0);
-#endif
-
-    ffmpegfs_info(PACKAGE_NAME " options:\n\n"
-                               "Base Path         : %s\n"
-                               "Mount Path        : %s\n\n"
-                               "Destination Type  : %s\n"
-              #ifndef DISABLE_ISMV
-                               "Use ISMV          : %s\n"
-              #endif
-                               "Audio Format      : %s\n"
-                               "Audio Bitrate     : %u kbps\n"
-                               "Audio Sample Rate : %u kHz\n"
-              #ifndef DISABLE_AVFILTER
-                               "Video Size        : %ux%u pixels\n"
-                               "Deinterlace       : %s\n"
-              #endif
-                               "Video Format      : %s\n"
-                               "Video Bitrate     : %u kbps\n"
-                               "Max. Log Level    : %s\n"
-                               "Log to stderr     : %u\n"
-                               "Log to syslog     : %u\n"
-                               "Logfile           : %s\n"
-                               "\nCache Settings\n\n"
-                               "Expiry Time       : %lu seconds\n"
-                               "Inactivity Suspend: %lu seconds\n"
-                               "Inactivity Abort  : %lu seconds\n"
-                               "Max. Cache Size   : %zu bytes\n"
-                               "Min. Disk Space   : %zu bytes\n"
-              #ifndef DISABLE_MAX_THREADS
-                               "Max. Threads      : %u\n"
-              #endif
-                               "Cache Path        : %s\n",
-                  params.m_basepath,
-                  params.m_mountpath,
-                  params.m_desttype,
-              #ifndef DISABLE_ISMV
-                  params.m_enable_ismv ? "yes" : "no",
-              #endif
-                  get_codec_name(audio_codecid),
-                  params.m_audiobitrate,
-                  params.m_audiosamplerate,
-              #ifndef DISABLE_AVFILTER
-                  params.m_videowidth,
-                  params.m_videoheight,
-                  params.m_deinterlace ? "yes" : "no",
-              #endif
-                  get_codec_name(video_codecid),
-                  params.m_videobitrate,
-                  params.m_log_maxlevel,
-                  params.m_log_stderr,
-                  params.m_log_syslog,
-                  *params.m_logfile ? params.m_logfile : "none",
-                  params.m_expiry_time,
-                  params.m_max_inactive_suspend,
-                  params.m_max_inactive_abort,
-                  params.m_max_cache_size,
-                  params.m_min_diskspace,
-              #ifndef DISABLE_MAX_THREADS
-                  params.m_max_threads,
-              #endif
-                  cachepath);
+    return 0;
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &ffmpegfs_ops, NULL);

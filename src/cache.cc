@@ -511,8 +511,11 @@ bool Cache::prune_expired()
     sqlite3_stmt * stmt;
     time_t now = time(NULL);
     char sql[1024];
+    char buffer[100];
 
-    //fprintf(stderr, "Pruning expired cache entries older than %zu seconds...\n", params.expiry_time); fflush(stderr);
+    format_time(buffer, sizeof(buffer), params.m_expiry_time);
+
+    fprintf(stderr, "Pruning expired cache entries older than %s...\n", buffer); fflush(stderr);
 
     sprintf(sql, "SELECT filename, strftime('%%s', access_time) FROM cache_entry WHERE strftime('%%s', access_time) + %zu < %zu;\n", params.m_expiry_time, now);
 
@@ -523,17 +526,19 @@ bool Cache::prune_expired()
     {
         const char *filename = (const char *) sqlite3_column_text(stmt, 0);
         filenames.push_back(filename);
-        //fprintf(stderr, "Found %zu seconds old entry: %s\n", now - (time_t)sqlite3_column_int64(stmt, 1), filename); fflush(stderr);
+
+        format_time(buffer, sizeof(buffer), now - (time_t)sqlite3_column_int64(stmt, 1));
+        fprintf(stderr, "Found %s old entry: %s\n", buffer, filename); fflush(stderr);
     }
 
-    //fprintf(stderr, "%zu expired cache entries found.\n", filenames.size()); fflush(stderr);
+    fprintf(stderr, "%zu expired cache entries found.\n", filenames.size()); fflush(stderr);
 
     if (ret == SQLITE_DONE)
     {
         for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); it++)
         {
             const string & filename = *it;
-            //fprintf(stderr, "Pruning: %s\n", filename.c_str()); fflush(stderr);
+            fprintf(stderr, "Pruning: %s\n", filename.c_str()); fflush(stderr);
 
             cache_t::iterator p = m_cache.find(filename);
             if (p != m_cache.end())
@@ -566,8 +571,11 @@ bool Cache::prune_cache_size()
     vector<size_t> filesizes;
     sqlite3_stmt * stmt;
     const char * sql;
+    char buffer[100];
 
-    fprintf(stderr, "Pruning oldest cache entries exceeding %zu bytes cache size...\n", params.m_max_cache_size); fflush(stderr);
+    format_size(buffer, sizeof(buffer), params.m_max_cache_size);
+
+    fprintf(stderr, "Pruning oldest cache entries exceeding %s cache size...\n", buffer); fflush(stderr);
 
     sql = "SELECT filename, encoded_filesize FROM cache_entry ORDER BY access_time ASC;\n";
 
@@ -584,11 +592,15 @@ bool Cache::prune_cache_size()
         total_size += size;
     }
 
-    fprintf(stderr, "%zu bytes in cache.\n", total_size); fflush(stderr);
+    format_size(buffer, sizeof(buffer), total_size);
+
+    fprintf(stderr, "%s in cache.\n", buffer); fflush(stderr);
 
     if (total_size > params.m_max_cache_size)
     {
-        fprintf(stderr, "Pruning %zu bytes of oldest cache entries to limit cache size.\n", total_size - params.m_max_cache_size); fflush(stderr);
+        format_size(buffer, sizeof(buffer), total_size - params.m_max_cache_size);
+
+        fprintf(stderr, "Pruning %s of oldest cache entries to limit cache size.\n", buffer); fflush(stderr);
 
         if (ret == SQLITE_DONE)
         {
@@ -614,7 +626,9 @@ bool Cache::prune_cache_size()
                 }
             }
 
-            fprintf(stderr, "%zu bytes left in cache.\n", total_size); fflush(stderr);
+            format_size(buffer, sizeof(buffer), total_size);
+
+            fprintf(stderr, "%s left in cache.\n", buffer); fflush(stderr);
         }
         else
         {
@@ -641,8 +655,11 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
     }
 
     size_t free_bytes = buf.f_bfree * buf.f_bsize;
+    char buffer[100];
 
-    fprintf(stderr, "Disk space before prune: %zu bytes\n", free_bytes); fflush(stderr);
+    format_size(buffer, sizeof(buffer), free_bytes);
+
+    fprintf(stderr, "%s disk space before prune.\n", buffer); fflush(stderr);
     if (free_bytes < params.m_min_diskspace + predicted_filesize)
     {
         vector<string> filenames;
@@ -663,7 +680,13 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
             filesizes.push_back(size);
         }
 
-        fprintf(stderr, "Pruning %zu bytes of oldest cache entries to keep disk space above %zu bytes limit...\n", params.m_min_diskspace + predicted_filesize - free_bytes, params.m_min_diskspace); fflush(stderr);
+        char prunesize[100];
+        char diskspace[100];
+
+        format_size(prunesize, sizeof(prunesize), params.m_min_diskspace + predicted_filesize - free_bytes);
+        format_size(diskspace, sizeof(diskspace), params.m_min_diskspace);
+
+        fprintf(stderr, "Pruning %s of oldest cache entries to keep disk space above %s limit...\n", prunesize, diskspace); fflush(stderr);
 
         if (ret == SQLITE_DONE)
         {
@@ -689,7 +712,9 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
                 }
             }
 
-            fprintf(stderr, "Disk space after prune: %zu bytes\n", free_bytes); fflush(stderr);
+            format_size(buffer, sizeof(buffer), free_bytes);
+
+            fprintf(stderr, "Disk space after prune: %s\n", buffer); fflush(stderr);
         }
         else
         {
