@@ -1,8 +1,8 @@
 /*
- * data buffer class source for mp3fs
+ * data buffer class source for ffmpegfs
  *
  * Copyright (C) 2013 K. Henriksson
- * Copyright (C) 2017 FFmpeg supplementals by Norbert Schlia (nschlia@oblivion-software.de)
+ * Copyright (C) 2017 FFmpeg support by Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,14 +51,15 @@ Buffer::Buffer(const string &filename)
     cache_path(cachepath, sizeof(cachepath));
 
     m_cachefile = cachepath;
-    m_cachefile += params.mountpath;
+    m_cachefile += params.m_mountpath;
     m_cachefile += filename;
     m_cachefile += ".cache.";
-    m_cachefile += params.desttype;
+    m_cachefile += params.m_desttype;
 }
 
 /* If buffer_data was never allocated, this is a no-op. */
-Buffer::~Buffer() {
+Buffer::~Buffer()
+{
     close();
 }
 
@@ -84,7 +85,7 @@ bool Buffer::open(bool erase_cache)
         char *cachefile = strdup(m_cachefile.c_str());
         if (mktree(dirname(cachefile), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) && errno != EEXIST)
         {
-            mp3fs_error("Error creating cache directory '%s': %s", m_cachefile.c_str(), strerror(errno));
+            ffmpegfs_error("Error creating cache directory '%s': %s", m_cachefile.c_str(), strerror(errno));
             free(cachefile);
             throw false;
         }
@@ -106,17 +107,19 @@ bool Buffer::open(bool erase_cache)
         m_fd = ::open(m_cachefile.c_str(), O_CREAT | O_RDWR, (mode_t)0644);
         if (m_fd == -1)
         {
-            mp3fs_error("Error opening cache file '%s': %s", m_cachefile.c_str(), strerror(errno));
+            ffmpegfs_error("Error opening cache file '%s': %s", m_cachefile.c_str(), strerror(errno));
             throw false;
         }
 
-        if (fstat(m_fd, &sb) == -1) {
-            mp3fs_error("fstat failed for '%s': %s", m_cachefile.c_str(), strerror(errno));
+        if (fstat(m_fd, &sb) == -1)
+        {
+            ffmpegfs_error("fstat failed for '%s': %s", m_cachefile.c_str(), strerror(errno));
             throw false;
         }
 
-        if (!S_ISREG(sb.st_mode)) {
-            mp3fs_error("'%s' is not a file.", m_cachefile.c_str());
+        if (!S_ISREG(sb.st_mode))
+        {
+            ffmpegfs_error("'%s' is not a file.", m_cachefile.c_str());
             throw false;
         }
 
@@ -129,7 +132,7 @@ bool Buffer::open(bool erase_cache)
 
             if (ftruncate(m_fd, filesize) == -1)
             {
-                mp3fs_error("Error calling ftruncate() to 'stretch' the file '%s': %s", m_cachefile.c_str(), strerror(errno));
+                ffmpegfs_error("Error calling ftruncate() to 'stretch' the file '%s': %s", m_cachefile.c_str(), strerror(errno));
                 throw false;
             }
         }
@@ -139,8 +142,9 @@ bool Buffer::open(bool erase_cache)
         }
 
         p = mmap(0, filesize, PROT_READ | PROT_WRITE, MAP_SHARED, m_fd, 0);
-        if (p == MAP_FAILED) {
-            mp3fs_error("File mapping failed for '%s': %s", m_cachefile.c_str(), strerror(errno));
+        if (p == MAP_FAILED)
+        {
+            ffmpegfs_error("File mapping failed for '%s': %s", m_cachefile.c_str(), strerror(errno));
             throw false;
         }
 
@@ -197,14 +201,15 @@ bool Buffer::close(int flags /*= CLOSE_CACHE_NOOPT*/)
     m_buffer_pos = 0;
     m_fd = -1;
 
-    if (munmap(p, size) == -1) {
-        mp3fs_error("File unmapping failed: %s", strerror(errno));
+    if (munmap(p, size) == -1)
+    {
+        ffmpegfs_error("File unmapping failed: %s", strerror(errno));
         success = false;
     }
 
     if (ftruncate(fd, m_buffer_watermark) == -1)
     {
-        mp3fs_error("Error calling ftruncate() to resize and close the file '%s': %s", m_cachefile.c_str(), strerror(errno));
+        ffmpegfs_error("Error calling ftruncate() to resize and close the file '%s': %s", m_cachefile.c_str(), strerror(errno));
         success = false;
     }
 
@@ -225,7 +230,7 @@ bool Buffer::remove_file()
 {
     if (unlink(m_cachefile.c_str()) && errno != ENOENT)
     {
-        mp3fs_warning("Cannot unlink the file '%s': %s", m_cachefile.c_str(), strerror(errno));
+        ffmpegfs_warning("Cannot unlink the file '%s': %s", m_cachefile.c_str(), strerror(errno));
         return false;
     }
     else
@@ -244,7 +249,7 @@ bool Buffer::flush()
     lock();
     if (msync(m_buffer, m_buffer_size, MS_SYNC) == -1)
     {
-        mp3fs_error("Could not sync the file to disk: %s", strerror(errno));
+        ffmpegfs_error("Could not sync '%s' to disk: %s", m_cachefile.c_str(), strerror(errno));
     }
     unlock();
 
@@ -254,7 +259,8 @@ bool Buffer::flush()
 /*
  * Reserve memory without changing size to reduce re-allocations
  */
-bool Buffer::reserve(size_t size) {
+bool Buffer::reserve(size_t size)
+{
     bool success = true;
 
     lock();
@@ -267,7 +273,7 @@ bool Buffer::reserve(size_t size) {
 
     if (ftruncate(m_fd, m_buffer_size) == -1)
     {
-       mp3fs_error("Error calling ftruncate() to resize the file '%s': %s", m_cachefile.c_str(), strerror(errno));
+        ffmpegfs_error("Error calling ftruncate() to resize the file '%s': %s", m_cachefile.c_str(), strerror(errno));
         success = false;
     }
 
@@ -280,12 +286,14 @@ bool Buffer::reserve(size_t size) {
  * Write data to the current position in the Buffer. The position pointer
  * will be updated.
  */
-size_t Buffer::write(const uint8_t* data, size_t length) {
+size_t Buffer::write(const uint8_t* data, size_t length)
+{
 
     lock();
 
     uint8_t* write_ptr = write_prepare(length);
-    if (!write_ptr) {
+    if (!write_ptr)
+    {
         length = 0;
     }
     else
@@ -304,13 +312,18 @@ size_t Buffer::write(const uint8_t* data, size_t length) {
  * return a pointer where the data may be written. The position pointer
  * should be updated afterward with increment_pos().
  */
-uint8_t* Buffer::write_prepare(size_t length) {
-    if (reallocate(m_buffer_pos + length)) {
-        if (m_buffer_watermark < m_buffer_pos + length) {
+uint8_t* Buffer::write_prepare(size_t length)
+{
+    if (reallocate(m_buffer_pos + length))
+    {
+        if (m_buffer_watermark < m_buffer_pos + length)
+        {
             m_buffer_watermark = m_buffer_pos + length;
         }
         return m_buffer + m_buffer_pos;
-    } else {
+    }
+    else
+    {
         return NULL;
     }
 }
@@ -320,38 +333,46 @@ uint8_t* Buffer::write_prepare(size_t length) {
  * returns void. It does not ensure the position is valid memory because
  * that is done by the write_prepare methods via reallocate.
  */
-void Buffer::increment_pos(ptrdiff_t increment) {
+void Buffer::increment_pos(ptrdiff_t increment)
+{
     m_buffer_pos += increment;
 }
 
-bool Buffer::seek(size_t pos) {
-    if (pos <= size()) {
+bool Buffer::seek(size_t pos)
+{
+    if (pos <= size())
+    {
         m_buffer_pos = pos;
         return true;
     }
-    else {
+    else
+    {
         m_buffer_pos = size();
         return false;
     }
 }
 
 /* Give the value of the internal read position pointer. */
-size_t Buffer::tell() const {
+size_t Buffer::tell() const
+{
     return m_buffer_pos;
 }
 
 /* Give the value of the internal buffer size pointer. */
-size_t Buffer::size() const {
+size_t Buffer::size() const
+{
     return m_buffer_size;
 }
 
 /* Number of bytes written to buffer so far (may be less than m_buffer.size()) */
-size_t Buffer::buffer_watermark() const {
+size_t Buffer::buffer_watermark() const
+{
     return m_buffer_watermark;
 }
 
 /* Copy buffered data into output buffer. */
-bool Buffer::copy(uint8_t* out_data, size_t offset, size_t bufsize) {
+bool Buffer::copy(uint8_t* out_data, size_t offset, size_t bufsize)
+{
     if (size() >= offset && m_buffer != NULL)
     {
         lock();
@@ -378,8 +399,10 @@ bool Buffer::copy(uint8_t* out_data, size_t offset, size_t bufsize) {
  * reallocate memory to make more available. Fill the newly allocated memory
  * with zeroes.
  */
-bool Buffer::reallocate(size_t newsize) {
-    if (newsize > size()) {
+bool Buffer::reallocate(size_t newsize)
+{
+    if (newsize > size())
+    {
         size_t oldsize = size();
 
         if (!reserve(newsize))
@@ -387,7 +410,7 @@ bool Buffer::reallocate(size_t newsize) {
             return false;
         }
 
-        mp3fs_trace("Buffer reallocate: %zu -> %zu.", oldsize, newsize);
+        ffmpegfs_trace("Buffer reallocate: %zu -> %zu.", oldsize, newsize);
     }
     return true;
 }
@@ -400,4 +423,14 @@ void Buffer::lock()
 void Buffer::unlock()
 {
     pthread_mutex_unlock(&m_mutex);
+}
+
+const string & Buffer::filename() const
+{
+    return m_filename;
+}
+
+const string & Buffer::cachefile() const
+{
+    return m_cachefile;
 }

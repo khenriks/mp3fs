@@ -10,17 +10,17 @@ cleanup () {
     exit $EXIT
 }
 
-mp3fserr () {
+ffmpegfserr () {
     exit 99
 }
 
 set -e
 trap cleanup EXIT
-trap mp3fserr USR1
+trap ffmpegfserr USR1
 
 SRCDIR="$( cd "${BASH_SOURCE%/*}/srcdir" && pwd )"
 DIRNAME="$(mktemp -d)"
-( mp3fs -d "$SRCDIR" "$DIRNAME" --logfile=$0.builtin.log || kill -USR1 $$ ) &
+( ffmpegfs -d "$SRCDIR" "$DIRNAME" --logfile=$0.builtin.log || kill -USR1 $$ ) &
 while ! mount | grep -q "$DIRNAME" ; do
     sleep 0.1
 done

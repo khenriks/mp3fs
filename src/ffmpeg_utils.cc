@@ -1,5 +1,5 @@
 /*
- * FFmpeg utilities for mp3fs
+ * FFmpeg utilities for ffmpegfs
  *
  * Copyright (C) 2017 by Norbert Schlia (nschlia@oblivion-software.de)
  *
@@ -19,6 +19,7 @@
  */
 
 #include "ffmpeg_utils.h"
+#include "id3v1tag.h"
 
 #include <algorithm>
 #include <cstdlib>
@@ -69,13 +70,20 @@ double ffmpeg_cvttime(int64_t ts, const AVRational & time_base)
 #if !(LIBAVUTIL_VERSION_MICRO >= 100 && LIBAVUTIL_VERSION_INT >= LIBAVUTIL_MIN_VERSION_INT )
 const char *get_media_type_string(enum AVMediaType media_type)
 {
-    switch (media_type) {
-    case AVMEDIA_TYPE_VIDEO:      return "video";
-    case AVMEDIA_TYPE_AUDIO:      return "audio";
-    case AVMEDIA_TYPE_DATA:       return "data";
-    case AVMEDIA_TYPE_SUBTITLE:   return "subtitle";
-    case AVMEDIA_TYPE_ATTACHMENT: return "attachment";
-    default:                      return "unknown";
+    switch (media_type)
+    {
+    case AVMEDIA_TYPE_VIDEO:
+        return "video";
+    case AVMEDIA_TYPE_AUDIO:
+        return "audio";
+    case AVMEDIA_TYPE_DATA:
+        return "data";
+    case AVMEDIA_TYPE_SUBTITLE:
+        return "subtitle";
+    case AVMEDIA_TYPE_ATTACHMENT:
+        return "attachment";
+    default:
+        return "unknown";
     }
 }
 #endif
@@ -156,7 +164,8 @@ int show_formats_devices(int device_only)
            " .E = Muxing supported\n"
            " --\n", device_only ? "Devices:" : "File formats:");
     last_name = "000";
-    for (;;) {
+    for (;;)
+    {
         int decode = 0;
         int encode = 0;
         const char *name      = NULL;
@@ -174,12 +183,14 @@ int show_formats_devices(int device_only)
         //                encode    = 1;
         //            }
         //        }
-        while ((ifmt = av_iformat_next(ifmt))) {
+        while ((ifmt = av_iformat_next(ifmt)))
+        {
             is_dev = is_device(ifmt->priv_class);
             if (!is_dev && device_only)
                 continue;
             if ((!name || strcmp(ifmt->name, name) < 0) &&
-                    strcmp(ifmt->name, last_name) > 0) {
+                    strcmp(ifmt->name, last_name) > 0)
+            {
                 name      = ifmt->name;
                 long_name = ifmt->long_name;
                 extensions = ifmt->extensions;
@@ -289,7 +300,7 @@ void tempdir(char *dir, size_t size)
     strncpy(dir, "/tmp", size);
 }
 
-const char * get_codecs(const char * type, OUTPUTTYPE * output_type, AVCodecID * audio_codecid, AVCodecID * video_codecid, int enable_ismv)
+const char * get_codecs(const char * type, OUTPUTTYPE * output_type, AVCodecID * audio_codecid, AVCodecID * video_codecid, int m_enable_ismv)
 {
     if (!strcasecmp(type, "mp3"))
     {
@@ -309,7 +320,7 @@ const char * get_codecs(const char * type, OUTPUTTYPE * output_type, AVCodecID *
         {
             *output_type = TYPE_MP4;
         }
-        return enable_ismv ? "ismv" : "mp4";
+        return m_enable_ismv ? "ismv" : "mp4";
     }
     else
     {
@@ -327,17 +338,23 @@ int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *ofor
     if (!s)
         goto nomem;
 
-    if (!oformat) {
-        if (format) {
+    if (!oformat)
+    {
+        if (format)
+        {
             oformat = av_guess_format(format, NULL, NULL);
-            if (!oformat) {
+            if (!oformat)
+            {
                 av_log(s, AV_LOG_ERROR, "Requested output format '%s' is not a suitable output format\n", format);
                 ret = AVERROR(EINVAL);
                 goto error;
             }
-        } else {
+        }
+        else
+        {
             oformat = av_guess_format(NULL, filename, NULL);
-            if (!oformat) {
+            if (!oformat)
+            {
                 ret = AVERROR(EINVAL);
                 av_log(s, AV_LOG_ERROR, "Unable to find a suitable output format for '%s'\n",
                        filename);
@@ -347,15 +364,18 @@ int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *ofor
     }
 
     s->oformat = oformat;
-    if (s->oformat->priv_data_size > 0) {
+    if (s->oformat->priv_data_size > 0)
+    {
         s->priv_data = av_mallocz(s->oformat->priv_data_size);
         if (!s->priv_data)
             goto nomem;
-        if (s->oformat->priv_class) {
+        if (s->oformat->priv_class)
+        {
             *(const AVClass**)s->priv_data= s->oformat->priv_class;
             av_opt_set_defaults(s->priv_data);
         }
-    } else
+    }
+    else
         s->priv_data = NULL;
 
     if (filename)
@@ -391,6 +411,15 @@ const char *avcodec_get_name(enum AVCodecID id)
 }
 #endif
 
+void init_id3v1(ID3v1 *id3v1)
+{
+    // Initialise ID3v1.1 tag structure
+    memset(id3v1, ' ', sizeof(ID3v1));
+    memcpy(&id3v1->m_sTAG, "TAG", 3);
+    id3v1->m_bPad = '\0';
+    id3v1->m_bTitleNo = 0;
+    id3v1->m_bGenre = 0;
+}
 
 #if 0
 #include <stdio.h>
@@ -404,15 +433,16 @@ const char *avcodec_get_name(enum AVCodecID id)
 
 long available_space(const char* path)
 {
-  struct statvfs stat;
+    struct statvfs stat;
 
-  if (statvfs(path, &stat) != 0) {
-    // error happens, just quits here
-    return -1;
-  }
+    if (statvfs(path, &stat) != 0)
+    {
+        // error happens, just quits here
+        return -1;
+    }
 
-  // the available size is f_bsize * f_bavail
-  return stat.f_bsize * stat.f_bavail;
+    // the available size is f_bsize * f_bavail
+    return stat.f_bsize * stat.f_bavail;
 }
 
 struct mntent *mountpoint(char *filename, struct mntent *mnt, char *buf, size_t bufsize)
@@ -421,22 +451,27 @@ struct mntent *mountpoint(char *filename, struct mntent *mnt, char *buf, size_t 
     FILE *      fp;
     dev_t       dev;
 
-    if (stat(filename, &s) != 0) {
+    if (stat(filename, &s) != 0)
+    {
         return NULL;
     }
 
     dev = s.st_dev;
 
-    if ((fp = setmntent("/proc/mounts", "r")) == NULL) {
+    if ((fp = setmntent("/proc/mounts", "r")) == NULL)
+    {
         return NULL;
     }
 
-    while (getmntent_r(fp, mnt, buf, bufsize)) {
-        if (stat(mnt->mnt_dir, &s) != 0) {
+    while (getmntent_r(fp, mnt, buf, bufsize))
+    {
+        if (stat(mnt->mnt_dir, &s) != 0)
+        {
             continue;
         }
 
-        if (s.st_dev == dev) {
+        if (s.st_dev == dev)
+        {
             endmntent(fp);
             return mnt;
         }

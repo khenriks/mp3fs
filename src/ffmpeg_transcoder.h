@@ -1,5 +1,5 @@
 /*
- * FFmpeg decoder class header for mp3fs
+ * FFmpeg decoder class header for ffmpegfs
  *
  * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
@@ -24,6 +24,7 @@
 #pragma once
 
 #include "ffmpeg_utils.h"
+#include "id3v1tag.h"
 
 #include <queue>
 
@@ -31,22 +32,8 @@ using namespace std;
 
 class Buffer;
 
-struct ID3v1
+class FFMPEG_Transcoder
 {
-    char m_sTAG[3];         // Contains "TAG"
-    char m_sSongTitle[30];  // Title of sound track
-    char m_sSongArtist[30]; // Artist Name
-    char m_sAlbumName[30];  // Album Name
-    char m_sYear[4];        // Year of publishing
-    char m_sComment[28];    // Any user comments
-    char m_bPad;            // Must be '\0'
-    char m_bTitleNo;
-    char m_bGenre;          // Type of music
-};
-
-#define ID3V1_TAG_LENGTH sizeof(ID3v1)  // 128 bytes
-
-class FFMPEG_Transcoder {
 public:
     FFMPEG_Transcoder();
     ~FFMPEG_Transcoder();
@@ -92,6 +79,8 @@ protected:
     static int64_t seek(void * pOpaque, int64_t i4Offset, int nWhence);
 
     int64_t get_output_bit_rate(AVStream *in_stream, int64_t max_bit_rate) const;
+
+    int av_dict_set_with_check(AVDictionary **pm, const char *key, const char *value, int flags);
 
 private:
     time_t                      m_mtime;

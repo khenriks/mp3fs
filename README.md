@@ -1,20 +1,19 @@
-mp3fs
+ffmpegfs
 =====
 
 | Compiler | Library | Build State |
 | ------------- | ------------- | ------------- |
-| gcc 4.9.2 | Libav 11.1 | [![Build Status](https://www.oblivion-secure.de/jenkins/buildStatus/icon?job=ffmpegfs%20(github-libav))](https://github.com/nschlia/mp3fs/) |
-| gcc 4.9.2 | FFmpeg 3.4 | [![Build Status](https://www.oblivion-secure.de/jenkins/buildStatus/icon?job=ffmpegfs%20(github-ffmpeg))](https://github.com/nschlia/mp3fs/) |
+| gcc 4.9.2 | Libav 11.1 | [![Build Status](https://www.oblivion-secure.de/jenkins/buildStatus/icon?job=ffmpegfs%20(github-libav))](https://github.com/nschlia/ffmpegfs/) |
+| gcc 4.9.2 | FFmpeg 3.4 | [![Build Status](https://www.oblivion-secure.de/jenkins/buildStatus/icon?job=ffmpegfs%20(github-ffmpeg))](https://github.com/nschlia/ffmpegfs/) |
 
 *clang, gcc 5/6 and other FFmpeg/Libav versions are also planned...*
 
 Web site:<br />
-**Original Version:** http://khenriks.github.io/mp3fs/<br />
-**FFmpeg Version:** https://github.com/nschlia/mp3fs<br />
+https://github.com/nschlia/ffmpegfs<br />
 
 NOTE THAT THIS IS AN ALPHA VERSION FOR TESTING ONLY!
 
-mp3fs is a read-only FUSE filesystem which transcodes between audio 
+ffmpegfs is a read-only FUSE filesystem which transcodes between audio
 and video formats (many formats that FFmpeg can decode to MP3 or MP4) 
 on the fly when opened and read.
 
@@ -35,7 +34,7 @@ Supported Linux Distributions
 -----------------------------
 
 **Suse** does not provide proprietary formats like AAC and H264, thus
-the distribution FFmpeg is crippled. mp3fs will not be able to encode 
+the distribution FFmpeg is crippled. ffmpegfs will not be able to encode
 to H264 and AAC. End of story. 
 See https://en.opensuse.org/Restricted_formats.
 
@@ -45,7 +44,7 @@ This Libav version is far too old and will not work.
 
 **Debian 8** comes with Libav 11 clone of FFmpeg. 
 
-mp3fs compiles with Libav 11 and 12, but streaming directly while 
+ffmpegfs compiles with Libav 11 and 12, but streaming directly while
 transcoding does not work. The first time a file is accessed playback 
 will fail. After it has been decoded fully to cache playback does work. 
 Playing the file via http may fail or it may take quite long until the
@@ -72,26 +71,26 @@ Usage
 
 Mount your filesystem like this:
 
-    mp3fs [-b bitrate] musicdir mountpoint [-o fuse_options]
+    ffmpegfs [--audiobitrate bitrate] [--videobitrate bitrate] musicdir mountpoint [-o fuse_options]
 
 For example,
 
-    mp3fs -b 128 /mnt/music /mnt/mp3fs -o allow_other,ro
+    ffmpegfs --audiobitrate 256 -videobitrate 2000000 /mnt/music /mnt/ffmpegfs -o allow_other,ro
 
-In recent versions of FUSE and mp3fs, the same can be achieved with the
+In recent versions of FUSE and ffmpegfs, the same can be achieved with the
 following entry in `/etc/fstab`:
 
-    mp3fs#/mnt/music /mnt/mp3fs fuse allow_other,ro,bitrate=128 0 0
+    ffmpegfs#/mnt/music /mnt/ffmpegfs fuse allow_other,ro,audiobitrate=256,videobitrate=2000000 0 0
 
 At this point files like `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
-show up as `/mnt/mp3fs/**.mp4`.
+show up as `/mnt/ffmpegfs/**.mp4`.
 
 Note that the "allow_other" option by default can only be used by root.
-You must either run mp3fs as root or better add a "user_allow_other" key 
+You must either run ffmpegfs as root or better add a "user_allow_other" key
 to /etc/fuse.conf.
 
 "allow_other" is required to allow any user access to the mount, by
-default this is only possible for the user who launched mp3fs.
+default this is only possible for the user who launched ffmpegfs.
 
 HOW IT WORKS
 ------------
@@ -155,7 +154,7 @@ with artist, album, etc.
 Subsequently many applications will go to the end of an MP4 to read
 important information before going back to the head of the file and
 start playing. This will break the whole transcode-on-demand idea
-of mp3fs.
+of ffmpegfs.
 
 To get around the restriction several extensions have been developed,
 one of which is called "faststart" that relocates the afformentioned
@@ -191,13 +190,12 @@ streaming or opening the files locally, for example.
 DEVELOPMENT
 -----------
 
-mp3fs uses Git for revision control. You can obtain the full repository
+ffmpegfs uses Git for revision control. You can obtain the full repository
 with:
 
-    git clone https://github.com/nschlia/mp3fs.git (this FFmpeg enabled version)
-    git clone https://github.com/khenriks/mp3fs.git (original version)
+    git clone https://github.com/nschlia/ffmpegfs.git
 
-mp3fs is written in a mixture of C and C++ and uses the following libraries:
+ffmpegfs is written in a mixture of C and C++ and uses the following libraries:
 
 * [FUSE](http://fuse.sourceforge.net/)
 

@@ -1,5 +1,5 @@
 /*
- * FFmpeg transcoder class header for mp3fs
+ * FFmpeg transcoder class header for ffmpegfs
  *
  * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
@@ -24,15 +24,14 @@
 #pragma once
 
 #include "cache.h"
+#include "id3v1tag.h"
 
 #include <string>
 
 class Buffer;
-class FFMPEG_Transcoder;
-struct ID3v1;
 
-struct Cache_Entry {
-
+struct Cache_Entry
+{
     friend class Cache;
 
 protected:
@@ -45,7 +44,6 @@ public:
     void clear(int fetch_file_time = true);
     time_t mtime() const;
     size_t calculate_size() const;
-    const ID3v1 * id3v1tag() const;
     time_t age() const;
     time_t last_access() const;
     bool expired() const;
@@ -57,6 +55,8 @@ public:
     void lock();
     void unlock();
 
+    int ref_count() const;
+
 protected:
     bool close(int flags);
     void close_buffer(int flags);
@@ -65,19 +65,20 @@ protected:
     bool write_info();
     bool delete_info();
 
+protected:
+    Cache *         m_owner;
+    pthread_mutex_t m_mutex;
+
+    int             m_ref_count;
+
 public:
-    Cache *             m_owner;
-    pthread_mutex_t     m_mutex;
+    Buffer *        m_buffer;
+    bool            m_is_decoding;
+    pthread_t       m_thread_id;
 
-    Buffer *            m_buffer;
-    bool                m_is_decoding;
-    pthread_t           m_thread_id;
-    int                 m_ref_count;
+    t_cache_info    m_cache_info;
 
-    t_cache_info        m_cache_info;
-
-    //protected:
-    FFMPEG_Transcoder * m_transcoder;
+    ID3v1           m_id3v1;
 };
 
 #endif // CACHE_ENTRY_H

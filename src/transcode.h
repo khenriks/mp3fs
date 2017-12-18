@@ -1,9 +1,9 @@
 /*
- * FileTranscoder interface for MP3FS
+ * FileTranscoder interface for ffmpegfs
  *
  * Copyright (C) 2006-2008 David Collett
  * Copyright (C) 2008-2013 K. Henriksson
- * Copyright (C) 2017 FFmpeg supplementals by Norbert Schlia (nschlia@oblivion-software.de)
+ * Copyright (C) 2017 FFmpeg support by Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 // For release 1.0: disable ISMV (smooth streaming) and image filters
 #define DISABLE_ISMV
 #define DISABLE_AVFILTER
+#define DISABLE_MAX_THREADS
 
 #define FUSE_USE_VERSION 26
 
@@ -36,43 +37,46 @@
 #include <stdarg.h>
 
 /* Global program parameters */
-extern struct mp3fs_params {
+extern struct ffmpegfs_params
+{
     // Paths
-    const char *    basepath;
-    const char *    mountpath;
+    const char *    m_basepath;
+    const char *    m_mountpath;
     // Output type
-    const char*     desttype;
+    const char*     m_desttype;
 #ifndef DISABLE_ISMV
-    int             enable_ismv;                // TODO #2240: produces ridiculously large files
+    int             m_enable_ismv;              // TODO Bug #2240: produces ridiculously large files
 #endif
     // Audio
-    unsigned int    audiobitrate;
-    unsigned int    audiosamplerate;
+    unsigned int    m_audiobitrate;
+    unsigned int    m_audiosamplerate;
     // Video
-    unsigned int    videobitrate;
+    unsigned int    m_videobitrate;
 #ifndef DISABLE_AVFILTER
-    unsigned int    videowidth;                 // TODO #2243
-    unsigned int    videoheight;                // TODO #2243
-    int             deinterlace;                // TODO #2227: deinterlace video
+    unsigned int    m_videowidth;               // TODO Feature #2243: set video width
+    unsigned int    m_videoheight;              // TODO Feature #2243: set video height
+    int             m_deinterlace;              // TODO Feature #2227: deinterlace video
 #endif
-    // mp3fs options
-    int             debug;
-    const char*     log_maxlevel;
-    int             log_stderr;
-    int             log_syslog;
-    const char*     logfile;
+    // ffmpegfs options
+    int             m_debug;
+    const char*     m_log_maxlevel;
+    int             m_log_stderr;
+    int             m_log_syslog;
+    const char*     m_logfile;
     // Background recoding/caching
-    time_t          expiry_time;                // Time (seconds) after which an cache entry is deleted
-    time_t          max_inactive_suspend;       // Time (seconds) that must elapse without access until transcoding is suspended
-    time_t          max_inactive_abort;         // Time (seconds) that must elapse without access until transcoding is aborted
-    size_t          max_cache_size;             // TODO #2237: Max. cache size in MB. When exceeded, oldest entries will be pruned
-    size_t          min_diskspace;              // TODO #2234: Min. diskspace required for cache
-    //int             max_threads;              // TODO #2250: Max. number of recoder threads
-    const char*     cachepath;                  // Disk cache path, defaults to /tmp
+    time_t          m_expiry_time;              // Time (seconds) after which an cache entry is deleted
+    time_t          m_max_inactive_suspend;     // Time (seconds) that must elapse without access until transcoding is suspended
+    time_t          m_max_inactive_abort;       // Time (seconds) that must elapse without access until transcoding is aborted
+    size_t          m_max_cache_size;           // Max. cache size in MB. When exceeded, oldest entries will be pruned
+    size_t          m_min_diskspace;            // Min. diskspace required for cache
+#ifndef DISABLE_MAX_THREADS
+    int             m_max_threads;              // TODO Feature #2250: Max. number of recoder threads
+#endif
+    const char*     m_cachepath;                // Disk cache path, defaults to /tmp
 } params;
 
 /* Fuse operations struct */
-extern struct fuse_operations mp3fs_ops;
+extern struct fuse_operations ffmpegfs_ops;
 
 /*
  * Forward declare transcoder struct. Don't actually define it here, to avoid
@@ -97,9 +101,7 @@ int transcoder_cached_filesize(const char *filename, struct stat *stbuf);
 
 /* Functions for doing transcoding, called by main program body */
 struct Cache_Entry* transcoder_new(const char *filename, int begin_transcode);
-ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offset,
-                        size_t len);
-//int transcoder_finish(struct Cache_Entry* cache_entry);
+ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offset, size_t len);
 void transcoder_delete(struct Cache_Entry* cache_entry);
 size_t transcoder_get_size(struct Cache_Entry* cache_entry);
 size_t transcoder_buffer_watermark(struct Cache_Entry* cache_entry);
@@ -111,11 +113,11 @@ int check_encoder(const char* type);
 int check_decoder(const char* type);
 
 /* Functions to print output until C++ conversion is done. */
-void mp3fs_trace(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
-void mp3fs_debug(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
-void mp3fs_warning(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
-void mp3fs_info(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
-void mp3fs_error(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
+void ffmpegfs_trace(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
+void ffmpegfs_debug(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
+void ffmpegfs_warning(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
+void ffmpegfs_info(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
+void ffmpegfs_error(const char* f, ...) __attribute__ ((format(printf, 1, 2)));
 #ifndef USING_LIBAV
 void ffmpeg_log(void *ptr, int level, const char *fmt, va_list vl);
 #endif

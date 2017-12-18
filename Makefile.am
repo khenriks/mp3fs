@@ -5,13 +5,13 @@ export AM_CXXFLAGS = -std=c++11 $(INCLUDES) $(WARNINGS)
 
 SUBDIRS = src test
 
-dist_man_MANS = mp3fs.1
+dist_man_MANS = ffmpegfs.1
 
-MAINTAINERCLEANFILES = mp3fs.1
+MAINTAINERCLEANFILES = ffmpegfs.1
 
-EXTRA_DIST = INSTALL.md README.md mp3fs.1.txt
+EXTRA_DIST = INSTALL.md README.md ffmpegfs.1.txt
 
-mp3fs.1: mp3fs.1.txt
+ffmpegfs.1: ffmpegfs.1.txt
 	$(AM_V_GEN)a2x -a revnumber="$(VERSION)" \
 		-a revdate="$(shell date +'%B %Y')" -f manpage $<
 

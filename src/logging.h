@@ -1,5 +1,5 @@
 /*
- * Logging class header for mp3fs
+ * Logging class header for ffmpegfs
  *
  * Copyright (C) 2017 K. Henriksson
  *
@@ -31,7 +31,8 @@
 
 using namespace std;
 
-class Logging {
+class Logging
+{
 public:
     enum class level
     {
@@ -52,10 +53,14 @@ public:
      */
     explicit Logging(string logfile, level max_level, bool to_stderr, bool to_syslog);
 
-    bool GetFail() const { return logfile_.fail(); }
+    bool GetFail() const
+    {
+        return logfile_.fail();
+    }
 
 private:
-    class Logger : public ostringstream {
+    class Logger : public ostringstream
+    {
     public:
         Logger(level loglevel, Logging* logging) :
             loglevel_(loglevel), logging_(logging) {}

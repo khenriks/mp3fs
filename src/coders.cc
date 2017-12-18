@@ -1,8 +1,8 @@
 /*
- * Encoder and Decoder class source for mp3fs
+ * Encoder and Decoder class source for ffmpegfs
  *
  * Copyright (C) 2013 K. Henriksson
- * Copyright (C) 2017 FFmpeg supplementals by Norbert Schlia (nschlia@oblivion-software.de)
+ * Copyright (C) 2017 FFmpeg support by Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,23 +26,25 @@
 #include <string.h>
 
 /* Define list of available encoder extensions. */
-const char* encoder_list[] = {
+const char* encoder_list[] =
+{
     "mp3",
     "mp4",
     NULL
 };
 
 /* Define list of available decoder extensions. */
-const char* decoder_list[] = {
+const char* decoder_list[] =
+{
     "avi",
     "flac",
     "ogg",
     "oga",
     "ogv",
-    //    "mp4",
-    //    "m4a",
-    //    "m4v",
-    //    "mp3",
+    // "mp4",
+    // "m4a",
+    // "m4v",
+    // "mp3",
     "webm",
     "flv",
     "mpg",
@@ -61,7 +63,8 @@ const char* decoder_list[] = {
 extern "C" {
 
 /* Check if an encoder is available to encode to the specified type. */
-int check_encoder(const char* type) {
+int check_encoder(const char* type)
+{
     int found = 0;
 
     for (int n = 0; encoder_list[n]; n++)
@@ -76,7 +79,8 @@ int check_encoder(const char* type) {
 }
 
 /* Check if a decoder is available to decode from the specified type. */
-int check_decoder(const char* type) {
+int check_decoder(const char* type)
+{
     int found = 0;
 
     for (int n = 0; decoder_list[n]; n++)

@@ -1,4 +1,21 @@
-mp3fs NEWS
+ffmpegfs NEWS
+
+Important changes in 0.94 (2017-12-18)
+
+Changes in this release:
+* Decided to rename mp3fs to ffmpegfs because the project has grown far beyond
+  a simple clone of mp3fs and the changes it will surely never be pushed back
+  to the parent project. A big random applause to the makers of mp3fs for giving
+  me a good head start!
+* Cache management: Keep cache size within limit, ensure min. disk space, prune
+  oldest entries
+* Fix many crashes
+* Fix memory leaks   
+* TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
+  that already represents a H264 video stream it would be possible to
+  simply repackage it to a mp4 container without recoding.
+
+nschlia@oblivion-software.de
 
 Important changes in 0.92-FFmpeg (2017-12-14)
 

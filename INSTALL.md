@@ -1,5 +1,5 @@
-Installation Instructions for mp3fs
-===================================
+Installation Instructions for ffmpegfs
+======================================
 
 Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
 This file was originally copyright (C) 2013-2014 K. Henriksson. 
@@ -10,7 +10,7 @@ See README.md for more information.
 Prerequisites
 -------------
 
-mp3fs uses FFMEG lib for decoding/encoding. It requires the following 
+ffmpegfs uses FFMEG lib for decoding/encoding. It requires the following
 libraries:
 
 * gcc and g++ compilers
@@ -87,7 +87,7 @@ https://stackoverflow.com/questions/35937403/error-libmp3lame-3-98-3-not-found
 Installation
 ------------
 
-mp3fs uses the GNU build system. If you are installing from git, you'll
+ffmpegfs uses the GNU build system. If you are installing from git, you'll
 need to first run:
 
     ./autogen.sh

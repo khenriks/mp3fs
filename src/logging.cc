@@ -1,5 +1,5 @@
 /*
- * Logging class source for mp3fs
+ * Logging class source for ffmpegfs
  *
  * Copyright (C) 2017 K. Henriksson
  * Extensions (c) 2017 by Norbert Schlia (nschlia@oblivion-software.de)
@@ -27,41 +27,48 @@
 
 #include <syslog.h>
 
-namespace {
-    Logging* logging;
+namespace
+{
+Logging* logging;
 }
 
 Logging::Logging(string logfile, level max_level, bool to_stderr,
                  bool to_syslog) :
-    max_level_(max_level), to_stderr_(to_stderr), to_syslog_(to_syslog) {
-    if (!logfile.empty()) {
+    max_level_(max_level), to_stderr_(to_stderr), to_syslog_(to_syslog)
+{
+    if (!logfile.empty())
+    {
         logfile_.open(logfile);
     }
-    if (to_syslog_) {
-        openlog("mp3fs", 0, LOG_USER);
+    if (to_syslog_)
+    {
+        openlog("ffmpegfs", 0, LOG_USER);
     }
 }
 
-Logging::Logger::~Logger() {
+Logging::Logger::~Logger()
+{
     if (!logging_ || loglevel_ > logging_->max_level_) return;
 
     // Construct string containing time
     time_t now = time(nullptr);
     string time_string(30, '\0');
     time_string.resize(strftime(&time_string[0], time_string.size(),
-                                     "%F %T", localtime(&now)));
+                       "%F %T", localtime(&now)));
 
     string msg = "[" + time_string + "] " +
-        level_name_map_.at(loglevel_) + ": " + str();
+            level_name_map_.at(loglevel_) + ": " + str();
 
-    if (logging_->to_syslog_) {
+    if (logging_->to_syslog_)
+    {
         syslog(syslog_level_map_.at(loglevel_), "%s", msg.c_str());
     }
     if (logging_->logfile_.is_open()) logging_->logfile_ << msg << endl;
     if (logging_->to_stderr_) clog << msg << endl;
 }
 
-const map<Logging::level,int> Logging::Logger::syslog_level_map_ = {
+const map<Logging::level,int> Logging::Logger::syslog_level_map_ =
+{
     {ERROR,     LOG_ERR},
     {WARNING,   LOG_WARNING},
     {INFO,      LOG_INFO},
@@ -69,7 +76,8 @@ const map<Logging::level,int> Logging::Logger::syslog_level_map_ = {
     {TRACE,     LOG_DEBUG},
 };
 
-const map<Logging::level,string> Logging::Logger::level_name_map_ = {
+const map<Logging::level,string> Logging::Logger::level_name_map_ =
+{
     {ERROR,     "ERROR"},
     {WARNING,   "WARNING"},
     {INFO,      "INFO"},
@@ -77,20 +85,24 @@ const map<Logging::level,string> Logging::Logger::level_name_map_ = {
     {TRACE,     "TRACE"},
 };
 
-Logging::Logger Log(Logging::level lev) {
+Logging::Logger Log(Logging::level lev)
+{
     return {lev, logging};
 }
 
-bool InitLogging(string logfile, Logging::level max_level, bool to_stderr, bool to_syslog) {
+bool InitLogging(string logfile, Logging::level max_level, bool to_stderr, bool to_syslog)
+{
     logging = new Logging(logfile, max_level, to_stderr, to_syslog);
     return !logging->GetFail();
 }
 
-void log_with_level(Logging::level level, const char* format, va_list ap) {
+void log_with_level(Logging::level level, const char* format, va_list ap)
+{
     log_with_level(level, "", format, ap);
 }
 
-void log_with_level(Logging::level level, const char* prefix, const char* format, va_list ap) {
+void log_with_level(Logging::level level, const char* prefix, const char* format, va_list ap)
+{
     // This copy is because we call vsnprintf twice, and ap is undefined after
     // the first call.
     va_list ap2;
@@ -101,12 +113,12 @@ void log_with_level(Logging::level level, const char* prefix, const char* format
     vsnprintf(&buffer[0], buffer.size() + 1, format, ap2);
 
     va_end(ap2);
-	
-//#ifndef NDEBUG
-//    if (level == Logging::level::TRACE)
-//    {
-//        cerr << "TRACE: " << buffer << endl;
-//    }
+
+    //#ifndef NDEBUG
+    //    if (level == Logging::level::TRACE)
+    //    {
+    //        cerr << "TRACE: " << buffer << endl;
+    //    }
     if (level == Logging::level::DEBUG)
     {
         cerr << "DEBUG: " << buffer << endl;
@@ -119,11 +131,12 @@ void log_with_level(Logging::level level, const char* prefix, const char* format
     {
         cerr << "ERROR: " << buffer << endl;
     }
-//#endif
+    //#endif
 
     Log(level) << prefix << buffer;
 }
 
-void log_with_level(Logging::level level, const char* prefix, const char* message) {
+void log_with_level(Logging::level level, const char* prefix, const char* message)
+{
     Log(level) << prefix << message;
 }

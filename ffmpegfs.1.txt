@@ -1,24 +1,24 @@
-MP3FS(1)
-========
+FFMPEGFS(1)
+==========
 :doctype:       manpage
-:man source:    mp3fs
+:man source:    ffmpegfs
 :man version:   {revnumber}
 :man manual:    User Commands
 
 NAME
 ----
-mp3fs - mounts and transcodes a multitude of formats like FLACs or OGGs 
+ffmpegfs - mounts and transcodes a multitude of formats like FLACs or OGGs
 to MP3s or MP4s on the fly
 
 
 SYNOPSIS
 --------
-*mp3fs* ['OPTION']... 'IN_DIR' 'OUT_DIR'
+*ffmpegfs* ['OPTION']... 'IN_DIR' 'OUT_DIR'
 
 
 DESCRIPTION
 -----------
-The mp3fs(1) command will mount the directory 'IN_DIR' on 'OUT_DIR'.
+The ffmpegfs(1) command will mount the directory 'IN_DIR' on 'OUT_DIR'.
 Thereafter, accessing 'OUT_DIR' will show the contents of 'IN_DIR', with
 all supported media files transparently renamed and transcoded to MP3/MP4
 format upon access.
@@ -27,7 +27,7 @@ format upon access.
 OPTIONS
 -------
 
-Usage: ./src/mp3fs [OPTION]... IN_DIR OUT_DIR
+Usage: ffmpegfs [OPTION]... IN_DIR OUT_DIR
 
 Mount IN_DIR on OUT_DIR, converting audio/video files to MP3/MP4 upon access.
 
@@ -41,12 +41,12 @@ Encoding options:
 
 Audio Options:
 
-*--audiobitrate*=RATE, *-oaudiobitrate*=RATE::
+*--audiobitrate*=RATE, *-o audiobitrate*=RATE::
                            Audio encoding bitrate (in kbit): Acceptable values for RATE
                            include 96, 112, 128, 160, 192, 224, 256, and
                            320.
                            Default: 128 kbit
-*--audiosamplerate*=Hz, *-oaudiosamplerate*=Hz::
+*--audiosamplerate*=Hz, *-o audiosamplerate*=Hz::
                            Limits the output sample rate to Hz. If the source file
                            sample rate is more it will be downsampled automatically.
                            Typical values are 8000, 11025, 22050, 44100,
@@ -55,7 +55,7 @@ Audio Options:
 
 Video Options:
 
-*--videobitrate*=RATE, *-ovideobitrate*=RATE::
+*--videobitrate*=RATE, *-o videobitrate*=RATE::
                            Video encoding bit rate (in kbit). Acceptable values for RATE
                            range between 500 and 250000. Setting this too high or low may.
                            cause transcoding to fail.
@@ -112,28 +112,28 @@ Cache Options:
                            Default: 0 (no minimum space)
  *--cachepath*=DIR, *-o cachepath*=DIR::
                            Sets the disk cache directory to DIR. Will be created if not existing.
-                           The user running mp3fs must have write access to the location.
+                           The user running ffmpegfs must have write access to the location.
                            Default: temp directory, e.g. /tmp
 
 Logging:
 
-*--log_maxlevel*=LEVEL, *-olog_maxlevel*=LEVEL::
+*--log_maxlevel*=LEVEL, *-o log_maxlevel*=LEVEL::
                            Maximum level of messages to log, either ERROR,
                            INFO, TRACE or DEBUG. Defaults to INFO, and always set
                            to DEBUG in debug mode. Note that the other log
                            flags must also be set to enable logging.
-*--log_stderr*, *-olog_stderr*::
+*--log_stderr*, *-o log_stderr*::
                            Enable outputting logging messages to stderr.
                            Enabled in debug mode.
-*--log_syslog*, *-olog_syslog*::
+*--log_syslog*, *-o log_syslog*::
                            Enable outputting logging messages to syslog.
-*--logfile*=FILE, *-ologfile*=FILE::
+*--logfile*=FILE, *-o logfile*=FILE::
                            File to output log messages to. By default, no
                            file will be written.
 
 General/FUSE options:
 
-*-d*, *-odebug*::
+*-d*, *-o debug*::
     Enable debug output. This will result in a large quantity of
     diagnostic information being printed to stderr as the program runs.
     This option will normally not be used. It implies *-f*.
@@ -156,26 +156,26 @@ Usage
 
 Mount your filesystem like this:
 
-    mp3fs [-b bitrate] musicdir mountpoint [-o fuse_options]
+    ffmpegfs [--audiobitrate bitrate] [--videobitrate bitrate] musicdir mountpoint [-o fuse_options]
 
 For example,
 
-    mp3fs -b 128 /mnt/music /mnt/mp3fs -o allow_other,ro
+    ffmpegfs --audiobitrate 256 -videobitrate 2000000 /mnt/music /mnt/ffmpegfs -o allow_other,ro
 
-In recent versions of FUSE and mp3fs, the same can be achieved with the
+In recent versions of FUSE and ffmpegfs, the same can be achieved with the
 following entry in `/etc/fstab`:
 
-    mp3fs#/mnt/music /mnt/mp3fs fuse allow_other,ro,bitrate=128 0 0
+    ffmpegfs#/mnt/music /mnt/ffmpegfs fuse allow_other,ro,audiobitrate=256,videobitrate=2000000 0 0
 
 At this point files like `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
-show up as `/mnt/mp3fs/**.mp4`.
+show up as `/mnt/ffmpegfs/**.mp4`.
 
 Note that the "allow_other" option by default can only be used by root.
-You must either run mp3fs as root or better add a "user_allow_other" key 
+You must either run ffmpegfs as root or better add a "user_allow_other" key
 to /etc/fuse.conf.
 
 "allow_other" is required to allow any user access to the mount, by
-default this is only possible for the user who launched mp3fs.
+default this is only possible for the user who launched ffmpegfs.
 
 HOW IT WORKS
 ------------
@@ -239,7 +239,7 @@ with artist, album, etc.
 Subsequently many applications will go to the end of an MP4 to read
 important information before going back to the head of the file and
 start playing. This will break the whole transcode-on-demand idea
-of mp3fs.
+of ffmpegfs.
 
 To get around the restriction several extensions have been developed,
 one of which is called "faststart" that relocates the afformentioned
@@ -275,13 +275,12 @@ streaming or opening the files locally, for example.
 DEVELOPMENT
 -----------
 
-mp3fs uses Git for revision control. You can obtain the full repository
+ffmpegfs uses Git for revision control. You can obtain the full repository
 with:
 
-    git clone https://github.com/nschlia/mp3fs.git (this FFmpeg enabled version)
-    git clone https://github.com/khenriks/mp3fs.git (original version)
+    git clone https://github.com/nschlia/ffmpegfs.git
 
-mp3fs is written in a mixture of C and C++ and uses the following libraries:
+ffmpegfs is written in a mixture of C and C++ and uses the following libraries:
 
 * [FUSE](http://fuse.sourceforge.net/)
 

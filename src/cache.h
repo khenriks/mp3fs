@@ -1,5 +1,5 @@
 /*
- * data buffer class header for mp3fs
+ * data buffer class header for ffmpegfs
  *
  * Copyright (C) 2013 K. Henriksson
  *
@@ -37,6 +37,7 @@ typedef struct
 {
     string      m_filename;
     char        m_target_format[11];
+    size_t      m_predicted_filesize;
     size_t      m_encoded_filesize;
     bool        m_finished;
     bool        m_error;
@@ -48,7 +49,8 @@ typedef struct
 
 class Cache_Entry;
 
-class Cache {
+class Cache
+{
     typedef map<string, Cache_Entry *> cache_t;
 
     friend class Cache_Entry;
@@ -70,6 +72,10 @@ public:
 
     bool prune_cache(size_t predicted_filesize);
 
+    bool prune_expired();
+    bool prune_cache_size();
+    bool prune_disk_space(size_t predicted_filesize);
+
 protected:
     bool read_info(t_cache_info & cache_info);
     bool write_info(const t_cache_info & cache_info);
@@ -80,10 +86,6 @@ protected:
 
     void close_index();
 
-    bool prune_expired();
-    bool prune_cache_size();
-    bool prune_disk_space(size_t predicted_filesize);
-    
 private:
     pthread_mutex_t m_mutex;
     string          m_cacheidx_file;

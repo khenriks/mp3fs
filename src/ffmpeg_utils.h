@@ -1,5 +1,5 @@
 /*
- * FFmpeg decoder class header for mp3fs
+ * FFmpeg decoder class header for ffmpegfs
  *
  * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
@@ -23,7 +23,7 @@
 
 #pragma once
 
-// Force PRId64 defines 
+// Force PRId64 defines
 #define __STDC_FORMAT_MACROS
 
 // Disable annoying warnings outside our code
@@ -32,10 +32,10 @@
 #ifdef __GNUC__
 #  include <features.h>
 #  if __GNUC_PREREQ(5,0)
- 	// GCC >= 5.0
+// GCC >= 5.0
 #     pragma GCC diagnostic ignored "-Wfloat-conversion"
 #  elif __GNUC_PREREQ(4,8)
-	// GCC >= 4.8
+// GCC >= 4.8
 #  else
 #     error("GCC < 4.8 not supported");
 #  endif
@@ -152,7 +152,7 @@ extern "C" {
 void ffmpeg_libinfo(char * buffer, size_t maxsize);
 int show_formats_devices(int device_only);
 const char * get_codec_name(enum AVCodecID codec_id);
-const char * get_codecs(const char * type, OUTPUTTYPE * output_type, enum AVCodecID * audio_codecid, enum AVCodecID * video_codecid, int enable_ismv);
+const char * get_codecs(const char * type, OUTPUTTYPE * output_type, enum AVCodecID * audio_codecid, enum AVCodecID * video_codecid, int m_enable_ismv);
 
 #ifdef __cplusplus
 }

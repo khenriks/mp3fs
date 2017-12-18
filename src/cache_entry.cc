@@ -1,5 +1,5 @@
 /*
- * Cache entry object class for mp3fs
+ * Cache entry object class for ffmpegfs
  *
  * Copyright (c) 2017 by Norbert Schlia (nschlia@oblivion-software.de)
  *
@@ -34,20 +34,19 @@ using namespace std;
 Cache_Entry::Cache_Entry(Cache *owner, const string & filename)
     : m_owner(owner)
     , m_mutex(PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP)
-    , m_thread_id(0)
     , m_ref_count(0)
-    , m_transcoder(new FFMPEG_Transcoder)
+    , m_thread_id(0)
 {
     m_cache_info.m_filename = filename;
-    
+
     m_cache_info.m_target_format[0] = '\0';
-    strncat(m_cache_info.m_target_format, params.desttype, sizeof(m_cache_info.m_target_format) - 1);
+    strncat(m_cache_info.m_target_format, params.m_desttype, sizeof(m_cache_info.m_target_format) - 1);
 
     m_buffer = new Buffer(m_cache_info.m_filename);
 
     clear();
 
-    mp3fs_debug("Created new Cache_Entry.");
+    ffmpegfs_trace("Created new cache entry.");
 }
 
 Cache_Entry::~Cache_Entry()
@@ -55,22 +54,21 @@ Cache_Entry::~Cache_Entry()
     if (m_thread_id && m_thread_id != pthread_self())
     {
         // If not same thread, wait for other to finish
-        mp3fs_debug("Waiting for thread id %zx to terminate.", m_thread_id);
+        ffmpegfs_warning("Waiting for thread id %zx to terminate.", m_thread_id);
 
         int s = pthread_join(m_thread_id, NULL);
         if (s != 0)
         {
-            mp3fs_error("Error joining thread id %zu: %s", m_thread_id, strerror(s));
+            ffmpegfs_error("Error joining thread id %zu: %s", m_thread_id, strerror(s));
         }
         else
         {
-            mp3fs_debug("Thread id %zx has terminated.", m_thread_id);
+            ffmpegfs_info("Thread id %zx has terminated.", m_thread_id);
         }
     }
 
     delete m_buffer;
-    delete m_transcoder;
-    mp3fs_debug("Deleted Cache_Entry.");
+    ffmpegfs_trace("Deleted buffer.");
 }
 
 void Cache_Entry::clear(int fetch_file_time)
@@ -79,17 +77,24 @@ void Cache_Entry::clear(int fetch_file_time)
 
     m_is_decoding = false;
 
+    // Initialise ID3v1.1 tag structure
+    init_id3v1(&m_id3v1);
+
+    m_cache_info.m_predicted_filesize = 0;
     m_cache_info.m_encoded_filesize = 0;
     m_cache_info.m_finished = false;
     m_cache_info.m_access_time = m_cache_info.m_creation_time = time(NULL);
     m_cache_info.m_error = false;
 
-    if (fetch_file_time) {
-        if (stat(filename().c_str(), &sb) == -1) {
+    if (fetch_file_time)
+    {
+        if (stat(filename().c_str(), &sb) == -1)
+        {
             m_cache_info.m_file_time = 0;
             m_cache_info.m_file_size = 0;
         }
-        else {
+        else
+        {
             m_cache_info.m_file_time = sb.st_mtime;
             m_cache_info.m_file_size = sb.st_size;
         }
@@ -173,7 +178,7 @@ void Cache_Entry::close_buffer(int flags)
 
 // Returns true if entry may be deleted, false if still in use
 bool Cache_Entry::close(int flags)
-{    
+{
     write_info();
 
     if (m_buffer == NULL)
@@ -221,21 +226,6 @@ bool Cache_Entry::flush()
     return true;
 }
 
-time_t Cache_Entry::mtime() const
-{
-    return m_transcoder->mtime();
-}
-
-size_t Cache_Entry::calculate_size() const
-{
-    return m_transcoder->calculate_size();
-}
-
-const ID3v1 * Cache_Entry::id3v1tag() const
-{
-    return m_transcoder->id3v1tag();
-}
-
 time_t Cache_Entry::age() const
 {
     return (time(NULL) - m_cache_info.m_creation_time);
@@ -248,17 +238,17 @@ time_t Cache_Entry::last_access() const
 
 bool Cache_Entry::expired() const
 {
-    return (age() > params.expiry_time);
+    return (age() > params.m_expiry_time);
 }
 
 bool Cache_Entry::suspend_timeout() const
 {
-    return ((time(NULL) - m_cache_info.m_access_time) > params.max_inactive_suspend);
+    return ((time(NULL) - m_cache_info.m_access_time) > params.m_max_inactive_suspend);
 }
 
 bool Cache_Entry::decode_timeout() const
 {
-    return ((time(NULL) - m_cache_info.m_access_time) > params.max_inactive_abort);
+    return ((time(NULL) - m_cache_info.m_access_time) > params.m_max_inactive_abort);
 }
 
 const string & Cache_Entry::filename()
@@ -275,3 +265,9 @@ void Cache_Entry::unlock()
 {
     pthread_mutex_unlock(&m_mutex);
 }
+
+int Cache_Entry::ref_count() const
+{
+    return m_ref_count;
+}
+

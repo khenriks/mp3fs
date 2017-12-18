@@ -1,5 +1,5 @@
 /*
- * Encoder and decoder interfaces for mp3fs
+ * Encoder and decoder interfaces for ffmpegfs
  *
  * Copyright (C) 2013 K. Henriksson
  *

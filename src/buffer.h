@@ -1,5 +1,5 @@
 /*
- * cache class header for mp3fs
+ * cache class header for ffmpegfs
  *
  * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
@@ -35,7 +35,8 @@
 
 using namespace std;
 
-class Buffer {
+class Buffer
+{
 public:
     explicit Buffer(const string & filename);
     virtual ~Buffer();
@@ -53,10 +54,13 @@ public:
 
     void lock();
     void unlock();
-    
+
+    const string & filename() const;
+    const string & cachefile() const;
+
 protected:
     bool remove_file();
-    
+
 private:
     uint8_t* write_prepare(size_t length);
     void increment_pos(ptrdiff_t increment);
