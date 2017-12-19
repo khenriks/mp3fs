@@ -32,9 +32,10 @@ namespace
 Logging* logging;
 }
 
-Logging::Logging(string logfile, level max_level, bool to_stderr,
-                 bool to_syslog) :
-    max_level_(max_level), to_stderr_(to_stderr), to_syslog_(to_syslog)
+Logging::Logging(string logfile, level max_level, bool to_stderr, bool to_syslog) :
+    max_level_(max_level),
+    to_stderr_(to_stderr),
+    to_syslog_(to_syslog)
 {
     if (!logfile.empty())
     {
@@ -114,24 +115,28 @@ void log_with_level(Logging::level level, const char* prefix, const char* format
 
     va_end(ap2);
 
-    //#ifndef NDEBUG
-    //    if (level == Logging::level::TRACE)
-    //    {
-    //        cerr << "TRACE: " << buffer << endl;
-    //    }
-    if (level == Logging::level::DEBUG)
-    {
-        cerr << "DEBUG: " << buffer << endl;
-    }
-    if (level == Logging::level::WARNING)
-    {
-        cerr << "WARNING: " << buffer << endl;
-    }
-    if (level == Logging::level::ERROR)
-    {
-        cerr << "ERROR: " << buffer << endl;
-    }
-    //#endif
+//#ifndef NDEBUG
+//    if (level == Logging::level::TRACE)
+//    {
+//        cerr << "TRACE: " << buffer << endl;
+//    }
+//    if (level == Logging::level::DEBUG)
+//    {
+//        cerr << "DEBUG: " << buffer << endl;
+//    }
+//    if (level == Logging::level::INFO)
+//    {
+//        cerr << "INFO: " << buffer << endl;
+//    }
+//    if (level == Logging::level::WARNING)
+//    {
+//        cerr << "WARNING: " << buffer << endl;
+//    }
+//    if (level == Logging::level::ERROR)
+//    {
+//        cerr << "ERROR: " << buffer << endl;
+//    }
+//#endif
 
     Log(level) << prefix << buffer;
 }

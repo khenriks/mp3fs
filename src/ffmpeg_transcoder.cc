@@ -1842,7 +1842,6 @@ cleanup:
  */
 size_t FFMPEG_Transcoder::calculate_size()
 {
-
     if (m_nCalculated_size == 0 && m_in.m_pFormat_ctx != NULL)
     {
         // TODO #2260: check mp3 prediction. AAC/H264 OK now.
