@@ -1,6 +1,6 @@
 ffmpegfs NEWS
 
-Important changes in 0.94 (2017-12-18)
+Important changes in 0.94 (2017-12-19)
 
 Changes in this release:
 * Decided to rename mp3fs to ffmpegfs because the project has grown far beyond
