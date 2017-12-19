@@ -224,6 +224,15 @@ static void usage(char *name)
                "                           48000, 96000, 192000. Set to 0 to keep source rate.\n"
                "                           Default: 44.1 kHz\n"
                "\n"
+               "BITRATE can be defined...\n"
+               "In bit/s:  #  or #bps\n"
+               "In kbit/s: #M or #Mbps\n"
+               "In Mbit/s: #M or #Mbps\n"
+               "\n"
+               "SAMPLERATE can be defined...n"
+               "In Hz:  #  or #Hzn"
+               "In kHz: #K or #KHzn"
+               "\n"
                "Video Options:\n"
                "\n"
                "    --videobitrate=BITRATE, -o videobitrate=BITRATE\n"
@@ -249,8 +258,10 @@ static void usage(char *name)
                "                           Default: no deinterlace\n"
       #endif
                "\n"
-               "BITRATE may be defined e.g. as 256K, 2.5M or 128000\n"
-               "SAMPLERATE may be defined e.g. as 44100 or 44.1K\n"
+               "BITRATE can be defined...\n"
+               "In bit/s:  #  or #bps\n"
+               "In kbit/s: #M or #Mbps\n"
+               "In Mbit/s: #M or #Mbps\n"
                "\n"
                "Cache Options:\n"
                "\n"
@@ -287,12 +298,23 @@ static void usage(char *name)
                "                           Disable the cache functionality.\n"
                "                           Default: enabled\n"
                "\n"
-               "TIME may be defined as seconds, minutes, hours or days (e.g. 480s, 5m, 12h or 2d)\n"
-               "SIZE may be defined e.g. as 10000, 500MB, 1.5GB or 2TB\n"
+               "TIME can be defined...\n"
+               "Seconds: #\n"
+               "Minutes: #m\n"
+               "Hours:   #h\n"
+               "Days:    #d\n"
+               "Weeks:   #w\n"
+      	       "\n"   
+      	       "SIZE can be defined...\n"
+      	       "In bytes:  # or #B\n"
+      	       "In KBytes: #K or #KB\n"
+      	       "In MBytes: #B or #MB\n"
+      	       "In GBytes: #G or #GB\n"
+      	       "In TBytes: #T or #TB\n"
+      #ifndef DISABLE_MAX_THREADS
                "\n"
                "Other:\n"
                "\n"
-      #ifndef DISABLE_MAX_THREADS
                "     --max_threads=COUNT, -o max_threads=COUNT\n"
                "                           Limit concurrent transcoder threads. Set to 0 for unlimited threads."
                "                           Reasonable values are up to 4 times number of CPU cores."
@@ -339,6 +361,10 @@ static int compare(const char *value, const char *pattern)
     return reti;
 }
 
+// Get bitrate:
+// In bit/s:  #  or #bps
+// In kbit/s: #M or #Mbps
+// In Mbit/s: #M or #Mbps
 static int get_bitrate(const char * arg, unsigned int *value)
 {
     const char * ptr = strchr(arg, '=');
@@ -350,7 +376,7 @@ static int get_bitrate(const char * arg, unsigned int *value)
         ptr++;
 
         // Check for decimal number
-        reti = compare(ptr, "^([1-9][0-9]*|0)?$");
+        reti = compare(ptr, "^([1-9][0-9]*|0)?(bps)?$");
 
         if (reti == -1)
         {
@@ -363,7 +389,7 @@ static int get_bitrate(const char * arg, unsigned int *value)
         }
 
         // Check for number with optional descimal point and K modifier
-        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?K$");
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?K(bps)?$");
 
         if (reti == -1)
         {
@@ -376,7 +402,7 @@ static int get_bitrate(const char * arg, unsigned int *value)
         }
 
         // Check for number with optional descimal point and M modifier
-        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?M$");
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?M(bps)?$");
 
         if (reti == -1)
         {
@@ -398,6 +424,9 @@ static int get_bitrate(const char * arg, unsigned int *value)
     return -1;
 }
 
+// Get sample rate:
+// In Hz:  #  or #Hz
+// In kHz: #K or #KHz
 static int get_samplerate(const char * arg, unsigned int * value)
 {
     const char * ptr = strchr(arg, '=');
@@ -409,7 +438,7 @@ static int get_samplerate(const char * arg, unsigned int * value)
         ptr++;
 
         // Check for decimal number
-        reti = compare(ptr, "^([1-9][0-9]*|0)?$");
+        reti = compare(ptr, "^([1-9][0-9]*|0)(Hz)?$");
 
         if (reti == -1)
         {
@@ -422,7 +451,7 @@ static int get_samplerate(const char * arg, unsigned int * value)
         }
 
         // Check for number with optional descimal point and K modifier
-        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?K$");
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?K(Hz)?$");
 
         if (reti == -1)
         {
@@ -444,6 +473,12 @@ static int get_samplerate(const char * arg, unsigned int * value)
     return -1;
 }
 
+// Get time in format
+// Seconds: #
+// Minutes: #m
+// Hours:   #h
+// Days:    #d
+// Weeks:   #w
 static int get_time(const char * arg, time_t *value)
 {
     const char * ptr = strchr(arg, '=');
@@ -529,6 +564,12 @@ static int get_time(const char * arg, time_t *value)
     return -1;
 }
 
+// Read size:
+// In bytes:  # or #B
+// In KBytes: #K or #KB
+// In MBytes: #B or #MB
+// In GBytes: #G or #GB
+// In TBytes: #T or #TB
 static int get_size(const char * arg, size_t *value)
 {
     const char * ptr = strchr(arg, '=');
@@ -552,7 +593,7 @@ static int get_size(const char * arg, size_t *value)
             return 0;   // OK
         }
 
-        // Check for number with optional descimal point and K modifier
+        // Check for number with optional descimal point and K/KB modifier
         reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?KB?$");
 
         if (reti == -1)
@@ -565,7 +606,7 @@ static int get_size(const char * arg, size_t *value)
             return 0;   // OK
         }
 
-        // Check for number with optional descimal point and M modifier
+        // Check for number with optional descimal point and M/MB modifier
         reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?MB?$");
 
         if (reti == -1)
@@ -578,7 +619,7 @@ static int get_size(const char * arg, size_t *value)
             return 0;   // OK
         }
 
-        // Check for number with optional descimal point and G modifier
+        // Check for number with optional descimal point and G/GB modifier
         reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?GB?$");
 
         if (reti == -1)
@@ -591,7 +632,7 @@ static int get_size(const char * arg, size_t *value)
             return 0;   // OK
         }
 
-        // Check for number with optional descimal point and T modifier
+        // Check for number with optional descimal point and T/TB modifier
         reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?TB?$");
 
         if (reti == -1)

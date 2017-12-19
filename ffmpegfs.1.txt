@@ -41,27 +41,36 @@ Encoding options:
 
 Audio Options:
 
-*--audiobitrate*=RATE, *-o audiobitrate*=RATE::
+*--audiobitrate*=BITRATE, *-o audiobitrate*=BITRATE::
                            Audio encoding bitrate (in kbit): Acceptable values for RATE
                            include 96, 112, 128, 160, 192, 224, 256, and
                            320.
                            Default: 128 kbit
-*--audiosamplerate*=Hz, *-o audiosamplerate*=Hz::
-                           Limits the output sample rate to Hz. If the source file
+*--audiosamplerate*=SAMPLERATE, *-o audiosamplerate*=SAMPLERATE::
+                           Limits the output sample rate to SAMPLERATE. If the source file
                            sample rate is more it will be downsampled automatically.
                            Typical values are 8000, 11025, 22050, 44100,
                            48000, 96000, 192000. Set to 0 to keep source rate.
                            Default: 44.1 kHz
 
+BITRATE can be defined...
+In bit/s:  #  or #bps
+In kbit/s: #M or #Mbps
+In Mbit/s: #M or #Mbps
+
+SAMPLERATE can be defined...
+In Hz:  #  or #Hz
+In kHz: #K or #KHz
+
 Video Options:
 
-*--videobitrate*=RATE, *-o videobitrate*=RATE::
-                           Video encoding bit rate (in kbit). Acceptable values for RATE
+*--videobitrate*=BITRATE, *-o videobitrate*=BITRATE::
+                           Video encoding bit rate (in kbit). Acceptable values for BITRATE
                            range between 500 and 250000. Setting this too high or low may.
                            cause transcoding to fail.
                            Default: 2 Mbit
 +
-Acceptable values for 'RATE':
+Acceptable values for 'BITRATE':
 +
 *MP4 audio:*
 +    
@@ -74,40 +83,45 @@ Acceptable values for 'RATE':
 +    
 *MP3 audio:*
 +
-For sampling frequencies of 32, 44.1, and 48 kHz, 'RATE' can be among 32,
+For sampling frequencies of 32, 44.1, and 48 kHz, 'BITRATE' can be among 32,
 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, and 320.
 +
-For sampling frequencies of 16, 22.05, and 24 kHz, 'RATE' can be among 8,
+For sampling frequencies of 16, 22.05, and 24 kHz, 'BITRATE' can be among 8,
 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, and 160.
 +
 When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
-160, 192, 224, 256, and 320. If not specified, 'RATE' defaults to 128.
+160, 192, 224, 256, and 320. If not specified, 'BITRATE' defaults to 128.
+
+BITRATE can be defined...
+In bit/s:  #  or #bps
+In kbit/s: #M or #Mbps
+In Mbit/s: #M or #Mbps
 
 Cache Options:
 
- *--expiry_time*=SECONDS, *-o expiry_time*=SECONDS::
-                           Cache entries expire after SECONDS and will be deleted
+ *--expiry_time*=TIME, *-o expiry_time*=TIME::
+                           Cache entries expire after TIME and will be deleted
                            to save disk space.
                            Default: 1 week
- *--max_inactive_suspend*=SECONDS, *-o max_inactive_suspend*=SECONDS::
+ *--max_inactive_suspend*=TIME, *-o max_inactive_suspend*=TIME::
                            While being accessed the file is transcoded to the target format
                            in the background. When the client quits transcoding will continue
                            until this time out. Transcoding is suspended until it is
                            accessed again, and transcoding will continue.
                            Default: 2 minutes
- *--max_inactive_abort*=SECONDS, *-o max_inactive_abort*=SECONDS::
+ *--max_inactive_abort*=TIME, *-o max_inactive_abort*=TIME::
                            While being accessed the file is transcoded to the target format
                            in the background. When the client quits transcoding will continue
                            until this time out, and the transcoder thread quits
                            Default: 5 minutes
- *--max_cache_size*=BYTES, *-o max_cache_size*=BYTES::
+ *--max_cache_size*=SIZE, *-o max_cache_size*=SIZE::
                            Set the maximum diskspace used by the cache. If the cache would grow
                            beyond this limit when a file is transcoded, old entries will be deleted
                            to keep the cache within the size limit.
                            Default: unlimited
- *--min_diskspace*=BYTES, *-o min_diskspace*=BYTES::
+ *--min_diskspace*=SIZE, *-o min_diskspace*=SIZE::
                            Set the required diskspace on the cachepath mount. If the remaining
-                           space would fall below BYTES when a file is transcoded, old entries will
+                           space would fall below SIZE when a file is transcoded, old entries will
                            be deleted to keep the diskspace within the limit.
                            Default: 0 (no minimum space)
  *--cachepath*=DIR, *-o cachepath*=DIR::
@@ -118,6 +132,19 @@ Cache Options:
                            Disable the cache functionality.
                            Default: enabled
 
+TIME can be defined...
+Seconds: #
+Minutes: #m
+Hours:   #h
+Days:    #d
+Weeks:   #w
+
+SIZE can be defined...
+In bytes:  # or #B
+In KBytes: #K or #KB
+In MBytes: #B or #MB
+In GBytes: #G or #GB
+In TBytes: #T or #TB
 Logging:
 
 *--log_maxlevel*=LEVEL, *-o log_maxlevel*=LEVEL::

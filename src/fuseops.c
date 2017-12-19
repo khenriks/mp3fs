@@ -252,7 +252,11 @@ static int ffmpegfs_getattr(const char *path, struct stat *stbuf)
                 goto transcoder_fail;
             }
 
-            stbuf->st_size = transcoder_get_size(cache_entry);
+#if defined __x86_64__ || !defined __USE_FILE_OFFSET64
+            stbuf->st_size = (__off_t)transcoder_get_size(cache_entry);
+#else
+            stbuf->st_size = (__off64_t)transcoder_get_size(cache_entry);
+#endif
             stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
 
             transcoder_delete(cache_entry);
@@ -318,7 +322,11 @@ int ffmpegfs_fgetattr(const char *filename, struct stat * stbuf, struct fuse_fil
             goto transcoder_fail;
         }
 
-        stbuf->st_size = transcoder_buffer_tell(cache_entry);
+#if defined __x86_64__ || !defined __USE_FILE_OFFSET64
+        stbuf->st_size = (__off_t)transcoder_buffer_tell(cache_entry);
+#else
+        stbuf->st_size = (__off64_t)transcoder_buffer_tell(cache_entry);
+#endif
         stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
     }
 
