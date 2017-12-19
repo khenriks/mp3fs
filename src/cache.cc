@@ -515,7 +515,7 @@ bool Cache::prune_expired()
 
     format_time(buffer, sizeof(buffer), params.m_expiry_time);
 
-    fprintf(stderr, "Pruning expired cache entries older than %s...\n", buffer); fflush(stderr);
+    ffmpegfs_trace("Pruning expired cache entries older than %s...\n", buffer);
 
     sprintf(sql, "SELECT filename, strftime('%%s', access_time) FROM cache_entry WHERE strftime('%%s', access_time) + %zu < %zu;\n", params.m_expiry_time, now);
 
@@ -528,17 +528,17 @@ bool Cache::prune_expired()
         filenames.push_back(filename);
 
         format_time(buffer, sizeof(buffer), now - (time_t)sqlite3_column_int64(stmt, 1));
-        fprintf(stderr, "Found %s old entry: %s\n", buffer, filename); fflush(stderr);
+        ffmpegfs_trace("Found %s old entry: %s\n", buffer, filename);
     }
 
-    fprintf(stderr, "%zu expired cache entries found.\n", filenames.size()); fflush(stderr);
+    ffmpegfs_trace("%zu expired cache entries found.\n", filenames.size());
 
     if (ret == SQLITE_DONE)
     {
         for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); it++)
         {
             const string & filename = *it;
-            fprintf(stderr, "Pruning: %s\n", filename.c_str()); fflush(stderr);
+            ffmpegfs_trace("Pruning: %s\n", filename.c_str());
 
             cache_t::iterator p = m_cache.find(filename);
             if (p != m_cache.end())
@@ -575,7 +575,7 @@ bool Cache::prune_cache_size()
 
     format_size(buffer, sizeof(buffer), params.m_max_cache_size);
 
-    fprintf(stderr, "Pruning oldest cache entries exceeding %s cache size...\n", buffer); fflush(stderr);
+    ffmpegfs_trace("Pruning oldest cache entries exceeding %s cache size...\n", buffer);
 
     sql = "SELECT filename, encoded_filesize FROM cache_entry ORDER BY access_time ASC;\n";
 
@@ -594,13 +594,13 @@ bool Cache::prune_cache_size()
 
     format_size(buffer, sizeof(buffer), total_size);
 
-    fprintf(stderr, "%s in cache.\n", buffer); fflush(stderr);
+    ffmpegfs_trace("%s in cache.\n", buffer);
 
     if (total_size > params.m_max_cache_size)
     {
         format_size(buffer, sizeof(buffer), total_size - params.m_max_cache_size);
 
-        fprintf(stderr, "Pruning %s of oldest cache entries to limit cache size.\n", buffer); fflush(stderr);
+        ffmpegfs_trace("Pruning %s of oldest cache entries to limit cache size.\n", buffer);
 
         if (ret == SQLITE_DONE)
         {
@@ -608,7 +608,7 @@ bool Cache::prune_cache_size()
             for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); it++)
             {
                 const string & filename = *it;
-                fprintf(stderr, "Pruning: %s\n", filename.c_str()); fflush(stderr);
+                ffmpegfs_trace("Pruning: %s\n", filename.c_str());
 
                 cache_t::iterator p = m_cache.find(filename);
                 if (p != m_cache.end())
@@ -628,7 +628,7 @@ bool Cache::prune_cache_size()
 
             format_size(buffer, sizeof(buffer), total_size);
 
-            fprintf(stderr, "%s left in cache.\n", buffer); fflush(stderr);
+            ffmpegfs_trace("%s left in cache.\n", buffer);
         }
         else
         {
@@ -650,7 +650,7 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
 
     if (statvfs(cachepath, &buf))
     {
-        fprintf(stderr, "prune_disk_space() cannot determine free disk space: %s\n", strerror(errno)); fflush(stderr);
+        ffmpegfs_trace("prune_disk_space() cannot determine free disk space: %s\n", strerror(errno));
         return false;
     }
 
@@ -659,7 +659,7 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
 
     format_size(buffer, sizeof(buffer), free_bytes);
 
-    fprintf(stderr, "%s disk space before prune.\n", buffer); fflush(stderr);
+    ffmpegfs_trace("%s disk space before prune.\n", buffer);
     if (free_bytes < params.m_min_diskspace + predicted_filesize)
     {
         vector<string> filenames;
@@ -686,7 +686,7 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
         format_size(prunesize, sizeof(prunesize), params.m_min_diskspace + predicted_filesize - free_bytes);
         format_size(diskspace, sizeof(diskspace), params.m_min_diskspace);
 
-        fprintf(stderr, "Pruning %s of oldest cache entries to keep disk space above %s limit...\n", prunesize, diskspace); fflush(stderr);
+        ffmpegfs_trace("Pruning %s of oldest cache entries to keep disk space above %s limit...\n", prunesize, diskspace);
 
         if (ret == SQLITE_DONE)
         {
@@ -694,7 +694,7 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
             for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); it++)
             {
                 const string & filename = *it;
-                fprintf(stderr, "Pruning: %s\n", filename.c_str()); fflush(stderr);
+                ffmpegfs_trace("Pruning: %s\n", filename.c_str());
 
                 cache_t::iterator p = m_cache.find(filename);
                 if (p != m_cache.end())
@@ -714,7 +714,7 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
 
             format_size(buffer, sizeof(buffer), free_bytes);
 
-            fprintf(stderr, "Disk space after prune: %s\n", buffer); fflush(stderr);
+            ffmpegfs_trace("Disk space after prune: %s\n", buffer);
         }
         else
         {
