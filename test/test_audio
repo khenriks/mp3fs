@@ -1,6 +1,15 @@
 #!/bin/bash
 
-. "${BASH_SOURCE%/*}/funcs.sh"
+. "${BASH_SOURCE%/*}/funcs.sh" "$1"
 
-[ "$(./fpcompare "$SRCDIR/obama.flac" "$DIRNAME/obama.mp4" 2>&-)" \< 0.05 ]
-[ "$(./fpcompare "$SRCDIR/raven.ogg" "$DIRNAME/raven.mp4" 2>&-)" \< 0.05 ]
+echo Checking $DIRNAME/obama.$DESTTYPE
+RESULT="$(./fpcompare "$SRCDIR/obama.flac" "$DIRNAME/obama.$DESTTYPE" 2>&-)"
+echo "Result: $RESULT"
+[ "$RESULT" \< 0.08 ]
+
+echo Checking $DIRNAME/raven.$DESTTYPE
+RESULT="$(./fpcompare "$SRCDIR/raven.ogg" "$DIRNAME/raven.$DESTTYPE" 2>&-)"
+echo "Result: $RESULT"
+[ "$RESULT" \< 0.08 ]
+
+echo OK

@@ -1,15 +1,33 @@
 #!/bin/bash
 
-. "${BASH_SOURCE%/*}/funcs.sh"
+. "${BASH_SOURCE%/*}/funcs.sh" "$1"
 
 # Ensure log contains file sizes, predicted and actual
-cat "$DIRNAME/obama.mp4" > /dev/null
-cat "$DIRNAME/raven.mp4" > /dev/null
+cat "$DIRNAME/obama.$DESTTYPE" > /dev/null
+cat "$DIRNAME/raven.$DESTTYPE" > /dev/null
 
+if [ "$DESTTYPE" == "mp4" ];
+then
 # mp4
-[ $(stat -c %s "$DIRNAME/obama.mp4") -eq 99151 ]
-[ $(stat -c %s "$DIRNAME/raven.mp4") -eq 133636 ]
-
+echo Checking $DIRNAME/obama.mp4
+SIZE=$(stat -c %s "$DIRNAME/obama.mp4")
+echo Size: $SIZE
+[ $SIZE -eq 99151 ]
+echo Checking $DIRNAME/raven.mp4
+SIZE=$(stat -c %s "$DIRNAME/raven.mp4")
+echo Size: $SIZE
+[ $SIZE -eq 133636 ]
+elif [ "$DESTTYPE" == "mp3" ];
+then
 # mp3
-#[ $(stat -c %s "$DIRNAME/obama.mp4") -eq 106781 ]
-#[ $(stat -c %s "$DIRNAME/raven.mp4") -eq 346594 ]
+echo Checking $DIRNAME/obama.mp3
+SIZE=$(stat -c %s "$DIRNAME/obama.mp3")
+echo Size: $SIZE
+[ $SIZE -eq 97244 ]
+echo Checking $DIRNAME/raven.mp3
+SIZE=$(stat -c %s "$DIRNAME/raven.mp3")
+echo Size: $SIZE
+[ $SIZE -eq 126090 ]
+else
+exit 99
+fi

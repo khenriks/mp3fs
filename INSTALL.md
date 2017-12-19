@@ -103,10 +103,18 @@ To build and run the check suite, do:
 
     make checks
     
-This will test audio conversion, tagging, size prediction and image embedding.
+This will test audio conversion, tagging and size prediction.
 
-NOTE: Size prediction is not working properly at the moment, image embedding
-is not yet implemented. Both tests will currently fail.
+NOTE: Image embedding is not yet implemented. The test has been
+disabled at the moment.
+
+HINT: If test_tags fails you may be missig the python-mutagen package, then do
+
+On Debian:
+
+    aptitude install python-mutagen
+
+On Ubuntu use the same command with `apt-get` in place of `aptitude`.
 
 Trouble Shooting
 ----------------

@@ -1,5 +1,7 @@
 #!/bin/bash
 
-. "${BASH_SOURCE%/*}/funcs.sh"
+. "${BASH_SOURCE%/*}/funcs.sh" "$1"
 
-[ "$(ls -m "$DIRNAME")" = "dir.flac, obama.mp4, raven.mp4" ]
+[ "$(ls -m "$DIRNAME")" = "dir.flac, obama.$DESTTYPE, raven.$DESTTYPE" ]
+
+echo OK

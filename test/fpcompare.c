@@ -179,7 +179,7 @@ done:
 
 int main(int argc, char **argv)
 {
-    int i, j, max_length = 120, num_file_names = 0, raw = 0, duration;
+    int i, j, max_length = 120, num_file_names = 0/*, raw = 0*/, duration;
     int raw_fingerprint_size[2];
     uint32_t *raw_fingerprints[2] = {0};
     char *file_name, **file_names;
@@ -198,9 +198,9 @@ int main(int argc, char **argv)
             printf("fpcalc version %s\n", chromaprint_get_version());
             return 0;
         }
-        else if (!strcmp(arg, "-raw")) {
-            raw = 1;
-        }
+        //else if (!strcmp(arg, "-raw")) {
+        //    raw = 1;
+        //}
         else if (!strcmp(arg, "-algo") && i + 1 < argc) {
             const char *v = argv[++i];
             if (!strcmp(v, "test1")) { algo = CHROMAPRINT_ALGORITHM_TEST1; }

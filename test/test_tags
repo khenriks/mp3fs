@@ -1,11 +1,15 @@
 #!/bin/bash
 
-. "${BASH_SOURCE%/*}/funcs.sh"
+. "${BASH_SOURCE%/*}/funcs.sh" "$1"
 
 get_metadata() {
-    mutagen-inspect "$1" | fgrep = | sort | sed -r 's/^\?too=Lavf.*/?too=/'
+    mutagen-inspect "$1" | fgrep = | sort | sed -r 's/^.*=Lavf.*//'
 }
 
+if [ "$DESTTYPE" == "mp4" ];
+then
+# mp4
+echo Checking $DIRNAME/obama.mp4
 cmp -s - <(get_metadata "$DIRNAME/obama.mp4")<<END
 ?ART=Barack Obama
 ?alb=US State of the Union 2011
@@ -13,10 +17,10 @@ cmp -s - <(get_metadata "$DIRNAME/obama.mp4")<<END
 ?day=2011-01-25
 ?gen=Spoken
 ?nam=The Internet [excerpt]
-?too=
+
 trkn=(1, 0)
 END
-
+echo Checking $DIRNAME/raven.mp4
 cmp -s - <(get_metadata "$DIRNAME/raven.mp4") <<END
 ?ART=Edgar Allen Poe
 ?alb=The Raven
@@ -24,6 +28,40 @@ cmp -s - <(get_metadata "$DIRNAME/raven.mp4") <<END
 ?day=2007
 ?gen=Speech
 ?nam=the_raven
-?too=
+
 trkn=(1, 0)
 END
+elif [ "$DESTTYPE" == "mp3" ];
+then
+# mp3
+echo Checking $DIRNAME/obama.mp3
+cmp -s - <(get_metadata "$DIRNAME/obama.mp3")<<END
+TALB=US State of the Union 2011
+TCON=Spoken
+TCOP=Public Domain
+TDRC=2011-01-25
+TIT2=The Internet [excerpt]
+TPE1=Barack Obama
+TPOS=0
+TRCK=1
+
+TXXX=DISCTOTAL=0
+TXXX=TRACKTOTAL=1
+END
+echo Checking $DIRNAME/raven.mp3
+cmp -s - <(get_metadata "$DIRNAME/raven.mp3") <<END
+TALB=The Raven
+TCON=Speech
+TDRC=2007
+TIT2=the_raven
+TPE1=Edgar Allen Poe
+TRCK=01
+
+TXXX=ENSEMBLE=Edgar Allen Poe
+TXXX=comment=www.librivox.org
+END
+else
+exit 99
+fi
+
+echo OK

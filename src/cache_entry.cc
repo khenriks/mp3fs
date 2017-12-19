@@ -231,6 +231,18 @@ bool Cache_Entry::flush()
     return true;
 }
 
+size_t Cache_Entry::size() const
+{
+    if (m_cache_info.m_encoded_filesize)
+    {
+        return m_cache_info.m_encoded_filesize;
+    }
+    else
+    {
+        return m_cache_info.m_predicted_filesize;
+    }
+}
+
 time_t Cache_Entry::age() const
 {
     return (time(NULL) - m_cache_info.m_creation_time);

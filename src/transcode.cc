@@ -358,20 +358,21 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
     try
     {
         /*
-            * If we are encoding to MP3 and the requested data overlaps the ID3v1 tag
-            * at the end of the file, do not encode data first up to that position.
-            * This optimizes the case where applications read the end of the file
-            * first to read the ID3v1 tag.
-            */
-        if (strcmp(params.m_desttype, "mp3") == 0 &&
-                (size_t)offset > cache_entry->m_buffer->tell()
-                && offset + len >
-                (transcoder_get_size(cache_entry) - ID3V1_TAG_LENGTH))
+         * If we are encoding to MP3 and the requested data overlaps the ID3v1 tag
+         * at the end of the file, do not encode data first up to that position.
+         * This optimizes the case where applications read the end of the file
+         * first to read the ID3v1 tag.
+         */
+        if (!cache_entry->m_cache_info.m_finished &&
+                offset + len > (cache_entry->size() - ID3V1_TAG_LENGTH) &&
+                !strcmp(params.m_desttype, "mp3"))
         {
 
             memcpy(buff, &cache_entry->m_id3v1, ID3V1_TAG_LENGTH);
 
-            throw len;
+            errno = 0;
+
+            throw (ssize_t)len;
         }
 
         // Set last access time
@@ -381,7 +382,7 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
 
         if (!success)
         {
-            throw -1;
+            throw (ssize_t)-1;
         }
 
         // truncate if we didn't actually get len
@@ -397,11 +398,11 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
         if (!cache_entry->m_buffer->copy((uint8_t*)buff, offset, len))
         {
             len = 0;
-            //    throw -1;
+            // throw (ssize_t)-1;
         }
         errno = 0;
     }
-    catch (int _len)
+    catch (ssize_t _len)
     {
         len = _len;
     }
@@ -421,14 +422,7 @@ void transcoder_delete(struct Cache_Entry* cache_entry)
 /* Return size of output file, as computed by Encoder. */
 size_t transcoder_get_size(struct Cache_Entry* cache_entry)
 {
-    if (cache_entry->m_cache_info.m_encoded_filesize)
-    {
-        return cache_entry->m_cache_info.m_encoded_filesize;
-    }
-    else
-    {
-        return cache_entry->m_cache_info.m_predicted_filesize;
-    }
+    return cache_entry->size();
 }
 
 size_t transcoder_buffer_watermark(struct Cache_Entry* cache_entry)

@@ -10,7 +10,10 @@ Changes in this release:
 * Cache management: Keep cache size within limit, ensure min. disk space, prune
   oldest entries
 * Fix many crashes
-* Fix memory leaks   
+* Fix memory leaks
+* Fix mp4 check suite
+* Add mp3 check suite
+* Add --disable_cache parameter
 * TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
   that already represents a H264 video stream it would be possible to
   simply repackage it to a mp4 container without recoding.
