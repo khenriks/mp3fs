@@ -23,11 +23,11 @@ then
 echo Checking $DIRNAME/obama.mp3
 SIZE=$(stat -c %s "$DIRNAME/obama.mp3")
 echo Size: $SIZE
-[ $SIZE -eq 97244 ]
+[ $SIZE -eq 96827 ] # 96827
 echo Checking $DIRNAME/raven.mp3
 SIZE=$(stat -c %s "$DIRNAME/raven.mp3")
 echo Size: $SIZE
-[ $SIZE -eq 126090 ]
+[ $SIZE -eq 126248 ] # 126248
 else
 exit 99
 fi
