@@ -114,6 +114,9 @@ Cache Options:
                            Sets the disk cache directory to DIR. Will be created if not existing.
                            The user running ffmpegfs must have write access to the location.
                            Default: temp directory, e.g. /tmp
+ *--disable_cache*, -o *disable_cache::
+                           Disable the cache functionality.
+                           Default: enabled
 
 Logging:
 
