@@ -364,6 +364,7 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
          * first to read the ID3v1 tag.
          */
         if (!cache_entry->m_cache_info.m_finished &&
+                (size_t)offset > cache_entry->m_buffer->tell() &&
                 offset + len > (cache_entry->size() - ID3V1_TAG_LENGTH) &&
                 !strcmp(params.m_desttype, "mp3"))
         {
@@ -516,6 +517,7 @@ static void *decoder_thread(void *arg)
     }
     catch (bool _success)
     {
+        pthread_cond_signal(&thread_data->m_cond);  // unlock main thread
         cache_entry->unlock();
 
         success = _success;
