@@ -44,7 +44,6 @@ public:
     bool open(bool erase_cache = false);                // Open cache, if erase_cache = true delete old file before opening
     bool close(int flags = CLOSE_CACHE_NOOPT);
     bool flush();
-    bool clear();
     bool reserve(size_t size);
     size_t write(const uint8_t* data, size_t length);
     bool seek(size_t pos);

@@ -42,7 +42,8 @@ public:
     bool open(bool create_cache = true);
     bool flush();
     void clear(int fetch_file_time = true);
-    size_t size() const;
+    time_t mtime() const;
+    size_t calculate_size() const;
     time_t age() const;
     time_t last_access() const;
     bool expired() const;

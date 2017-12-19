@@ -535,7 +535,7 @@ static int get_size(const char * arg, size_t *value)
         ptr++;
 
         // Check for decimal number
-        reti = compare(ptr, "^([1-9][0-9]*|0)?$");
+        reti = compare(ptr, "^([1-9][0-9]*|0)?B?$");
 
         if (reti == -1)
         {
@@ -548,7 +548,7 @@ static int get_size(const char * arg, size_t *value)
         }
 
         // Check for number with optional descimal point and K modifier
-        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?K$");
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?KB?$");
 
         if (reti == -1)
         {
@@ -561,7 +561,7 @@ static int get_size(const char * arg, size_t *value)
         }
 
         // Check for number with optional descimal point and M modifier
-        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?M$");
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?MB?$");
 
         if (reti == -1)
         {
@@ -574,7 +574,7 @@ static int get_size(const char * arg, size_t *value)
         }
 
         // Check for number with optional descimal point and G modifier
-        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?G$");
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?GB?$");
 
         if (reti == -1)
         {
@@ -587,7 +587,7 @@ static int get_size(const char * arg, size_t *value)
         }
 
         // Check for number with optional descimal point and T modifier
-        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?T$");
+        reti = compare(ptr, "^[1-9][0-9]*(\\.[0-9]+)?TB?$");
 
         if (reti == -1)
         {

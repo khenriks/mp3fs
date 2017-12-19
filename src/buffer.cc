@@ -256,33 +256,6 @@ bool Buffer::flush()
     return true;
 }
 
-bool Buffer::clear()
-{
-    if (!m_is_open)
-    {
-        return false;
-    }
-
-    bool bSuccess = true;
-
-    lock();
-
-    m_buffer_pos = 0;
-    m_buffer_watermark = 0;
-
-    // If empty set file size to 1 page
-    long filesize = sysconf (_SC_PAGESIZE);
-
-    if (ftruncate(m_fd, filesize) == -1)
-    {
-        ffmpegfs_error("Error calling ftruncate() to clear the file '%s': %s", m_cachefile.c_str(), strerror(errno));
-        bSuccess = false;
-    }
-    unlock();
-
-    return bSuccess;
-}
-
 /*
  * Reserve memory without changing size to reduce re-allocations
  */
