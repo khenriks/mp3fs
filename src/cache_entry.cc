@@ -99,6 +99,11 @@ void Cache_Entry::clear(int fetch_file_time)
             m_cache_info.m_file_size = sb.st_size;
         }
     }
+
+    if (m_buffer != NULL)
+    {
+        m_buffer->clear();
+    }
 }
 
 bool Cache_Entry::read_info()
@@ -224,6 +229,18 @@ bool Cache_Entry::flush()
     write_info();
 
     return true;
+}
+
+size_t Cache_Entry::size() const
+{
+    if (m_cache_info.m_encoded_filesize)
+    {
+        return m_cache_info.m_encoded_filesize;
+    }
+    else
+    {
+        return m_cache_info.m_predicted_filesize;
+    }
 }
 
 time_t Cache_Entry::age() const
