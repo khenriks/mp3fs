@@ -24,8 +24,10 @@
 #include <cstdarg>
 #include <ctime>
 #include <iostream>
-
 #include <syslog.h>
+#include <algorithm>
+#include <cctype>
+#include <locale>
 
 namespace
 {
@@ -47,6 +49,13 @@ Logging::Logging(string logfile, level max_level, bool to_stderr, bool to_syslog
     }
 }
 
+// trim from end (in place)
+static inline void rtrim(std::string &s) {
+    s.erase(std::find_if(s.rbegin(), s.rend(), [](int ch) {
+        return !std::isspace(ch);
+    }).base(), s.end());
+}
+
 Logging::Logger::~Logger()
 {
     if (!logging_ || loglevel_ > logging_->max_level_) return;
@@ -59,6 +68,8 @@ Logging::Logger::~Logger()
 
     string msg = "[" + time_string + "] " +
             level_name_map_.at(loglevel_) + ": " + str();
+
+    rtrim(msg);
 
     if (logging_->to_syslog_)
     {
