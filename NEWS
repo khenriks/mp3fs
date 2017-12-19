@@ -17,6 +17,7 @@ Changes in this release:
 * TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
   that already represents a H264 video stream it would be possible to
   simply repackage it to a mp4 container without recoding.
+* TODO: Cover art support still missing
 
 nschlia@oblivion-software.de
 
