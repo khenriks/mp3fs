@@ -73,6 +73,7 @@ extern struct ffmpegfs_params
     int             m_max_threads;              // TODO Feature #2250: Max. number of recoder threads
 #endif
     const char*     m_cachepath;                // Disk cache path, defaults to /tmp
+    int             m_disable_cache;            // Disable cache
 } params;
 
 /* Fuse operations struct */

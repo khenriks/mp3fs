@@ -85,8 +85,8 @@ struct ffmpegfs_params params =
 #ifndef DISABLE_MAX_THREADS
     .m_max_threads          = 0,                        // default: 4 * cpu cores (set later)
 #endif
-    .m_cachepath            = NULL                      // default: /tmp
-
+    .m_cachepath            = NULL,                     // default: /tmp
+    .m_disable_cache        = 0                         // default: enabled
 };
 
 enum
@@ -147,6 +147,8 @@ static struct fuse_opt ffmpegfs_opts[] =
     FUSE_OPT_KEY("min_diskspace=%zu",           KEY_MIN_DISKSPACE_SIZE),
     FFMPEGFS_OPT("--cachepath=%s",              m_cachepath, 0),
     FFMPEGFS_OPT("cachepath=%s",                m_cachepath, 0),
+    FFMPEGFS_OPT("--disable_cache",             m_disable_cache, 1),
+    FFMPEGFS_OPT("disable_cache",               m_disable_cache, 1),
 
     // Other
 #ifndef DISABLE_MAX_THREADS
@@ -281,6 +283,9 @@ static void usage(char *name)
                "                           Sets the disk cache directory to DIR. Will be created if not existing.\n"
                "                           The user running ffmpegfs must have write access to the location.\n"
                "                           Default: temp directory, e.g. /tmp\n"
+               "     --disable_cache, -o disable_cache\n"
+               "                           Disable the cache functionality.\n"
+               "                           Default: enabled\n"
                "\n"
                "TIME may be defined as seconds, minutes, hours or days (e.g. 480s, 5m, 12h or 2d)\n"
                "SIZE may be defined e.g. as 10000, 500MB, 1.5GB or 2TB\n"
@@ -826,12 +831,12 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    /* Log to the screen, and enable debug messages, if debug is enabled. */
+    // Log to the screen, and enable debug messages, if debug is enabled.
     if (params.m_debug)
     {
         params.m_log_stderr = 1;
         params.m_log_maxlevel = "DEBUG";
-        //        av_log_set_level(AV_LOG_DEBUG);
+        // av_log_set_level(AV_LOG_DEBUG);
         av_log_set_level(AV_LOG_INFO);
     }
     else

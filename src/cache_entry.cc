@@ -99,6 +99,11 @@ void Cache_Entry::clear(int fetch_file_time)
             m_cache_info.m_file_size = sb.st_size;
         }
     }
+
+    if (m_buffer != NULL)
+    {
+        m_buffer->clear();
+    }
 }
 
 bool Cache_Entry::read_info()

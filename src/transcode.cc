@@ -206,6 +206,12 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
             throw false;
         }
 
+        if (params.m_disable_cache)
+        {
+            // Disable cache
+            cache_entry->clear();
+        }
+
         if (!cache_entry->m_is_decoding && !cache_entry->m_cache_info.m_finished)
         {
 #ifndef DISABLE_MAX_THREADS
