@@ -38,8 +38,8 @@ LIBS+=-lavresample
 #-lavdevice -lavfilter
 LIBS+=-lsqlite3
 
-QMAKE_CFLAGS += -std=c99 -Wall -Wextra -Wconversion -Wno-sign-conversion
-QMAKE_CXXFLAGS += -std=c++11 -Wall -Wextra -Wconversion -Wno-sign-conversion
+QMAKE_CFLAGS += -std=c99 -Wall -Wextra -Wconversion
+QMAKE_CXXFLAGS += -std=c++11 -Wall -Wextra -Wconversion
 #QMAKE_CFLAGS += -O2 -MT -MD -MP -MF
 #QMAKE_CXXFLAGS += -O2 -MT -MD -MP -MF
 
@@ -63,4 +63,10 @@ DISTFILES += \
     autogen.sh \
     buildloc \
     configure.ac \
-    ffmpegfs.1.txt
+    ffmpegfs.1.txt \
+    test/test_audio \
+    test/test_filenames \
+    test/test_filesize \
+    test/test_picture \
+    test/test_tags \
+    test/funcs.sh
