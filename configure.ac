@@ -7,6 +7,10 @@ AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
+# Optimisation
+CXXFLAGS="-O3 -g"
+CFLAGS="-O3 -g"
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CXX
