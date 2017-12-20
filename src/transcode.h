@@ -74,6 +74,7 @@ extern struct ffmpegfs_params
 #endif
     const char*     m_cachepath;                // Disk cache path, defaults to /tmp
     int             m_disable_cache;            // Disable cache
+    int             m_prune_cache;              // Prune cache immediately
 } params;
 
 /* Fuse operations struct */
@@ -108,6 +109,7 @@ size_t transcoder_get_size(struct Cache_Entry* cache_entry);
 size_t transcoder_buffer_watermark(struct Cache_Entry* cache_entry);
 size_t transcoder_buffer_tell(struct Cache_Entry* cache_entry);
 void transcoder_exit(void);
+int transcoder_prune_cache(void);
 
 /* Check for availability of audio types. */
 int check_encoder(const char* type);

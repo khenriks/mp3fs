@@ -441,6 +441,18 @@ void transcoder_exit(void)
     thread_exit = true;
 }
 
+int transcoder_prune_cache(void)
+{
+    if (cache != NULL)
+    {
+        return cache->prune_cache();
+    }
+    else
+    {
+        return false;
+    }
+}
+
 static void *decoder_thread(void *arg)
 {
     Thread_Data *thread_data = (Thread_Data*)arg;

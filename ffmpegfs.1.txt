@@ -131,6 +131,8 @@ Cache Options:
  *--disable_cache*, -o *disable_cache::
                            Disable the cache functionality.
                            Default: enabled
+ *--prune_cache::
+                           Prune cache immediately according to the above setting.
 
 TIME can be defined...
 Seconds: #
