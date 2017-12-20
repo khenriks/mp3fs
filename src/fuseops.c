@@ -511,11 +511,10 @@ static int ffmpegfs_release(const char *path, struct fuse_file_info *fi)
     return 0;
 }
 
-/* We need synchronous reads. */
+// We need synchronous reads.
 static void *ffmpegfs_init(struct fuse_conn_info *conn)
 {
-
-    ffmpegfs_trace("init");
+    ffmpegfs_info("%s V%s initialising", PACKAGE_NAME, PACKAGE_VERSION);
 
     conn->async_read = 0;
 
@@ -524,9 +523,14 @@ static void *ffmpegfs_init(struct fuse_conn_info *conn)
 
 static void ffmpegfs_destroy(__attribute__((unused)) void * p)
 {
-    ffmpegfs_trace("destroy");
+    ffmpegfs_info("%s V%s terminating", PACKAGE_NAME, PACKAGE_VERSION);
+    printf("%s V%s terminating\n", PACKAGE_NAME, PACKAGE_VERSION);
 
     transcoder_exit();
+
+    cache_delete();
+
+    ffmpegfs_debug("%s V%s terminated", PACKAGE_NAME, PACKAGE_VERSION);
 }
 
 struct fuse_operations ffmpegfs_ops =

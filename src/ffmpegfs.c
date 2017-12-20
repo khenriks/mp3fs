@@ -184,7 +184,6 @@ static int get_time(const char * arg, time_t *value);
 static int get_size(const char * arg, size_t *value);
 
 static int ffmpegfs_opt_proc(void* data, const char* arg, int key, struct fuse_args *outargs);
-static void cleanup();
 static void print_params();
 static void usage(char *name);
 
@@ -661,7 +660,7 @@ static int ffmpegfs_opt_proc(void* data, const char* arg, int key, struct fuse_a
     static int n;
     (void)data;
 
-    switch(key)
+    switch (key)
     {
     case FUSE_OPT_KEY_NONOPT:
     {
@@ -736,14 +735,6 @@ static int ffmpegfs_opt_proc(void* data, const char* arg, int key, struct fuse_a
     }
 
     return 1;
-}
-
-static void cleanup()
-{
-    ffmpegfs_debug("%s V%s terminating", PACKAGE_NAME, PACKAGE_VERSION);
-    printf("%s V%s terminating\n", PACKAGE_NAME, PACKAGE_VERSION);
-
-    cache_delete();
 }
 
 static void print_params()
@@ -849,11 +840,8 @@ int main(int argc, char *argv[])
            "Copyright (C) 2008-2012 K. Henriksson\n"
            "Copyright (C) 2017 FFmpeg support by Norbert Schlia (nschlia@oblivion-software.de)\n\n");
 
-    /* register the termination function */
-    atexit(cleanup);
-
     // Configure FFmpeg
-    /* register all the codecs */
+    // register all the codecs
     avcodec_register_all();
     av_register_all();
     //show_formats_devices(0);
@@ -957,7 +945,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    /* Check for valid destination type. */
+    // Check for valid destination type.
     if (!check_encoder(params.m_desttype))
     {
         fprintf(stderr, "ERROR: No encoder available for desttype: %s\n\n", params.m_desttype);

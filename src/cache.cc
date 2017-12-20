@@ -45,9 +45,6 @@ Cache::Cache() :
 
 Cache::~Cache()
 {
-
-    close_index();
-
     // Clean up memory
     for (cache_t::iterator p = m_cache.begin(); p != m_cache.end(); ++p)
     {
@@ -55,6 +52,8 @@ Cache::~Cache()
     }
 
     m_cache.clear();
+
+    close_index();
 }
 
 static int callback(void * /*NotUsed*/, int /*argc*/, char ** /*argv*/, char ** /*azColName*/)
@@ -92,7 +91,7 @@ bool Cache::load_index()
             throw false;
         }
         // open connection to a DB
-        if (SQLITE_OK != (ret = sqlite3_open_v2(m_cacheidx_file.c_str(), &m_cacheidx_db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL)))
+        if (SQLITE_OK != (ret = sqlite3_open_v2(m_cacheidx_file.c_str(), &m_cacheidx_db, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_SHAREDCACHE, NULL)))
         {
             ffmpegfs_error("Failed to initialise SQLite3 connection: %d, %s", ret, sqlite3_errmsg(m_cacheidx_db));
             throw false;
@@ -111,7 +110,7 @@ bool Cache::load_index()
                 "creation_time      DATETIME NOT NULL,\n"
                 "access_time        DATETIME NOT NULL,\n"
                 "file_time          DATETIME NOT NULL,\n"
-                "file_size         UNSIGNED BIG INT NOT NULL\n"
+                "file_size          UNSIGNED BIG INT NOT NULL\n"
                 ");\n"
                 "CREATE UNIQUE INDEX IF NOT EXISTS \"filename_idx\" ON \"cache_entry\" (\"filename\" ASC);\n";
 
