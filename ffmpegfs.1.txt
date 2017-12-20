@@ -34,41 +34,41 @@ Mount IN_DIR on OUT_DIR, converting audio/video files to MP3/MP4 upon access.
 Encoding options:
 
 *--desttype*=TYPE, *-odesttype*=TYPE::
-                           Select destination format. Can currently be
-                           either mp3 or mp4. To stream videos, mp4 must be
-                           selected.
-                           Default: mp4
+    Select destination format. 'TYPE' can currently be
+    either mp3 or mp4. To stream videos, mp4 must be
+    selected. +
+    Default: mp4
 
 Audio Options:
 
 *--audiobitrate*=BITRATE, *-o audiobitrate*=BITRATE::
-                           Audio encoding bitrate (in kbit): Acceptable values for RATE
-                           include 96, 112, 128, 160, 192, 224, 256, and
-                           320.
-                           Default: 128 kbit
+    Audio encoding bitrate (in kbit): Acceptable values for 'BITRATE'
+    include 96, 112, 128, 160, 192, 224, 256, and
+    320.
+    Default: 128 kbit
 *--audiosamplerate*=SAMPLERATE, *-o audiosamplerate*=SAMPLERATE::
-                           Limits the output sample rate to SAMPLERATE. If the source file
-                           sample rate is more it will be downsampled automatically.
-                           Typical values are 8000, 11025, 22050, 44100,
-                           48000, 96000, 192000. Set to 0 to keep source rate.
-                           Default: 44.1 kHz
+    Limits the output sample rate to 'SAMPLERATE'. If the source file
+    sample rate is more it will be downsampled automatically.
+    Typical values are 8000, 11025, 22050, 44100,
+    48000, 96000, 192000. Set to 0 to keep source rate.
+    Default: 44.1 kHz
 
-BITRATE can be defined...
-In bit/s:  #  or #bps
-In kbit/s: #M or #Mbps
-In Mbit/s: #M or #Mbps
+ BITRATE can be defined as...
+ In bit/s:  #  or #bps
+ In kbit/s: #M or #Mbps
+ In Mbit/s: #M or #Mbps
 
-SAMPLERATE can be defined...
-In Hz:  #  or #Hz
-In kHz: #K or #KHz
+ SAMPLERATE can be defined as...
+ In Hz:  #  or #Hz
+ In kHz: #K or #KHz
 
 Video Options:
 
 *--videobitrate*=BITRATE, *-o videobitrate*=BITRATE::
-                           Video encoding bit rate (in kbit). Acceptable values for BITRATE
-                           range between 500 and 250000. Setting this too high or low may.
-                           cause transcoding to fail.
-                           Default: 2 Mbit
+    Video encoding bit rate (in kbit). Acceptable values for 'BITRATE'
+    range between 500 and 250000. Setting this too high or low may.
+    cause transcoding to fail.
+    Default: 2 Mbit
 +
 Acceptable values for 'BITRATE':
 +
@@ -92,75 +92,76 @@ For sampling frequencies of 16, 22.05, and 24 kHz, 'BITRATE' can be among 8,
 When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
 160, 192, 224, 256, and 320. If not specified, 'BITRATE' defaults to 128.
 
-BITRATE can be defined...
-In bit/s:  #  or #bps
-In kbit/s: #M or #Mbps
-In Mbit/s: #M or #Mbps
+ BITRATE can be defined as...
+ In bit/s:  #  or #bps
+ In kbit/s: #M or #Mbps
+ In Mbit/s: #M or #Mbps
 
 Cache Options:
 
  *--expiry_time*=TIME, *-o expiry_time*=TIME::
-                           Cache entries expire after TIME and will be deleted
-                           to save disk space.
-                           Default: 1 week
+    Cache entries expire after 'TIME' and will be deleted
+    to save disk space.
+    Default: 1 week
  *--max_inactive_suspend*=TIME, *-o max_inactive_suspend*=TIME::
-                           While being accessed the file is transcoded to the target format
-                           in the background. When the client quits transcoding will continue
-                           until this time out. Transcoding is suspended until it is
-                           accessed again, and transcoding will continue.
-                           Default: 2 minutes
+    While being accessed the file is transcoded to the target format
+    in the background. When the client quits transcoding will continue
+    until this time out. Transcoding is suspended until it is
+    accessed again, and transcoding will continue.
+    Default: 2 minutes
  *--max_inactive_abort*=TIME, *-o max_inactive_abort*=TIME::
-                           While being accessed the file is transcoded to the target format
-                           in the background. When the client quits transcoding will continue
-                           until this time out, and the transcoder thread quits
-                           Default: 5 minutes
+    While being accessed the file is transcoded to the target format
+    in the background. When the client quits transcoding will continue
+    until this time out, and the transcoder thread quits
+    Default: 5 minutes
  *--max_cache_size*=SIZE, *-o max_cache_size*=SIZE::
-                           Set the maximum diskspace used by the cache. If the cache would grow
-                           beyond this limit when a file is transcoded, old entries will be deleted
-                           to keep the cache within the size limit.
-                           Default: unlimited
+    Set the maximum diskspace used by the cache. If the cache would grow
+    beyond this limit when a file is transcoded, old entries will be deleted
+    to keep the cache within the size limit.
+    Default: unlimited
  *--min_diskspace*=SIZE, *-o min_diskspace*=SIZE::
-                           Set the required diskspace on the cachepath mount. If the remaining
-                           space would fall below SIZE when a file is transcoded, old entries will
-                           be deleted to keep the diskspace within the limit.
-                           Default: 0 (no minimum space)
+    Set the required diskspace on the cachepath mount. If the remaining
+    space would fall below 'SIZE' when a file is transcoded, old entries will
+    be deleted to keep the diskspace within the limit.
+    Default: 0 (no minimum space)
  *--cachepath*=DIR, *-o cachepath*=DIR::
-                           Sets the disk cache directory to DIR. Will be created if not existing.
-                           The user running ffmpegfs must have write access to the location.
-                           Default: temp directory, e.g. /tmp
+    Sets the disk cache directory to 'DIR'. Will be created if not existing.
+    The user running ffmpegfs must have write access to the location.
+    Default: temp directory, e.g. /tmp
  *--disable_cache*, -o *disable_cache::
-                           Disable the cache functionality.
-                           Default: enabled
+    Disable the cache functionality.
+    Default: enabled
  *--prune_cache::
-                           Prune cache immediately according to the above setting.
+    Prune cache immediately according to the above setting.
 
-TIME can be defined...
-Seconds: #
-Minutes: #m
-Hours:   #h
-Days:    #d
-Weeks:   #w
+ TIME can be defined as...
+ Seconds: #
+ Minutes: #m
+ Hours:   #h
+ Days:    #d
+ Weeks:   #w
 
-SIZE can be defined...
-In bytes:  # or #B
-In KBytes: #K or #KB
-In MBytes: #B or #MB
-In GBytes: #G or #GB
-In TBytes: #T or #TB
+ SIZE can be defined as...
+ In bytes:  # or #B
+ In KBytes: #K or #KB
+ In MBytes: #B or #MB
+ In GBytes: #G or #GB
+ In TBytes: #T or #TB
+
 Logging:
 
 *--log_maxlevel*=LEVEL, *-o log_maxlevel*=LEVEL::
-                           Maximum level of messages to log, either ERROR, WARNING, INFO, DEBUG
-                           or TRACE. Defaults to WARNING, and always set to DEBUG in debug mode.
-                           Note that the other log flags must also be set to enable logging.
+    Maximum level of messages to log, either ERROR, WARNING, INFO, DEBUG
+    or TRACE. Defaults to WARNING, and always set to DEBUG in debug mode.
+    Note that the other log flags must also be set to enable logging.
 *--log_stderr*, *-o log_stderr*::
-                           Enable outputting logging messages to stderr.
-                           Enabled in debug mode.
+    Enable outputting logging messages to stderr.
+    Enabled in debug mode.
 *--log_syslog*, *-o log_syslog*::
-                           Enable outputting logging messages to syslog.
+    Enable outputting logging messages to syslog.
 *--logfile*=FILE, *-o logfile*=FILE::
-                           File to output log messages to. By default, no
-                           file will be written.
+    File to output log messages to. By default, no
+    file will be written.
 
 General/FUSE options:
 
