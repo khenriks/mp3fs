@@ -326,7 +326,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
         {
             ffmpegfs_debug("Reading file from cache: '%s'.", filename);
 
-            if (!cache->prune_cache(0))
+            if (!cache->prune_cache())
             {
                 throw false;
             }
@@ -498,10 +498,15 @@ static void *decoder_thread(void *arg)
         thread_data->m_initialised = true;
         pthread_cond_signal(&thread_data->m_cond);  // signal that we are running
 
+        //size_t pos = 0;
+        //size_t size = transcoder->calculate_size() + 1;
+
         while (!cache_entry->m_cache_info.m_finished && !(timeout = cache_entry->decode_timeout()) && !thread_exit)
         {
             int stat = transcoder->process_single_fr();
 
+            //pos = cache_entry->m_buffer->tell();
+            //printf("Progress %3zu%%\r", pos * 100/ size);
             if (stat == -1 || (stat == 1 && transcode_finish(cache_entry, transcoder) == -1))
             {
                 errno = EIO;
