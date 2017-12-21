@@ -3,7 +3,7 @@ ffmpegfs
 
 | Compiler | Library | Build State |
 | ------------- | ------------- | ------------- |
-| gcc 4.9.2 | Libav 11.1 | [![Build Status](https://www.oblivion-secure.de/jenkins/buildStatus/icon?job=ffmpegfs%20(github-libav))](https://nschlia.github.io/ffmpegfs/) |
+| gcc 4.9.2 | Libav 12.2 | [![Build Status](https://www.oblivion-secure.de/jenkins/buildStatus/icon?job=ffmpegfs%20(github-libav))](https://nschlia.github.io/ffmpegfs/) |
 | gcc 4.9.2 | FFmpeg 3.4 | [![Build Status](https://www.oblivion-secure.de/jenkins/buildStatus/icon?job=ffmpegfs%20(github-ffmpeg))](https://nschlia.github.io/ffmpegfs/) |
 
 *clang, gcc 5/6 and other FFmpeg/Libav versions are also planned...*
