@@ -1,50 +1,40 @@
-FFMPEGFS(1)
-==========
+= FFMPEGFS(1) =
 :doctype:       manpage
 :man source:    ffmpegfs
 :man version:   {revnumber}
 :man manual:    User Commands
 
-NAME
-----
+== NAME ==
 ffmpegfs - mounts and transcodes a multitude of formats like FLACs or OGGs
-to MP3s or MP4s on the fly
+to mp3s or mp4s on the fly
 
 
-SYNOPSIS
---------
+== SYNOPSIS ==
 *ffmpegfs* ['OPTION']... 'IN_DIR' 'OUT_DIR'
 
 
-DESCRIPTION
------------
+== DESCRIPTION ==
 The ffmpegfs(1) command will mount the directory 'IN_DIR' on 'OUT_DIR'.
 Thereafter, accessing 'OUT_DIR' will show the contents of 'IN_DIR', with
-all supported media files transparently renamed and transcoded to MP3/MP4
+all supported media files transparently renamed and transcoded to *mp3*/*mp4*
 format upon access.
 
 
-OPTIONS
--------
-
+== OPTIONS ==
 Usage: ffmpegfs [OPTION]... IN_DIR OUT_DIR
 
-Mount IN_DIR on OUT_DIR, converting audio/video files to MP3/MP4 upon access.
+Mount IN_DIR on OUT_DIR, converting audio/video files to *mp3* or *mp4* upon access.
 
-Encoding options:
-
+=== Encoding options === 
 *--desttype*=TYPE, *-odesttype*=TYPE::
     Select destination format. 'TYPE' can currently be
-    either mp3 or mp4. To stream videos, mp4 must be
-    selected. +
-    Default: mp4
+    either *mp3* or *mp4*. To stream videos, *mp4* must be
+    selected.
+    Default: *mp4*
 
-Audio Options:
-
+=== Audio Options ===
 *--audiobitrate*=BITRATE, *-o audiobitrate*=BITRATE::
-    Audio encoding bitrate (in kbit): Acceptable values for 'BITRATE'
-    include 96, 112, 128, 160, 192, 224, 256, and
-    320.
+    Audio encoding bitrate.
     Default: 128 kbit
 *--audiosamplerate*=SAMPLERATE, *-o audiosamplerate*=SAMPLERATE::
     Limits the output sample rate to 'SAMPLERATE'. If the source file
@@ -52,53 +42,44 @@ Audio Options:
     Typical values are 8000, 11025, 22050, 44100,
     48000, 96000, 192000. Set to 0 to keep source rate.
     Default: 44.1 kHz
-
- BITRATE can be defined as...
- In bit/s:  #  or #bps
- In kbit/s: #M or #Mbps
- In Mbit/s: #M or #Mbps
-
- SAMPLERATE can be defined as...
- In Hz:  #  or #Hz
- In kHz: #K or #KHz
-
-Video Options:
-
-*--videobitrate*=BITRATE, *-o videobitrate*=BITRATE::
-    Video encoding bit rate (in kbit). Acceptable values for 'BITRATE'
-    range between 500 and 250000. Setting this too high or low may.
-    cause transcoding to fail.
-    Default: 2 Mbit
 +
-Acceptable values for 'BITRATE':
+*Acceptable values for 'BITRATE':*
 +
-*MP4 audio:*
+*mp4:* 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 
+256, 288, 320, 352, 384, 416 and 448 kbps.
 +    
-8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 
-256, 288, 320, 352, 384, 416 and 448.
-+    
-*MP4 video*
-+    
-500 - 25000 (kbit)
-+    
-*MP3 audio:*
-+
-For sampling frequencies of 32, 44.1, and 48 kHz, 'BITRATE' can be among 32,
-40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, and 320.
+*mp3:* For sampling frequencies of 32, 44.1, and 48 kHz, 'BITRATE' can be among 32,
+40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, and 320 kbps.
 +
 For sampling frequencies of 16, 22.05, and 24 kHz, 'BITRATE' can be among 8,
-16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, and 160.
+16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, and 160 kbps.
 +
 When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
-160, 192, 224, 256, and 320. If not specified, 'BITRATE' defaults to 128.
+160, 192, 224, 256, and 320 kbps.
 
- BITRATE can be defined as...
- In bit/s:  #  or #bps
- In kbit/s: #M or #Mbps
- In Mbit/s: #M or #Mbps
+*BITRATE*:: can be defined as...
+ * n bit/s:  #  or #bps
+ * n kbit/s: #M or #Mbps
+ * n Mbit/s: #M or #Mbps
 
-Cache Options:
+*SAMPLERATE*:: can be defined as...
+ * In Hz:  #  or #Hz
+ * In kHz: #K or #KHz
 
+=== Video Options ===
+*--videobitrate*=BITRATE, *-o videobitrate*=BITRATE::
+    Video encoding bit rate. Setting this too high or low may
+    cause transcoding to fail.
+    Default: 2 Mbit
++    
+*mp4:* May be specfied as 500 to 25000 kbit.
+
+*BITRATE*:: can be defined as...
+ * n bit/s:  #  or #bps
+ * n kbit/s: #M or #Mbps
+ * n Mbit/s: #M or #Mbps
+
+=== Cache Options ===
  *--expiry_time*=TIME, *-o expiry_time*=TIME::
     Cache entries expire after 'TIME' and will be deleted
     to save disk space.
@@ -134,22 +115,21 @@ Cache Options:
  *--prune_cache::
     Prune cache immediately according to the above setting.
 
- TIME can be defined as...
- Seconds: #
- Minutes: #m
- Hours:   #h
- Days:    #d
- Weeks:   #w
+ *TIME*:: can be defined as...
+  * Seconds: #
+  * Minutes: #m
+  * Hours:   #h
+  * Days:    #d
+  * Weeks:   #w
 
- SIZE can be defined as...
- In bytes:  # or #B
- In KBytes: #K or #KB
- In MBytes: #B or #MB
- In GBytes: #G or #GB
- In TBytes: #T or #TB
+ *SIZE*:: can be defined as...
+  * In bytes:  # or #B
+  * In KBytes: #K or #KB
+  * In MBytes: #B or #MB
+  * In GBytes: #G or #GB
+  * In TBytes: #T or #TB
 
-Logging:
-
+=== Logging ===
 *--log_maxlevel*=LEVEL, *-o log_maxlevel*=LEVEL::
     Maximum level of messages to log, either ERROR, WARNING, INFO, DEBUG
     or TRACE. Defaults to WARNING, and always set to DEBUG in debug mode.
@@ -163,8 +143,7 @@ Logging:
     File to output log messages to. By default, no
     file will be written.
 
-General/FUSE options:
-
+=== General/FUSE options ===
 *-d*, *-o debug*::
     Enable debug output. This will result in a large quantity of
     diagnostic information being printed to stderr as the program runs.
@@ -182,10 +161,7 @@ General/FUSE options:
 *-s*::
     Force single-threaded operation.
 
-
-Usage
------
-
+== Usage ==
 Mount your filesystem like this:
 
     ffmpegfs [--audiobitrate bitrate] [--videobitrate bitrate] musicdir mountpoint [-o fuse_options]
@@ -209,13 +185,11 @@ to /etc/fuse.conf.
 "allow_other" is required to allow any user access to the mount, by
 default this is only possible for the user who launched ffmpegfs.
 
-HOW IT WORKS
-------------
-
+== HOW IT WORKS ==
 When a file is opened, the decoder and encoder are initialised and
 the file metadata is read. At this time the final filesize can be
-determined approximately. This works well for MP3 output files,
-but only fair to good for MP4.
+determined approximately. This works well for *mp3* output files,
+but only fair to good for *mp4*.
 
 As the file is read, it is transcoded into an internal per-file
 buffer. This buffer continues to grow while the file is being read
@@ -236,27 +210,25 @@ enhancements may provide true random seeking (But if this is feasible
 is yet unclear due to restrictions to positioning inside compressed
 streams).
 
-MP3: ID3 version 2.4 and 1.1 tags are created from the comments in the 
+*mp3*: ID3 version 2.4 and 1.1 tags are created from the comments in the 
 source file. They are located at the start and end of the file 
 respectively. 
 
-MP4: Same applies to meta atoms in MP4 containers.
+*mp4*: Same applies to meta atoms in *mp4* containers.
 
-MP3 target only: A special optimisation is made so that applications 
+*mp3* target only: A special optimisation is made so that applications 
 which scan for id3v1 tags do not have to wait for the whole file to be 
 transcoded before reading the tag. This *dramatically* speeds up such
 applications.
 
-SUPPORTED OUTPUT FORMATS
-------------------------
-
-A few words to the supported output formats which are MP3 and MP4 
-currently. There is not much to say about the MP3 output as these 
-are regular MP3 files with no strings attached. They should play 
+== SUPPORTED OUTPUT FORMATS ==
+A few words to the supported output formats which are *mp3* and *mp4* 
+currently. There is not much to say about the *mp3* output as these 
+are regular *mp3* files with no strings attached. They should play 
 well in any modern player.
 
-The MP4 files created are special, though, as MP4 is not quite suited
-for live streaming. Reason being that the start block of an MP4 
+The *mp4* files created are special, though, as *mp4* is not quite suited
+for live streaming. Reason being that the start block of an *mp4* 
 contains a field with the size of the compressed data section. Suffice
 to say that this field cannot be filled in until the size is known,
 which means compression must be completed first, a seek done to the
@@ -268,17 +240,17 @@ to be recoded. If that was not enough some important pieces of
 information are located at the end of the file, including meta tags
 with artist, album, etc.
 
-Subsequently many applications will go to the end of an MP4 to read
+Subsequently many applications will go to the end of an *mp4* to read
 important information before going back to the head of the file and
 start playing. This will break the whole transcode-on-demand idea
 of ffmpegfs.
 
 To get around the restriction several extensions have been developed,
 one of which is called "faststart" that relocates the afformentioned
-data from the end to the beginning of the MP4. Additonally, the size field 
+data from the end to the beginning of the *mp4*. Additonally, the size field 
 can be left empty (0). isml (smooth live streaming) is another extension.
 
-For direct to stream transcoding several new features in MP4 need to
+For direct to stream transcoding several new features in *mp4* need to
 be used (ISMV, faststart, separate_moof/empty_moov to name them) 
 which are not implemented in older versions (or if available, not 
 working properly). 
@@ -299,14 +271,12 @@ cannot be positioned past the current playback position, only backwards.
 
 But that's the price of starting playback, fast.
 
-So there is a lot of work to be put into MP4 support, still.
+So there is a lot of work to be put into *mp4* support, still.
 
 The output format must be selectable for the desired audience, for
 streaming or opening the files locally, for example.
 
-DEVELOPMENT
------------
-
+== DEVELOPMENT ==
 ffmpegfs uses Git for revision control. You can obtain the full repository
 with:
 
@@ -320,15 +290,11 @@ If using the FFmpeg support (Libav works as well, but FFmpeg is recommended):
 
 * [FFmpeg](https://www.FFmpeg.org/) or [Libav](https://www.Libav.org/)
 
-Future Plans
-------------
-
+== Future Plans ==
 * Create a windows version
 * Add DVD/Bluray support
 
-AUTHORS
--------
-
+== AUTHORS ==
 This fork with FFmpeg support is maintained by Norbert Schlia 
 (nschlia@oblivion-software.de) since 2017.
 
@@ -337,9 +303,7 @@ David Collett (from 2006 to 2008).
 
 Much thanks to them for the original work!
 
-LICENSE
--------
-
+== LICENSE ==
 This program can be distributed under the terms of the GNU GPL version 3
 or later. It can be found [online](http://www.gnu.org/licenses/gpl-3.0.html)
 or in the COPYING file.
@@ -348,9 +312,7 @@ This file and other documentation files can be distributed under the terms of
 the GNU Free Documentation License 1.3 or later. It can be found
 [online](http://www.gnu.org/licenses/fdl-1.3.html) or in the COPYING.DOC file.
 
-FFMPEG LICENSE
---------------
-
+== FFMPEG LICENSE ==
 FFmpeg is licensed under the GNU Lesser General Public License (LGPL) 
 version 2.1 or later. However, FFmpeg incorporates several optional 
 parts and optimizations that are covered by the GNU General Public 
@@ -359,9 +321,7 @@ applies to all of FFmpeg.
 
 See https://www.ffmpeg.org/legal.html for details.
 
-COPYRIGHT
----------
-
+== COPYRIGHT ==
 This fork with FFmpeg support copyright \(C) 2017 Norbert Schlia
 (nschlia@oblivion-software.de).
 
@@ -375,5 +335,3 @@ the terms of the GNU General Public License (GPL) version 3 or later.
 
 This manual is copyright \(C) 2010-2011 K. Henriksson and 2017 N. Schlia 
 and may be distributed under GNU Free Documentation License 1.3 or later.
-
-
