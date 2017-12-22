@@ -31,7 +31,7 @@
 #pragma GCC diagnostic ignored "-Wconversion"
 #ifdef __GNUC__
 #  include <features.h>
-#  if __GNUC_PREREQ(5,0)
+#  if __GNUC_PREREQ(5,0) || defined(__clang__)
 // GCC >= 5.0
 #     pragma GCC diagnostic ignored "-Wfloat-conversion"
 #  elif __GNUC_PREREQ(4,8)
