@@ -103,10 +103,19 @@ bool Cache::load_index()
                 "id                 INTEGER PRIMARY KEY ASC,\n"
                 "filename           TEXT UNIQUE NOT NULL,\n"
                 "target_format      CHAR(10) NOT NULL,\n"
+                "enable_ismv        BOOLEAN NOT NULL,\n"
+                "audiobitrate       UNSIGNED INT NOT NULL,\n"
+                "audiosamplerate    UNSIGNED INT NOT NULL,\n"
+                "videobitrate       UNSIGNED INT NOT NULL,\n"
+                "videowidth         UNSIGNED INT NOT NULL,\n"
+                "videoheight        UNSIGNED INT NOT NULL,\n"
+                "deinterlace        BOOLEAN NOT NULL,\n"
                 "predicted_filesize UNSIGNED BIG INT NOT NULL,\n"
                 "encoded_filesize   UNSIGNED BIG INT NOT NULL,\n"
                 "finished           BOOLEAN NOT NULL,\n"
                 "error              BOOLEAN NOT NULL,\n"
+                "errno              INT NOT NULL,\n"
+                "averror            INT NOT NULL,\n"
                 "creation_time      DATETIME NOT NULL,\n"
                 "access_time        DATETIME NOT NULL,\n"
                 "file_time          DATETIME NOT NULL,\n"
@@ -130,8 +139,8 @@ bool Cache::load_index()
         // prepare the statements
 
         sql =   "INSERT OR REPLACE INTO cache_entry\n"
-                "(filename, target_format, predicted_filesize, encoded_filesize, finished, error, creation_time, access_time, file_time, file_size) VALUES\n"
-                "(?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch'), datetime(?, 'unixepoch'), datetime(?, 'unixepoch'), ?);\n";
+                "(filename, target_format, enable_ismv, audiobitrate, audiosamplerate, videobitrate, videowidth, videoheight, deinterlace, predicted_filesize, encoded_filesize, finished, error, errno, averror, creation_time, access_time, file_time, file_size) VALUES\n"
+                "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch'), datetime(?, 'unixepoch'), datetime(?, 'unixepoch'), ?);\n";
 
         if (SQLITE_OK != (ret = sqlite3_prepare_v2(m_cacheidx_db, sql, -1, &m_cacheidx_insert_stmt, NULL)))
         {
@@ -139,7 +148,7 @@ bool Cache::load_index()
             throw false;
         }
 
-        sql =   "SELECT target_format, predicted_filesize, encoded_filesize, finished, error, strftime('%s', creation_time), strftime('%s', access_time), strftime('%s', file_time), file_size FROM cache_entry WHERE filename = ?;\n";
+        sql =   "SELECT target_format, enable_ismv, audiobitrate, audiosamplerate, videobitrate, videowidth, videoheight, deinterlace, predicted_filesize, encoded_filesize, finished, error, errno, averror, strftime('%s', creation_time), strftime('%s', access_time), strftime('%s', file_time), file_size FROM cache_entry WHERE filename = ?;\n";
 
         if (SQLITE_OK != (ret = sqlite3_prepare_v2(m_cacheidx_db, sql, -1, &m_cacheidx_select_stmt, NULL)))
         {
@@ -214,14 +223,24 @@ bool Cache::read_info(t_cache_info & cache_info)
                 cache_info.m_target_format[0] = '\0';
                 strncat(cache_info.m_target_format, text, sizeof(cache_info.m_target_format) - 1);
             }
-            cache_info.m_predicted_filesize = sqlite3_column_int64(m_cacheidx_select_stmt, 1);
-            cache_info.m_encoded_filesize   = sqlite3_column_int64(m_cacheidx_select_stmt, 2);
-            cache_info.m_finished           = sqlite3_column_int(m_cacheidx_select_stmt, 3);
-            cache_info.m_error              = sqlite3_column_int(m_cacheidx_select_stmt, 4);
-            cache_info.m_creation_time      = sqlite3_column_int64(m_cacheidx_select_stmt, 5);
-            cache_info.m_access_time        = sqlite3_column_int64(m_cacheidx_select_stmt, 6);
-            cache_info.m_file_time          = sqlite3_column_int64(m_cacheidx_select_stmt, 7);
-            cache_info.m_file_size          = sqlite3_column_int64(m_cacheidx_select_stmt, 8);
+            
+            cache_info.m_enable_ismv        = sqlite3_column_int(m_cacheidx_select_stmt, 1);
+            cache_info.m_audiobitrate       = sqlite3_column_int(m_cacheidx_select_stmt, 2);
+            cache_info.m_audiosamplerate    = sqlite3_column_int(m_cacheidx_select_stmt, 3);
+            cache_info.m_videobitrate       = sqlite3_column_int(m_cacheidx_select_stmt, 4);
+            cache_info.m_videowidth         = sqlite3_column_int(m_cacheidx_select_stmt, 5);
+            cache_info.m_videoheight        = sqlite3_column_int(m_cacheidx_select_stmt, 6);
+            cache_info.m_deinterlace        = sqlite3_column_int(m_cacheidx_select_stmt, 7);
+            cache_info.m_predicted_filesize = sqlite3_column_int64(m_cacheidx_select_stmt, 8);
+            cache_info.m_encoded_filesize   = sqlite3_column_int64(m_cacheidx_select_stmt, 9);
+            cache_info.m_finished           = sqlite3_column_int(m_cacheidx_select_stmt, 10);
+            cache_info.m_error              = sqlite3_column_int(m_cacheidx_select_stmt, 11);
+            cache_info.m_errno              = sqlite3_column_int(m_cacheidx_select_stmt, 12);
+            cache_info.m_averror            = sqlite3_column_int(m_cacheidx_select_stmt, 13);
+            cache_info.m_creation_time      = sqlite3_column_int64(m_cacheidx_select_stmt, 14);
+            cache_info.m_access_time        = sqlite3_column_int64(m_cacheidx_select_stmt, 15);
+            cache_info.m_file_time          = sqlite3_column_int64(m_cacheidx_select_stmt, 16);
+            cache_info.m_file_size          = sqlite3_column_int64(m_cacheidx_select_stmt, 17);
         }
         else if (ret != SQLITE_DONE)
         {
@@ -246,6 +265,20 @@ bool Cache::read_info(t_cache_info & cache_info)
     return success;
 }
 
+#define SQLBINDTXT(idx, var) \
+    if (SQLITE_OK != (ret = sqlite3_bind_text(m_cacheidx_insert_stmt, idx, var, -1, NULL))) \
+{ \
+    ffmpegfs_error("SQLite3 select column #%i error: %d, %s", idx, ret, sqlite3_errstr(ret)); \
+    throw false; \
+    }
+
+#define SQLBINDNUM(func, idx, var) \
+    if (SQLITE_OK != (ret = func(m_cacheidx_insert_stmt, idx, var))) \
+{ \
+    ffmpegfs_error("SQLite3 select column #%i error: %d, %s", idx, ret, sqlite3_errstr(ret)); \
+    throw false; \
+    }
+
 bool Cache::write_info(const t_cache_info & cache_info)
 {
     int ret;
@@ -253,7 +286,7 @@ bool Cache::write_info(const t_cache_info & cache_info)
 
     if (m_cacheidx_insert_stmt == NULL)
     {
-        ffmpegfs_error("SQLite3 select statement not open");
+        ffmpegfs_error("SQLite3 select statement not open.");
         return false;
     }
 
@@ -261,66 +294,27 @@ bool Cache::write_info(const t_cache_info & cache_info)
 
     try
     {
-        assert(sqlite3_bind_parameter_count(m_cacheidx_insert_stmt) == 10);
+        assert(sqlite3_bind_parameter_count(m_cacheidx_insert_stmt) == 19);
 
-        if (SQLITE_OK != (ret = sqlite3_bind_text(m_cacheidx_insert_stmt, 1, cache_info.m_filename.c_str(), -1, NULL)))
-        {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
-            throw false;
-        }
-
-        if (SQLITE_OK != (ret = sqlite3_bind_text(m_cacheidx_insert_stmt, 2, cache_info.m_target_format, -1, NULL)))
-        {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
-            throw false;
-        }
-
-        if (SQLITE_OK != (ret = sqlite3_bind_int64(m_cacheidx_insert_stmt, 3, cache_info.m_predicted_filesize)))
-        {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
-            throw false;
-        }
-        if (SQLITE_OK != (ret = sqlite3_bind_int64(m_cacheidx_insert_stmt, 4, cache_info.m_encoded_filesize)))
-        {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
-            throw false;
-        }
-
-        if (SQLITE_OK != (ret = sqlite3_bind_int(m_cacheidx_insert_stmt, 5, cache_info.m_finished)))
-        {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
-            throw false;
-        }
-
-        if (SQLITE_OK != (ret = sqlite3_bind_int(m_cacheidx_insert_stmt, 6, cache_info.m_error)))
-        {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
-            throw false;
-        }
-
-        if (SQLITE_OK != (ret = sqlite3_bind_int64(m_cacheidx_insert_stmt, 7, cache_info.m_creation_time)))
-        {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
-            throw false;
-        }
-
-        if (SQLITE_OK != (ret = sqlite3_bind_int64(m_cacheidx_insert_stmt, 8, cache_info.m_access_time)))
-        {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
-            throw false;
-        }
-
-        if (SQLITE_OK != (ret = sqlite3_bind_int64(m_cacheidx_insert_stmt, 9, cache_info.m_file_time)))
-        {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
-            throw false;
-        }
-
-        if (SQLITE_OK != (ret = sqlite3_bind_int64(m_cacheidx_insert_stmt, 10, cache_info.m_file_size)))
-        {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
-            throw false;
-        }
+        SQLBINDTXT(1, cache_info.m_filename.c_str());
+        SQLBINDTXT(2, cache_info.m_target_format);
+        SQLBINDNUM(sqlite3_bind_int, 3, cache_info.m_enable_ismv);
+        SQLBINDNUM(sqlite3_bind_int, 4, cache_info.m_audiobitrate);
+        SQLBINDNUM(sqlite3_bind_int, 5, cache_info.m_audiosamplerate);
+        SQLBINDNUM(sqlite3_bind_int, 6, cache_info.m_videobitrate);
+        SQLBINDNUM(sqlite3_bind_int, 7, cache_info.m_videowidth);
+        SQLBINDNUM(sqlite3_bind_int, 8, cache_info.m_videoheight);
+        SQLBINDNUM(sqlite3_bind_int, 9, cache_info.m_deinterlace);
+        SQLBINDNUM(sqlite3_bind_int64, 10, cache_info.m_predicted_filesize);
+        SQLBINDNUM(sqlite3_bind_int64, 11, cache_info.m_encoded_filesize);
+        SQLBINDNUM(sqlite3_bind_int, 12, cache_info.m_finished);
+        SQLBINDNUM(sqlite3_bind_int, 13, cache_info.m_error);
+        SQLBINDNUM(sqlite3_bind_int, 14, cache_info.m_errno);
+        SQLBINDNUM(sqlite3_bind_int, 15, cache_info.m_averror);
+        SQLBINDNUM(sqlite3_bind_int64, 16, cache_info.m_creation_time);
+        SQLBINDNUM(sqlite3_bind_int64, 17, cache_info.m_access_time);
+        SQLBINDNUM(sqlite3_bind_int64, 18, cache_info.m_file_time);
+        SQLBINDNUM(sqlite3_bind_int64, 19, cache_info.m_file_size);
 
         ret = sqlite3_step(m_cacheidx_insert_stmt);
 
@@ -354,7 +348,7 @@ bool Cache::delete_info(const string & filename)
 
     if (m_cacheidx_delete_stmt == NULL)
     {
-        ffmpegfs_error("SQLite3 delete statement not open");
+        ffmpegfs_error("SQLite3 delete statement not open.");
         return false;
     }
 

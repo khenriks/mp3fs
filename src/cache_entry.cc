@@ -80,11 +80,33 @@ void Cache_Entry::clear(int fetch_file_time)
     // Initialise ID3v1.1 tag structure
     init_id3v1(&m_id3v1);
 
+    //string          m_filename;
+    //char            m_target_format[11];
+	
+#ifndef DISABLE_ISMV
+    m_cache_info.m_enable_ismv = params.m_enable_ismv;
+#else
+    m_cache_info.m_enable_ismv = false;
+#endif
+    m_cache_info.m_audiobitrate = params.m_audiobitrate;
+    m_cache_info.m_audiosamplerate = params.m_audiosamplerate;
+    m_cache_info.m_videobitrate = params.m_videobitrate;
+#ifndef DISABLE_AVFILTER
+    m_cache_info.m_videowidth = params.m_videowidth;
+    m_cache_info.m_videoheight = params.m_videoheight;
+    m_cache_info.m_deinterlace = params.m_deinterlace;
+#else	
+    m_cache_info.m_videowidth = 0;
+    m_cache_info.m_videoheight = 0;
+    m_cache_info.m_deinterlace = false;
+#endif
     m_cache_info.m_predicted_filesize = 0;
     m_cache_info.m_encoded_filesize = 0;
     m_cache_info.m_finished = false;
-    m_cache_info.m_access_time = m_cache_info.m_creation_time = time(NULL);
     m_cache_info.m_error = false;
+    m_cache_info.m_errno = 0;
+    m_cache_info.m_averror = 0;
+    m_cache_info.m_access_time = m_cache_info.m_creation_time = time(NULL);
 
     if (fetch_file_time)
     {

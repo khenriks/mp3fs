@@ -35,16 +35,25 @@ using namespace std;
 
 typedef struct
 {
-    string      m_filename;
-    char        m_target_format[11];
-    size_t      m_predicted_filesize;
-    size_t      m_encoded_filesize;
-    bool        m_finished;
-    bool        m_error;
-    time_t      m_creation_time;
-    time_t      m_access_time;
-    time_t      m_file_time;
-    uint64_t    m_file_size;
+    string          m_filename;
+    char            m_target_format[11];
+    bool            m_enable_ismv;
+    unsigned int    m_audiobitrate;
+    unsigned int    m_audiosamplerate;
+    unsigned int    m_videobitrate;
+    unsigned int    m_videowidth;
+    unsigned int    m_videoheight;
+    bool            m_deinterlace;
+    size_t          m_predicted_filesize;
+    size_t          m_encoded_filesize;
+    bool            m_finished;
+    bool            m_error;
+    int             m_errno;
+    int             m_averror;
+    time_t          m_creation_time;
+    time_t          m_access_time;
+    time_t          m_file_time;
+    uint64_t        m_file_size;
 } t_cache_info;
 
 class Cache_Entry;
