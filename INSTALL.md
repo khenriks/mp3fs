@@ -108,7 +108,10 @@ This will test audio conversion, tagging and size prediction.
 NOTE: Image embedding is not yet implemented. The test has been
 disabled at the moment.
 
-HINT: If test_tags fails you may be missig the python-mutagen package, then do
+Trouble Shooting
+----------------
+
+*If test_tags fails* you may be missing the python-mutagen package, then do
 
 On Debian:
 
@@ -116,10 +119,7 @@ On Debian:
 
 On Ubuntu use the same command with `apt-get` in place of `aptitude`.
 
-Trouble Shooting
-----------------
-
-If you run into this error:
+*If you run into this error:*
     
     Running autoreconf --install
     configure.ac:46: error: possibly undefined macro: AC_DEFINE
