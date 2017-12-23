@@ -54,7 +54,7 @@ protected:
     int open_codec_context(int *stream_idx, AVCodecContext **avctx, AVFormatContext *fmt_ctx, AVMediaType type, const char *filename);
     int add_stream(AVCodecID codec_id);
     int open_output_filestreams(Buffer *buffer);
-    void copy_metadata(AVDictionary *metadata, AVStream *stream, bool bIsVideo);
+    void copy_metadata(AVDictionary **metadata_out, const AVDictionary *metadata_in);
     int process_metadata();
     void init_packet(AVPacket *packet);
     int init_input_frame(AVFrame **frame);

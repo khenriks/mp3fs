@@ -1618,19 +1618,13 @@ time_t FFMPEG_Transcoder::mtime() const
     for (char *p1 = (dst), *pend = p1 + sizeof(dst), *p2 = (src); *p2 && p1 < pend; p1++, p2++) \
     *p1 = *p2;
 
-void FFMPEG_Transcoder::copy_metadata(AVDictionary *metadata, AVStream * stream, bool bIsVideo) // TODO #2262: Stream tags
+void FFMPEG_Transcoder::copy_metadata(AVDictionary **metadata_out, const AVDictionary *metadata_in)
 {
     AVDictionaryEntry *tag = NULL;
 
-    while ((tag = av_dict_get(metadata, "", tag, AV_DICT_IGNORE_SUFFIX)))
+    while ((tag = av_dict_get(metadata_in, "", tag, AV_DICT_IGNORE_SUFFIX)))
     {
-        if (stream != NULL && bIsVideo)
-        {
-            // TODO #2261: Keep video comments in video stream
-            continue;
-        }
-
-        av_dict_set_with_check(&m_out.m_pFormat_ctx->metadata, tag->key, tag->value, 0);
+        av_dict_set_with_check(metadata_out, tag->key, tag->value, 0);
 
         if (m_out.m_output_type == TYPE_MP3)
         {
@@ -1667,17 +1661,22 @@ int FFMPEG_Transcoder::process_metadata()
 {
     ffmpegfs_trace("Processing metadata for '%s'.", m_in.m_pFormat_ctx->filename);
 
-    copy_metadata(m_in.m_pFormat_ctx->metadata, NULL, false);
-
-    // For some formats (namely ogg) FFmpeg returns the tags, odd enough, with streams...
-    if (m_in.m_pAudio_stream)
+    if (m_in.m_pAudio_stream != NULL && m_in.m_pAudio_stream->codecpar->codec_id == AV_CODEC_ID_VORBIS)
     {
-        copy_metadata(m_in.m_pAudio_stream->metadata, m_in.m_pAudio_stream, false);
+        // For some formats (namely ogg) FFmpeg returns the tags, odd enough, with streams...
+        copy_metadata(&m_out.m_pFormat_ctx->metadata, m_in.m_pAudio_stream->metadata);
     }
 
-    if (m_in.m_pVideo_stream)
+    copy_metadata(&m_out.m_pFormat_ctx->metadata, m_in.m_pFormat_ctx->metadata);
+
+    if (m_out.m_pAudio_stream != NULL && m_in.m_pAudio_stream != NULL)
     {
-        copy_metadata(m_in.m_pVideo_stream->metadata, m_in.m_pVideo_stream, true);
+        copy_metadata(&m_out.m_pAudio_stream->metadata, m_in.m_pAudio_stream->metadata);
+    }
+
+    if (m_out.m_pVideo_stream != NULL && m_in.m_pVideo_stream != NULL)
+    {
+        copy_metadata(&m_out.m_pVideo_stream->metadata, m_in.m_pVideo_stream->metadata);
     }
 
     // Pictures later. More complicated...
