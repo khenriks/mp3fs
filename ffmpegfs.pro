@@ -37,6 +37,7 @@ LIBS+=-lswresample
 LIBS+=-lavresample
 #-lavdevice -lavfilter
 LIBS+=-lsqlite3
+LIBS+=-lrt
 
 QMAKE_CFLAGS += -std=c99 -Wall -Wextra -Wconversion
 QMAKE_CXXFLAGS += -std=c++11 -Wall -Wextra -Wconversion
