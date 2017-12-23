@@ -82,6 +82,7 @@ struct ffmpegfs_params params =
     .m_max_inactive_abort   = (60 /* m */) * 5,         // default: 5 minutes
     .m_max_cache_size       = 0,                        // default: no limit
     .m_min_diskspace        = 0,                        // default: no minimum
+    .m_prune_timer          = (60*60),                  // default: 60 minutes
 #ifndef DISABLE_MAX_THREADS
     .m_max_threads          = 0,                        // default: 4 * cpu cores (set later)
 #endif
