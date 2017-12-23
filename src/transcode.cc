@@ -188,6 +188,8 @@ int transcoder_cached_filesize(const char* filename, struct stat *stbuf)
 
 struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
 {
+    int _errno = 0;
+
     // Allocate transcoder structure
     ffmpegfs_trace("Creating transcoder object for %s.", filename);
 
@@ -203,6 +205,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
     {
         if (!cache_entry->open(begin_transcode))
         {
+            _errno = errno;
             throw false;
         }
 
@@ -228,7 +231,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
                 if (thread_count >= params.m_max_threads)
                 {
                     ffmpegfs_error("Unable to start new thread. Cancelling transcode.");
-                    errno = EBUSY; // Report resource busy
+                    _errno = EBUSY; // Report resource busy
                     throw false;
                 }
             }
@@ -255,6 +258,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
                 s = pthread_attr_init(&attr);
                 if (s != 0)
                 {
+                    _errno = s;
                     ffmpegfs_error("Error creating thread attributes: %s", strerror(s));
                     throw false;
                 }
@@ -264,6 +268,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
                     s = pthread_attr_setstacksize(&attr, stack_size);
                     if (s != 0)
                     {
+                        _errno = s;
                         ffmpegfs_error("Error setting stack size: %s", strerror(s));
                         pthread_attr_destroy(&attr);
                         throw false;
@@ -290,6 +295,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
 
                 if (s != 0)
                 {
+                    _errno = s;
                     ffmpegfs_error("Error creating thread: %s", strerror(s));
                     pthread_attr_destroy(&attr);
                     throw false;
@@ -302,6 +308,14 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
                 {
                     ffmpegfs_warning("Error destroying thread attributes: %s", strerror(s));
                 }
+
+                if (cache_entry->m_cache_info.m_error)
+                {
+                    ffmpegfs_debug("Decoder error for file '%s'.", cache_entry->filename().c_str());
+                    _errno = EIO; // Must return anything, Ì/O error is as good as anything else.
+                    throw false;
+                }
+
             }
             else if (!cache_entry->m_cache_info.m_predicted_filesize)
             {
@@ -309,6 +323,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
 
                 if (transcoder->open_input_file(cache_entry->filename().c_str()) < 0)
                 {
+                    _errno = errno;
                     delete transcoder;
                     throw false;
                 }
@@ -339,7 +354,8 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
     {
         cache_entry->m_is_decoding = false;
         cache_entry->unlock();
-        cache->close(&cache_entry);
+        cache->close(&cache_entry, CLOSE_CACHE_DELETE);
+        errno = _errno; // Restore last errno
     }
 
     return cache_entry;
@@ -349,7 +365,7 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
 
 ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offset, size_t len)
 {
-    ffmpegfs_trace("Reading %zu bytes from offset %jd.", len, (intmax_t)offset);
+    ffmpegfs_trace("Reading %zu bytes from offset %jd for file '%s'.", len, (intmax_t)offset, cache_entry->filename().c_str());
 
     cache_entry->lock();
 
@@ -510,7 +526,6 @@ static void *decoder_thread(void *arg)
             //printf("Progress %3zu%%\r", pos * 100/ size);
             if (stat == -1 || (stat == 1 && transcode_finish(cache_entry, transcoder) == -1))
             {
-                errno = EIO;
                 success = false;
                 break;
             }
@@ -535,10 +550,11 @@ static void *decoder_thread(void *arg)
     }
     catch (bool _success)
     {
+        success = _success;
+        cache_entry->m_cache_info.m_error = !success;
+
         pthread_cond_signal(&thread_data->m_cond);  // unlock main thread
         cache_entry->unlock();
-
-        success = _success;
     }
 
     transcoder->close();
@@ -569,7 +585,7 @@ static void *decoder_thread(void *arg)
 
     cache_entry->m_thread_id = 0;
 
-    cache->close(&cache_entry, timeout);
+    cache->close(&cache_entry, timeout ? CLOSE_CACHE_DELETE : CLOSE_CACHE_NOOPT);
 
     thread_count--;
 
