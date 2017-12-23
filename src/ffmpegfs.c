@@ -690,6 +690,13 @@ static int ffmpegfs_opt_proc(void* data, const char* arg, int key, struct fuse_a
         // TODO: Also output this information in debug mode
         printf("%-20s: %s\n", PACKAGE_NAME " Version", PACKAGE_VERSION);
 
+#ifdef __GNUC__
+#ifndef __clang_version__
+	printf("%-20s: %s\n", "Built with", "gcc " __VERSION__);
+#else
+	printf("%-20s: %s\n", "Built with", "clang " __clang_version__);
+#endif
+#endif
         char buffer[1024];
         ffmpeg_libinfo(buffer, sizeof(buffer));
         printf("%s", buffer);
