@@ -326,10 +326,11 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
         {
             ffmpegfs_debug("Reading file from cache: '%s'.", filename);
 
-            if (!cache->prune_cache())
-            {
-                throw false;
-            }
+//            if (!cache->prune_cache())
+//            {
+//                _errno = errno;
+//                throw false;
+//            }
         }
 
         cache_entry->unlock();

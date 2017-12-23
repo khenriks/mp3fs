@@ -33,6 +33,19 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <assert.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <signal.h>
+#include <time.h>
+
+#define CLOCKID CLOCK_REALTIME
+#define SIG SIGRTMIN
+
+static sigset_t mask;
+static timer_t timerid;
+
+static void handler(int sig, __attribute__((unused)) siginfo_t *si, __attribute__((unused)) void *uc);
+static int start_prune_timer();
 
 /*
  * Translate file names from FUSE to the original absolute path. A buffer
@@ -511,12 +524,77 @@ static int ffmpegfs_release(const char *path, struct fuse_file_info *fi)
     return 0;
 }
 
-// We need synchronous reads.
+static void handler(int sig, __attribute__((unused)) siginfo_t *si, __attribute__((unused)) void *uc)
+{
+    if (sig == SIG)
+    {
+        transcoder_prune_cache();
+    }
+}
+
+static int start_prune_timer()
+{
+    struct sigevent sev;
+    struct itimerspec its;
+    long long freq_nanosecs;
+    struct sigaction sa;
+
+    freq_nanosecs = params.m_prune_timer * 1000000000LL;
+
+    ffmpegfs_trace("Starting prune cache timer");
+
+    // Establish handler for timer signal
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = handler;
+    sigemptyset(&sa.sa_mask);
+    if (sigaction(SIG, &sa, NULL) == -1)
+    {
+        ffmpegfs_error("start_prune_timer() sigaction failed: %s", strerror(errno));
+        return -1;
+    }
+
+    // Block timer signal temporarily
+    sigemptyset(&mask);
+    sigaddset(&mask, SIG);
+    if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1)
+    {
+        ffmpegfs_error("start_prune_timer() sigprocmask failed: %s", strerror(errno));
+        return -1;
+    }
+
+    // Create the timer
+    sev.sigev_notify = SIGEV_SIGNAL;
+    sev.sigev_signo = SIG;
+    sev.sigev_value.sival_ptr = &timerid;
+    if (timer_create(CLOCKID, &sev, &timerid) == -1)
+    {
+        ffmpegfs_error("start_prune_timer() timer_create failed: %s", strerror(errno));
+        return -1;
+    }
+
+    // Start the timer
+    its.it_value.tv_sec = freq_nanosecs / 1000000000;
+    its.it_value.tv_nsec = freq_nanosecs % 1000000000;
+    its.it_interval.tv_sec = its.it_value.tv_sec;
+    its.it_interval.tv_nsec = its.it_value.tv_nsec;
+
+    if (timer_settime(timerid, 0, &its, NULL) == -1)
+    {
+        ffmpegfs_error("timer_settime() timer_create failed: %s", strerror(errno));
+        return -1;
+    }
+
+    return 0;
+}
+
 static void *ffmpegfs_init(struct fuse_conn_info *conn)
 {
     ffmpegfs_info("%s V%s initialising", PACKAGE_NAME, PACKAGE_VERSION);
 
+    // We need synchronous reads.
     conn->async_read = 0;
+
+    start_prune_timer();
 
     return NULL;
 }
@@ -527,6 +605,12 @@ static void ffmpegfs_destroy(__attribute__((unused)) void * p)
     printf("%s V%s terminating\n", PACKAGE_NAME, PACKAGE_VERSION);
 
     transcoder_exit();
+
+    ffmpegfs_trace("Unblocking signal %d\n", SIG);
+    if (sigprocmask(SIG_UNBLOCK, &mask, NULL) == -1)
+    {
+        ffmpegfs_error("timer_settime() sigprocmask failed: %s", strerror(errno));
+    }
 
     cache_delete();
 
