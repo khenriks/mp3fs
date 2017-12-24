@@ -23,6 +23,7 @@
  */
 
 #include "transcode.h"
+#include "ffmpeg_utils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,7 +46,7 @@ static sigset_t mask;
 static timer_t timerid;
 
 static void handler(int sig, __attribute__((unused)) siginfo_t *si, __attribute__((unused)) void *uc);
-static int start_maintenance_timer();
+static int start_maintenance_timer(time_t interval);
 
 /*
  * Translate file names from FUSE to the original absolute path. A buffer
@@ -222,8 +223,6 @@ static int ffmpegfs_getattr(const char *path, struct stat *stbuf)
 
     ffmpegfs_trace("getattr %s", path);
 
-    //errno = 0;
-
     origpath = translate_path(path);
     if (!origpath)
     {
@@ -361,8 +360,6 @@ static int ffmpegfs_open(const char *path, struct fuse_file_info *fi)
 
     ffmpegfs_trace("open %s", path);
 
-    //errno = 0;
-
     origpath = translate_path(path);
     if (!origpath)
     {
@@ -419,8 +416,6 @@ static int ffmpegfs_read(const char *path, char *buf, size_t size, off_t offset,
     struct Cache_Entry* cache_entry;
 
     ffmpegfs_trace("read %s: %zu bytes from %jd.", path, size, (intmax_t)offset);
-
-    //errno = 0;
 
     origpath = translate_path(path);
     if (!origpath)
@@ -532,16 +527,19 @@ static void handler(int sig, __attribute__((unused)) siginfo_t *si, __attribute_
     }
 }
 
-static int start_maintenance_timer()
+static int start_maintenance_timer(time_t interval)
 {
     struct sigevent sev;
     struct itimerspec its;
     long long freq_nanosecs;
     struct sigaction sa;
+    char maintenance_timer[100];
 
-    freq_nanosecs = params.m_maintenance_timer * 1000000000LL;
+    format_time(maintenance_timer, sizeof(maintenance_timer), interval);
 
-    ffmpegfs_trace("Starting maintenance timer.");
+    freq_nanosecs = interval * 1000000000LL;
+
+    ffmpegfs_info("Starting maintenance timer with %speriod.", maintenance_timer);
 
     // Establish handler for timer signal
     sa.sa_flags = SA_SIGINFO;
@@ -594,7 +592,10 @@ static void *ffmpegfs_init(struct fuse_conn_info *conn)
     // We need synchronous reads.
     conn->async_read = 0;
 
-    start_maintenance_timer();
+    if (params.m_maintenance_timer)
+    {
+        start_maintenance_timer(params.m_maintenance_timer);
+    }
 
     return NULL;
 }
