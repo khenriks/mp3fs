@@ -69,13 +69,13 @@ extern struct ffmpegfs_params
     time_t          m_max_inactive_abort;       // Time (seconds) that must elapse without access until transcoding is aborted
     size_t          m_max_cache_size;           // Max. cache size in MB. When exceeded, oldest entries will be pruned
     size_t          m_min_diskspace;            // Min. diskspace required for cache
-    time_t          m_prune_timer;              // Prune timer interval
+    const char*     m_cachepath;                // Disk cache path, defaults to /tmp
+    int             m_disable_cache;            // Disable cache
+    time_t          m_maintenance_timer;              // Prune timer interval
+    int             m_prune_cache;              // Prune cache immediately
 #ifndef DISABLE_MAX_THREADS
     int             m_max_threads;              // TODO Feature #2250: Max. number of recoder threads
 #endif
-    const char*     m_cachepath;                // Disk cache path, defaults to /tmp
-    int             m_disable_cache;            // Disable cache
-    int             m_prune_cache;              // Prune cache immediately
 } params;
 
 /* Fuse operations struct */
@@ -110,7 +110,7 @@ size_t transcoder_get_size(struct Cache_Entry* cache_entry);
 size_t transcoder_buffer_watermark(struct Cache_Entry* cache_entry);
 size_t transcoder_buffer_tell(struct Cache_Entry* cache_entry);
 void transcoder_exit(void);
-int transcoder_prune_cache(void);
+int transcoder_cache_maintenance(void);
 
 /* Check for availability of audio types. */
 int check_encoder(const char* type);

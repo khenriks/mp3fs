@@ -458,11 +458,11 @@ void transcoder_exit(void)
     thread_exit = true;
 }
 
-int transcoder_prune_cache(void)
+int transcoder_cache_maintenance(void)
 {
     if (cache != NULL)
     {
-        return cache->prune_cache();
+        return cache->cache_maintenance();
     }
     else
     {
@@ -500,7 +500,7 @@ static void *decoder_thread(void *arg)
             throw false;
         }
 
-        if (!cache->prune_cache(transcoder->calculate_size()))
+        if (!cache->cache_maintenance(transcoder->calculate_size()))
         {
             throw false;
         }

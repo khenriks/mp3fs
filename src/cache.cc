@@ -720,7 +720,7 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
     return true;
 }
 
-bool Cache::prune_cache(size_t predicted_filesize)
+bool Cache::cache_maintenance(size_t predicted_filesize)
 {
     bool bSuccess = true;
 

@@ -76,18 +76,19 @@ struct ffmpegfs_params params =
     .m_log_stderr         	= 0,                        // default: do not log to stderr
     .m_log_syslog         	= 0,                        // default: do not use syslog
     .m_logfile            	= "",                       // default: none
-
+    // Cache/recoding options
     .m_expiry_time          = (60*60*24 /* d */) * 7,	// default: 1 week
     .m_max_inactive_suspend = (60 /* m */) * 2,         // default: 2 minutes
     .m_max_inactive_abort   = (60 /* m */) * 5,         // default: 5 minutes
     .m_max_cache_size       = 0,                        // default: no limit
     .m_min_diskspace        = 0,                        // default: no minimum
-    .m_prune_timer          = (60*60),                  // default: 60 minutes
+    .m_cachepath            = NULL,                     // default: /tmp
+    .m_disable_cache        = 0,                        // default: enabled
+    .m_maintenance_timer          = (60*60),                  // default: prune every 60 minutes
+    .m_prune_cache          = 0,                        // Do not prune cache immediately
 #ifndef DISABLE_MAX_THREADS
     .m_max_threads          = 0,                        // default: 4 * cpu cores (set later)
 #endif
-    .m_cachepath            = NULL,                     // default: /tmp
-    .m_disable_cache        = 0                         // default: enabled
 };
 
 enum
@@ -103,7 +104,8 @@ enum
     KEY_MAX_INACTIVE_SUSPEND_TIME,
     KEY_MAX_INACTIVE_ABORT_TIME,
     KEY_MAX_CACHE_SIZE,
-    KEY_MIN_DISKSPACE_SIZE
+    KEY_MIN_DISKSPACE_SIZE,
+    KEY_CACHE_MAINTENANCE
 };
 
 #define FFMPEGFS_OPT(templ, param, value) { templ, offsetof(struct ffmpegfs_params, param), value }
@@ -120,12 +122,12 @@ static struct fuse_opt ffmpegfs_opts[] =
     // Audio
     FUSE_OPT_KEY("--audiobitrate=%s",           KEY_AUDIO_BITRATE),
     FUSE_OPT_KEY("audiobitrate=%s",             KEY_AUDIO_BITRATE),
-    FUSE_OPT_KEY("--audiosamplerate=%u",        KEY_AUDIO_SAMPLERATE),
-    FUSE_OPT_KEY("audiosamplerate=%u",          KEY_AUDIO_SAMPLERATE),
+    FUSE_OPT_KEY("--audiosamplerate=%s",        KEY_AUDIO_SAMPLERATE),
+    FUSE_OPT_KEY("audiosamplerate=%s",          KEY_AUDIO_SAMPLERATE),
 
     // Video
-    FUSE_OPT_KEY("--videobitrate=%u",           KEY_VIDEO_BITRATE),
-    FUSE_OPT_KEY("videobitrate=%u",             KEY_VIDEO_BITRATE),
+    FUSE_OPT_KEY("--videobitrate=%s",           KEY_VIDEO_BITRATE),
+    FUSE_OPT_KEY("videobitrate=%s",             KEY_VIDEO_BITRATE),
 #ifndef DISABLE_AVFILTER
     FFMPEGFS_OPT("--videoheight=%u",            m_videowidth, 0),
     FFMPEGFS_OPT("videoheight=%u",              m_videowidth, 0),
@@ -136,20 +138,22 @@ static struct fuse_opt ffmpegfs_opts[] =
 #endif
 
     // Cache
-    FUSE_OPT_KEY("--expiry_time=%zu",           KEY_EXPIRY_TIME),
-    FUSE_OPT_KEY("expiry_time=%zu",             KEY_EXPIRY_TIME),
-    FUSE_OPT_KEY("--max_inactive_suspend=%zu",  KEY_MAX_INACTIVE_SUSPEND_TIME),
-    FUSE_OPT_KEY("max_inactive_suspend=%zu",    KEY_MAX_INACTIVE_SUSPEND_TIME),
-    FUSE_OPT_KEY("--max_inactive_abort=%zu",    KEY_MAX_INACTIVE_ABORT_TIME),
-    FUSE_OPT_KEY("max_inactive_abort=%zu",      KEY_MAX_INACTIVE_ABORT_TIME),
-    FUSE_OPT_KEY("--max_cache_size=%zu",        KEY_MAX_CACHE_SIZE),
-    FUSE_OPT_KEY("max_cache_size=%zu",          KEY_MAX_CACHE_SIZE),
-    FUSE_OPT_KEY("--min_diskspace=%zu",         KEY_MIN_DISKSPACE_SIZE),
-    FUSE_OPT_KEY("min_diskspace=%zu",           KEY_MIN_DISKSPACE_SIZE),
+    FUSE_OPT_KEY("--expiry_time=%s",            KEY_EXPIRY_TIME),
+    FUSE_OPT_KEY("expiry_time=%s",              KEY_EXPIRY_TIME),
+    FUSE_OPT_KEY("--max_inactive_suspend=%s",   KEY_MAX_INACTIVE_SUSPEND_TIME),
+    FUSE_OPT_KEY("max_inactive_suspend=%s",     KEY_MAX_INACTIVE_SUSPEND_TIME),
+    FUSE_OPT_KEY("--max_inactive_abort=%s",     KEY_MAX_INACTIVE_ABORT_TIME),
+    FUSE_OPT_KEY("max_inactive_abort=%s",       KEY_MAX_INACTIVE_ABORT_TIME),
+    FUSE_OPT_KEY("--max_cache_size=%s",         KEY_MAX_CACHE_SIZE),
+    FUSE_OPT_KEY("max_cache_size=%s",           KEY_MAX_CACHE_SIZE),
+    FUSE_OPT_KEY("--min_diskspace=%s",          KEY_MIN_DISKSPACE_SIZE),
+    FUSE_OPT_KEY("min_diskspace=%s",            KEY_MIN_DISKSPACE_SIZE),
     FFMPEGFS_OPT("--cachepath=%s",              m_cachepath, 0),
     FFMPEGFS_OPT("cachepath=%s",                m_cachepath, 0),
     FFMPEGFS_OPT("--disable_cache",             m_disable_cache, 1),
     FFMPEGFS_OPT("disable_cache",               m_disable_cache, 1),
+    FUSE_OPT_KEY("--cache_maintenance=%s",      KEY_CACHE_MAINTENANCE),
+    FUSE_OPT_KEY("cache_maintenance=%s",        KEY_CACHE_MAINTENANCE),
     FFMPEGFS_OPT("--prune_cache",               m_prune_cache, 1),
 
     // Other
@@ -293,8 +297,14 @@ static void usage(char *name)
           "     --disable_cache, -o disable_cache\n"
           "                           Disable the cache functionality.\n"
           "                           Default: enabled\n"
+          "     --maintenance_timer=TIME, -o maintenance_timer=TIME\n"
+          "                           Starts cache maintenance in TIME intervals. This will enforce the expery_time,\n"
+          "                           max_cache_size and min_diskspace settings. Do not set too low as this will slow\n"
+          "                           down transcoding.\n"
+          "                           Only one ffmpegfs process will do the maintenance.\n"
+          "                           Default: 1 hour\n"
           "     --prune_cache\n"
-          "                           Prune cache immediately according to the above setting.\n"
+          "                           Prune cache immediately according to the above settings.\n"
           "\n"
           "TIME can be defined as...\n"
           " * Seconds: #\n"
@@ -692,9 +702,9 @@ static int ffmpegfs_opt_proc(void* data, const char* arg, int key, struct fuse_a
 
 #ifdef __GNUC__
 #ifndef __clang_version__
-	printf("%-20s: %s\n", "Built with", "gcc " __VERSION__);
+        printf("%-20s: %s\n", "Built with", "gcc " __VERSION__);
 #else
-	printf("%-20s: %s\n", "Built with", "clang " __clang_version__);
+        printf("%-20s: %s\n", "Built with", "clang " __clang_version__);
 #endif
 #endif
         char buffer[1024];
@@ -737,6 +747,10 @@ static int ffmpegfs_opt_proc(void* data, const char* arg, int key, struct fuse_a
     {
         return get_size(arg, &params.m_min_diskspace);
     }
+    case KEY_CACHE_MAINTENANCE:
+    {
+        return get_time(arg, &params.m_maintenance_timer);
+    }
     }
 
     return 1;
@@ -755,6 +769,7 @@ static void print_params()
     char max_inactive_abort[100];
     char max_cache_size[100];
     char min_diskspace[100];
+    char maintenance_timer[100];
 
     cache_path(cachepath, sizeof(cachepath));
 
@@ -772,6 +787,7 @@ static void print_params()
     format_time(max_inactive_abort, sizeof(max_inactive_abort), params.m_max_inactive_abort);
     format_size(max_cache_size, sizeof(max_cache_size), params.m_max_cache_size);
     format_size(min_diskspace, sizeof(min_diskspace), params.m_min_diskspace);
+    format_time(maintenance_timer, sizeof(maintenance_timer), params.m_maintenance_timer);
 
     ffmpegfs_info(PACKAGE_NAME " options:\n\n"
                                "Base Path         : %s\n"
@@ -799,10 +815,13 @@ static void print_params()
                                "Inactivity Abort  : %s\n"
                                "Max. Cache Size   : %s\n"
                                "Min. Disk Space   : %s\n"
+                               "Cache Path        : %s\n"
+                               "Disable Cache     : %s\n"
+                               "Maintenance Timer : %s\n"
               #ifndef DISABLE_MAX_THREADS
                                "Max. Threads      : %u\n"
               #endif
-                               "Cache Path        : %s\n",
+                  ,
                   params.m_basepath,
                   params.m_mountpath,
                   params.m_desttype,
@@ -828,10 +847,16 @@ static void print_params()
                   max_inactive_abort,
                   max_cache_size,
                   min_diskspace,
-              #ifndef DISABLE_MAX_THREADS
-                  params.m_max_threads,
-              #endif
-                  cachepath);
+                  cachepath,
+                  params.m_disable_cache ? "yes" : "no",
+                  maintenance_timer
+#ifndef DISABLE_MAX_THREADS
+   , params.m_max_threads
+#endif
+                  );
+
+
+
 }
 
 int main(int argc, char *argv[])
@@ -903,7 +928,7 @@ int main(int argc, char *argv[])
         {
             return 1;
         }
-        transcoder_prune_cache();
+        transcoder_cache_maintenance();
         return 0;
     }
 

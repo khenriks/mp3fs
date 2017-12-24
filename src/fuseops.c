@@ -45,7 +45,7 @@ static sigset_t mask;
 static timer_t timerid;
 
 static void handler(int sig, __attribute__((unused)) siginfo_t *si, __attribute__((unused)) void *uc);
-static int start_prune_timer();
+static int start_maintenance_timer();
 
 /*
  * Translate file names from FUSE to the original absolute path. A buffer
@@ -528,20 +528,20 @@ static void handler(int sig, __attribute__((unused)) siginfo_t *si, __attribute_
 {
     if (sig == SIG)
     {
-        transcoder_prune_cache();
+        transcoder_cache_maintenance();
     }
 }
 
-static int start_prune_timer()
+static int start_maintenance_timer()
 {
     struct sigevent sev;
     struct itimerspec its;
     long long freq_nanosecs;
     struct sigaction sa;
 
-    freq_nanosecs = params.m_prune_timer * 1000000000LL;
+    freq_nanosecs = params.m_maintenance_timer * 1000000000LL;
 
-    ffmpegfs_trace("Starting prune cache timer");
+    ffmpegfs_trace("Starting maintenance timer.");
 
     // Establish handler for timer signal
     sa.sa_flags = SA_SIGINFO;
@@ -549,7 +549,7 @@ static int start_prune_timer()
     sigemptyset(&sa.sa_mask);
     if (sigaction(SIG, &sa, NULL) == -1)
     {
-        ffmpegfs_error("start_prune_timer() sigaction failed: %s", strerror(errno));
+        ffmpegfs_error("start_maintenance_timer() sigaction failed: %s", strerror(errno));
         return -1;
     }
 
@@ -558,7 +558,7 @@ static int start_prune_timer()
     sigaddset(&mask, SIG);
     if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1)
     {
-        ffmpegfs_error("start_prune_timer() sigprocmask failed: %s", strerror(errno));
+        ffmpegfs_error("start_maintenance_timer() sigprocmask failed: %s", strerror(errno));
         return -1;
     }
 
@@ -568,7 +568,7 @@ static int start_prune_timer()
     sev.sigev_value.sival_ptr = &timerid;
     if (timer_create(CLOCKID, &sev, &timerid) == -1)
     {
-        ffmpegfs_error("start_prune_timer() timer_create failed: %s", strerror(errno));
+        ffmpegfs_error("start_maintenance_timer() timer_create failed: %s", strerror(errno));
         return -1;
     }
 
@@ -594,7 +594,7 @@ static void *ffmpegfs_init(struct fuse_conn_info *conn)
     // We need synchronous reads.
     conn->async_read = 0;
 
-    start_prune_timer();
+    start_maintenance_timer();
 
     return NULL;
 }

@@ -451,6 +451,12 @@ void format_samplerate(char *output, size_t size, unsigned int value)
 
 void format_time(char *output, size_t size, time_t value)
 {
+    if (!value)
+    {
+        strncpy(output, "unlimited", size);
+        return;
+    }
+
     int weeks;
     int days;
     int hours;
@@ -495,6 +501,12 @@ void format_time(char *output, size_t size, time_t value)
 
 void format_size(char *output, size_t size, size_t value)
 {
+    if (!value)
+    {
+        strncpy(output, "unlimited", size);
+        return;
+    }
+
     if (value > 1024*1024*1024*1024LL)
     {
         snprintf(output, size, "%.3f TB", (double)value / (1024*1024*1024*1024LL));

@@ -79,7 +79,7 @@ public:
     void lock();
     void unlock();
 
-    bool prune_cache(size_t predicted_filesize = 0);
+    bool cache_maintenance(size_t predicted_filesize = 0);
 
     bool prune_expired();
     bool prune_cache_size();
