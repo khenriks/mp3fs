@@ -787,7 +787,14 @@ static void print_params()
     format_time(max_inactive_abort, sizeof(max_inactive_abort), params.m_max_inactive_abort);
     format_size(max_cache_size, sizeof(max_cache_size), params.m_max_cache_size);
     format_size(min_diskspace, sizeof(min_diskspace), params.m_min_diskspace);
-    format_time(maintenance_timer, sizeof(maintenance_timer), params.m_maintenance_timer);
+    if (params.m_maintenance_timer)
+    {
+        format_time(maintenance_timer, sizeof(maintenance_timer), params.m_maintenance_timer);
+    }
+    else
+    {
+        strcpy(maintenance_timer, "inactive");
+    }
 
     ffmpegfs_info(PACKAGE_NAME " options:\n\n"
                                "Base Path         : %s\n"
