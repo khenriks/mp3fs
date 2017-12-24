@@ -109,11 +109,17 @@ When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
     Sets the disk cache directory to 'DIR'. Will be created if not existing.
     The user running ffmpegfs must have write access to the location.
     Default: temp directory, e.g. /tmp
- *--disable_cache*, -o *disable_cache::
+ *--disable_cache*, -o *disable_cache*::
     Disable the cache functionality.
     Default: enabled
- *--prune_cache::
-    Prune cache immediately according to the above setting.
+ *--maintenance_timer*=TIME, *-o maintenance_timer*=TIME::
+    Starts cache maintenance in TIME intervals. This will enforce the expery_time,
+    max_cache_size and min_diskspace settings. Do not set too low as this will slow
+    down transcoding.
+    Only one ffmpegfs process will do the maintenance.
+    Default: 1 hour
+ *--prune_cache*::
+    Prune cache immediately according to the above settings.
 
  *TIME*:: can be defined as...
   * Seconds: #
