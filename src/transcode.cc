@@ -312,10 +312,13 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
                 if (cache_entry->m_cache_info.m_error)
                 {
                     ffmpegfs_debug("Decoder error for file '%s'.", cache_entry->filename().c_str());
-                    _errno = EIO; // Must return anything, Ì/O error is as good as anything else.
+                    _errno = cache_entry->m_cache_info.m_errno;
+                    if (!_errno)
+                    {
+                        _errno = EIO; // Must return anything, Ì/O error is as good as anything else.
+                    }
                     throw false;
                 }
-
             }
             else if (!cache_entry->m_cache_info.m_predicted_filesize)
             {
@@ -418,6 +421,13 @@ ssize_t transcoder_read(struct Cache_Entry* cache_entry, char* buff, off_t offse
             len = 0;
             // throw (ssize_t)-1;
         }
+
+        if (cache_entry->m_cache_info.m_error)
+        {
+            errno = cache_entry->m_cache_info.m_errno ? cache_entry->m_cache_info.m_errno : EIO;
+            throw (ssize_t)-1;
+        }
+
         errno = 0;
     }
     catch (ssize_t _len)
@@ -552,6 +562,7 @@ static void *decoder_thread(void *arg)
     {
         success = _success;
         cache_entry->m_cache_info.m_error = !success;
+        cache_entry->m_cache_info.m_errno = success ? 0 : errno;    // Preserve errno
 
         pthread_cond_signal(&thread_data->m_cond);  // unlock main thread
         cache_entry->unlock();
@@ -566,6 +577,7 @@ static void *decoder_thread(void *arg)
         cache_entry->m_is_decoding = false;
         cache_entry->m_cache_info.m_finished = false;
         cache_entry->m_cache_info.m_error = true;
+        cache_entry->m_cache_info.m_errno = EIO;    // Report I/O error
 
         if (timeout)
         {
@@ -579,6 +591,7 @@ static void *decoder_thread(void *arg)
     else
     {
         cache_entry->m_cache_info.m_error = !success;
+        cache_entry->m_cache_info.m_errno = success ? 0 : errno;    // Preserve errno
 
         ffmpegfs_debug("Transcoding complete for '%s'. Result %s", cache_entry->filename().c_str(), success ? "SUCCESS" : "ERROR");
     }
