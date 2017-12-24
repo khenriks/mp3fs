@@ -16,7 +16,7 @@ echo Size: $SIZE
 echo Checking $DIRNAME/raven.mp4
 SIZE=$(stat -c %s "$DIRNAME/raven.mp4")
 echo Size: $SIZE
-[ $SIZE -eq 133636 ]
+[ $SIZE -eq 133661 ]
 elif [ "$DESTTYPE" == "mp3" ];
 then
 # mp3
@@ -31,3 +31,4 @@ echo Size: $SIZE
 else
 exit 99
 fi
+
