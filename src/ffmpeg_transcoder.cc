@@ -434,7 +434,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
     if (!output_codec)
     {
         ffmpegfs_error("Could not find encoder '%s' for '%s'.", avcodec_get_name(codec_id), m_in.m_pFormat_ctx->filename);
-        exit(1);
+        return AVERROR(EINVAL);
     }
 
 #if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFmpeg 3
