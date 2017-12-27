@@ -80,7 +80,7 @@ struct ffmpegfs_params params =
     .m_min_diskspace        = 0,                        // default: no minimum
     .m_cachepath            = NULL,                     // default: /tmp
     .m_disable_cache        = 0,                        // default: enabled
-    .m_maintenance_timer          = (60*60),                  // default: prune every 60 minutes
+    .m_cache_maintenance    = (60*60),                  // default: prune every 60 minutes
     .m_prune_cache          = 0,                        // Do not prune cache immediately
 #ifndef DISABLE_MAX_THREADS
     .m_max_threads          = 0,                        // default: 4 * cpu cores (set later)
@@ -293,7 +293,7 @@ static void usage(char *name)
           "     --disable_cache, -o disable_cache\n"
           "                           Disable the cache functionality.\n"
           "                           Default: enabled\n"
-          "     --maintenance_timer=TIME, -o maintenance_timer=TIME\n"
+          "     --cache_maintenance=TIME, -o cache_maintenance=TIME\n"
           "                           Starts cache maintenance in TIME intervals. This will enforce the expery_time,\n"
           "                           max_cache_size and min_diskspace settings. Do not set too low as this will slow\n"
           "                           down transcoding.\n"
@@ -494,7 +494,7 @@ static int get_time(const char * arg, time_t *value)
         ptr++;
 
         // Check for decimal number
-        reti = compare(ptr, "^([1-9][0-9]*|0)?$");
+        reti = compare(ptr, "^([1-9][0-9]*|0)?s?$");
 
         if (reti == -1)
         {
@@ -515,7 +515,7 @@ static int get_time(const char * arg, time_t *value)
         }
         else if (!reti)
         {
-            *value = (time_t)atol(ptr) * 60;
+            *value = (time_t)(atof(ptr) * 60);
             return 0;   // OK
         }
 
@@ -528,7 +528,7 @@ static int get_time(const char * arg, time_t *value)
         }
         else if (!reti)
         {
-            *value = (time_t)atol(ptr) * 60 * 60;
+            *value = (time_t)(atof(ptr) * 60 * 60);
             return 0;   // OK
         }
 
@@ -541,7 +541,7 @@ static int get_time(const char * arg, time_t *value)
         }
         else if (!reti)
         {
-            *value = (time_t)atol(ptr) * 60 * 60 * 24;
+            *value = (time_t)(atof(ptr) * 60 * 60 * 24);
             return 0;   // OK
         }
 
@@ -554,7 +554,7 @@ static int get_time(const char * arg, time_t *value)
         }
         else if (!reti)
         {
-            *value = (time_t)atol(ptr) * 60 * 60 * 24 * 7;
+            *value = (time_t)(atof(ptr) * 60 * 60 * 24 * 7);
             return 0;   // OK
         }
 
@@ -745,7 +745,7 @@ static int ffmpegfs_opt_proc(void* data, const char* arg, int key, struct fuse_a
     }
     case KEY_CACHE_MAINTENANCE:
     {
-        return get_time(arg, &params.m_maintenance_timer);
+        return get_time(arg, &params.m_cache_maintenance);
     }
     }
 
@@ -765,7 +765,7 @@ static void print_params()
     char max_inactive_abort[100];
     char max_cache_size[100];
     char min_diskspace[100];
-    char maintenance_timer[100];
+    char cache_maintenance[100];
 
     cache_path(cachepath, sizeof(cachepath));
 
@@ -783,13 +783,13 @@ static void print_params()
     format_time(max_inactive_abort, sizeof(max_inactive_abort), params.m_max_inactive_abort);
     format_size(max_cache_size, sizeof(max_cache_size), params.m_max_cache_size);
     format_size(min_diskspace, sizeof(min_diskspace), params.m_min_diskspace);
-    if (params.m_maintenance_timer)
+    if (params.m_cache_maintenance)
     {
-        format_time(maintenance_timer, sizeof(maintenance_timer), params.m_maintenance_timer);
+        format_time(cache_maintenance, sizeof(cache_maintenance), params.m_cache_maintenance);
     }
     else
     {
-        strcpy(maintenance_timer, "inactive");
+        strcpy(cache_maintenance, "inactive");
     }
 
     ffmpegfs_info(PACKAGE_NAME " options:\n\n"
@@ -852,7 +852,7 @@ static void print_params()
                   min_diskspace,
                   cachepath,
                   params.m_disable_cache ? "yes" : "no",
-                  maintenance_timer
+                  cache_maintenance
 #ifndef DISABLE_MAX_THREADS
    , params.m_max_threads
 #endif

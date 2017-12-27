@@ -112,7 +112,7 @@ When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
  *--disable_cache*, -o *disable_cache*::
     Disable the cache functionality.
     Default: enabled
- *--maintenance_timer*=TIME, *-o maintenance_timer*=TIME::
+ *--cache_maintenance*=TIME, *-o cache_maintenance*=TIME::
     Starts cache maintenance in TIME intervals. This will enforce the expery_time,
     max_cache_size and min_diskspace settings. Do not set too low as this will slow
     down transcoding.

@@ -70,7 +70,7 @@ extern struct ffmpegfs_params
     size_t          m_min_diskspace;            // Min. diskspace required for cache
     const char*     m_cachepath;                // Disk cache path, defaults to /tmp
     int             m_disable_cache;            // Disable cache
-    time_t          m_maintenance_timer;              // Prune timer interval
+    time_t          m_cache_maintenance;        // Prune timer interval
     int             m_prune_cache;              // Prune cache immediately
 #ifndef DISABLE_MAX_THREADS
     int             m_max_threads;              // TODO Feature #2250: Max. number of recoder threads
@@ -85,10 +85,6 @@ extern struct fuse_operations ffmpegfs_ops;
  * including coders.h and turning into C++.
  */
 struct Cache_Entry;
-
-/* Define lists of available encoder and decoder extensions. */
-extern const char* encoder_list[];
-extern const char* decoder_list[];
 
 #ifdef __cplusplus
 extern "C" {
@@ -110,10 +106,6 @@ size_t transcoder_buffer_watermark(struct Cache_Entry* cache_entry);
 size_t transcoder_buffer_tell(struct Cache_Entry* cache_entry);
 void transcoder_exit(void);
 int transcoder_cache_maintenance(void);
-
-/* Check for availability of audio types. */
-int check_encoder(const char* type);
-int check_decoder(const char* type);
 
 /* Functions to print output until C++ conversion is done. */
 void ffmpegfs_trace(const char* f, ...) __attribute__ ((format(printf, 1, 2)));

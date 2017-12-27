@@ -476,7 +476,7 @@ void format_time(char *output, size_t size, time_t value)
     }
     if (secs)
     {
-        pos += snprintf(output + pos, size - pos, "%is", secs);
+        pos += snprintf(output + pos, size - pos, "%is ", secs);
     }
 
 }

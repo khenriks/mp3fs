@@ -24,6 +24,7 @@
 
 #include "transcode.h"
 #include "ffmpeg_utils.h"
+#include "coders.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -592,9 +593,9 @@ static void *ffmpegfs_init(struct fuse_conn_info *conn)
     // We need synchronous reads.
     conn->async_read = 0;
 
-    if (params.m_maintenance_timer)
+    if (params.m_cache_maintenance)
     {
-        start_maintenance_timer(params.m_maintenance_timer);
+        start_maintenance_timer(params.m_cache_maintenance);
     }
 
     return NULL;

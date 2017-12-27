@@ -23,4 +23,20 @@
 
 #pragma once
 
+/* Define lists of available encoder and decoder extensions. */
+extern const char* encoder_list[];
+extern const char* decoder_list[];
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Check for availability of audio types. */
+int check_encoder(const char* type);
+int check_decoder(const char* type);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
