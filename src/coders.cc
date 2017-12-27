@@ -20,7 +20,6 @@
  */
 
 #include "coders.h"
-
 #include "transcode.h"
 
 #include <string.h>

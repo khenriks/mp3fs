@@ -23,12 +23,6 @@
 #include "buffer.h"
 #include "transcode.h"
 
-#include <unistd.h>
-#include <fstream>
-#include <iostream>
-#include <libgen.h>
-#include <assert.h>
-
 using namespace std;
 
 Cache_Entry::Cache_Entry(Cache *owner, const string & filename)

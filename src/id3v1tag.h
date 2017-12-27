@@ -23,8 +23,6 @@
 
 #pragma once
 
-#include <memory.h>
-
 struct ID3v1
 {
     char m_sTAG[3];         // Contains "TAG"

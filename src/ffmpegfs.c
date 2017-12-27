@@ -22,14 +22,10 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/sysinfo.h>
-#include <regex.h>
-
 #include "transcode.h"
+#include "coders.h"
+
+#include <regex.h>
 
 // TODO: Move this elsewehere, so this file can be library agnostic
 #pragma GCC diagnostic push

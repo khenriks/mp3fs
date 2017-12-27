@@ -25,8 +25,6 @@
 
 #include "buffer.h"
 
-#include <cstddef>
-#include <string>
 #include <map>
 
 #include <sqlite3.h>

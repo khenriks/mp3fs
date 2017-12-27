@@ -19,18 +19,10 @@
  */
 
 #include "ffmpeg_transcoder.h"
-
-#include <algorithm>
-#include <cstdlib>
-
-#include <unistd.h>
-
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-
 #include "transcode.h"
 #include "buffer.h"
+
+#include <assert.h>
 
 #define INVALID_STREAM  -1
 

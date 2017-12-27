@@ -33,7 +33,6 @@
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
-#include <syslog.h>
 #include <stdarg.h>
 
 /* Global program parameters */

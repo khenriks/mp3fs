@@ -27,12 +27,7 @@
 #include "logging.h"
 #include "cache_entry.h"
 
-#include <cerrno>
-#include <cstdarg>
-#include <cstring>
-#include <limits>
 #include <unistd.h>
-#include <assert.h>
 
 typedef struct tagThread_Data
 {

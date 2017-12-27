@@ -56,6 +56,7 @@ extern "C" {
 // Does not exist in Libav
 #include "libavutil/ffversion.h"
 #endif
+#include <libavutil/rational.h>
 
 //#include "libavdevice/avdevice.h"
 //#include <libavformat/avio.h>
@@ -136,9 +137,10 @@ typedef enum _tagOUTPUTTYPE
     TYPE_MP4
 } OUTPUTTYPE;
 
+#include <sys/stat.h>
+
 #ifdef __cplusplus
 #include <string>
-#include <libavutil/rational.h>
 
 using namespace std;
 

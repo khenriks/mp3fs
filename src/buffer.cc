@@ -23,14 +23,7 @@
 #include "transcode.h"
 #include "ffmpeg_utils.h"
 
-#include <cerrno>
-#include <cstdlib>
-#include <cstring>
-#include <string>
-#include <assert.h>
 #include <unistd.h>
-#include <iostream>
-#include <fstream>
 #include <sys/mman.h>
 #include <libgen.h>
 

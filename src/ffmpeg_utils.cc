@@ -21,24 +21,6 @@
 #include "ffmpeg_utils.h"
 #include "id3v1tag.h"
 
-#include <algorithm>
-#include <cstdlib>
-
-#include <unistd.h>
-
-//#include <vector>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-
-//#include <stdio.h>
-//#include <string.h>
-//#include <stdlib.h>
-#include <sys/stat.h>
-//#include <unistd.h>
-//#include <linux/limits.h>
-//#include <errno.h>
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 

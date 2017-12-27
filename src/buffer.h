@@ -24,7 +24,6 @@
 #pragma once
 
 #include <stdint.h>
-#include <cstddef>
 #include <string>
 
 #define CACHE_CHECK_BIT(mask, var)  ((mask) == (mask & (var)))

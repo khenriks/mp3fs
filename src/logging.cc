@@ -22,12 +22,10 @@
 #include "logging.h"
 
 #include <cstdarg>
-#include <ctime>
 #include <iostream>
 #include <syslog.h>
 #include <algorithm>
-#include <cctype>
-#include <locale>
+#include <ostream>
 
 namespace
 {

@@ -20,11 +20,9 @@
 
 #include "cache.h"
 #include "cache_entry.h"
-
 #include "transcode.h"
 #include "ffmpeg_utils.h"
 
-#include <sys/statvfs.h>
 #include <assert.h>
 #include <vector>
 
