@@ -23,10 +23,4 @@
 
 #pragma once
 
-#include <stdint.h>
-
-#include <string>
-
-#include "buffer.h"
-
 #endif
