@@ -1,5 +1,23 @@
 ffmpegfs NEWS
 
+Important changes in 0.95 (2017-12-XX)
+
+Changes in this release:
+* This is the first beta release towards V1.0.
+* Implemented cache maintenance.
+* Fixed checks ("make checks" works).
+* Fixed mp3 format.
+* Fixed suspend timeout coming although file currently accessed.
+* Fixed crash during shutdown because sqlite was used too late.
+* Properly pass on errno/save into db.
+* Additional database fields for target parameters (bitrate, error code etc.).
+* Files will be recoded if source file changes.
+* Add compiler version to -v parameter
+* Set gcc optimisation to -o3
+* TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
+  that already represents a H264 video stream it would be possible to
+  simply repackage it to a mp4 container without recoding.
+
 Important changes in 0.94 (2017-12-19)
 
 Changes in this release:
