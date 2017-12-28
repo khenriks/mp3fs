@@ -1145,7 +1145,7 @@ int FFMPEG_Transcoder::init_converted_samples(uint8_t ***converted_input_samples
                                 frame_size,
                                 m_out.m_pAudio_codec_ctx->sample_fmt, 0)) < 0)
     {
-        ffmpegfs_error("Could not allocate converted input samples  (error '%s') for '%s'.", ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
+        ffmpegfs_error("Could not allocate converted input samples (error '%s') for '%s'.", ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
         av_freep(&(*converted_input_samples)[0]);
         free(*converted_input_samples);
         return ret;
@@ -1359,7 +1359,7 @@ int FFMPEG_Transcoder::init_audio_output_frame(AVFrame **frame, int frame_size)
      */
     if ((ret = av_frame_get_buffer(*frame, 0)) < 0)
     {
-        ffmpegfs_error("Could allocate output frame samples  (error '%s') for '%s'.", ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
+        ffmpegfs_error("Could allocate output frame samples (error '%s') for '%s'.", ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
         av_frame_free(frame);
         return ret;
     }
@@ -1587,7 +1587,7 @@ int FFMPEG_Transcoder::write_output_file_trailer()
     int ret;
     if ((ret = av_write_trailer(m_out.m_pFormat_ctx)) < 0)
     {
-        ffmpegfs_error("Could not write output file trailer  (error '%s') for '%s'.", ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
+        ffmpegfs_error("Could not write output file trailer (error '%s') for '%s'.", ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
         return ret;
     }
     return 0;
