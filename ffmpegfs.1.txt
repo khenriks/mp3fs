@@ -138,7 +138,7 @@ When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
 === Logging ===
 *--log_maxlevel*=LEVEL, *-o log_maxlevel*=LEVEL::
     Maximum level of messages to log, either ERROR, WARNING, INFO, DEBUG
-    or TRACE. Defaults to WARNING, and always set to DEBUG in debug mode.
+    or TRACE. Defaults to INFO, and always set to DEBUG in debug mode.
     Note that the other log flags must also be set to enable logging.
 *--log_stderr*, *-o log_stderr*::
     Enable outputting logging messages to stderr.

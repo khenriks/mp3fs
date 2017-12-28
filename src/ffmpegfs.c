@@ -68,7 +68,7 @@ struct ffmpegfs_params params =
 #endif
 
     .m_debug              	= 0,                        // default: no debug messages
-    .m_log_maxlevel       	= "WARNING",                // default: WARNING level
+    .m_log_maxlevel       	= "INFO",                   // default: INFO level
     .m_log_stderr         	= 0,                        // default: do not log to stderr
     .m_log_syslog         	= 0,                        // default: do not use syslog
     .m_logfile            	= "",                       // default: none
@@ -329,7 +329,7 @@ static void usage(char *name)
           "\n"
           "    --log_maxlevel=LEVEL, -o log_maxlevel=LEVEL\n"
           "                           Maximum level of messages to log, either ERROR, WARNING, INFO, DEBUG\n"
-          "                           or TRACE. Defaults to WARNING, and always set to DEBUG in debug mode.\n"
+          "                           or TRACE. Defaults to INFO, and always set to DEBUG in debug mode.\n"
           "                           Note that the other log flags must also be set to enable logging.\n"
           "    --log_stderr, -o log_stderr\n"
           "                           Enable outputting logging messages to stderr.\n"
