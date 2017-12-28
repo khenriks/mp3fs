@@ -119,7 +119,7 @@ void cache_path(char *dir, size_t size)
     {
         strncat(dir, "/", size - 1);
     }
-    strncat(dir, "ffmpegfs", size - 1);
+    strncat(dir, PACKAGE, size - 1);
 }
 
 int cache_new(void)

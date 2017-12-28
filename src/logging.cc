@@ -43,7 +43,7 @@ Logging::Logging(string logfile, level max_level, bool to_stderr, bool to_syslog
     }
     if (to_syslog_)
     {
-        openlog("ffmpegfs", 0, LOG_USER);
+        openlog(PACKAGE, 0, LOG_USER);
     }
 }
 
