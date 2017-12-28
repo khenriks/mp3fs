@@ -24,30 +24,11 @@
 
 #include "transcode.h"
 #include "ffmpeg_utils.h"
+#include "cache_maintenance.h"
 #include "coders.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <errno.h>
 #include <dirent.h>
-#include <limits.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <assert.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <signal.h>
-#include <time.h>
-
-#define CLOCKID CLOCK_REALTIME
-#define SIG SIGRTMIN
-
-static sigset_t mask;
-static timer_t timerid;
-
-static void handler(int sig, __attribute__((unused)) siginfo_t *si, __attribute__((unused)) void *uc);
-static int start_maintenance_timer(time_t interval);
 
 /*
  * Translate file names from FUSE to the original absolute path. A buffer
@@ -520,72 +501,6 @@ static int ffmpegfs_release(const char *path, struct fuse_file_info *fi)
     return 0;
 }
 
-static void handler(int sig, __attribute__((unused)) siginfo_t *si, __attribute__((unused)) void *uc)
-{
-    if (sig == SIG)
-    {
-        transcoder_cache_maintenance();
-    }
-}
-
-static int start_maintenance_timer(time_t interval)
-{
-    struct sigevent sev;
-    struct itimerspec its;
-    long long freq_nanosecs;
-    struct sigaction sa;
-    char maintenance_timer[100];
-
-    format_time(maintenance_timer, sizeof(maintenance_timer), interval);
-
-    freq_nanosecs = interval * 1000000000LL;
-
-    ffmpegfs_info("Starting maintenance timer with %speriod.", maintenance_timer);
-
-    // Establish handler for timer signal
-    sa.sa_flags = SA_SIGINFO;
-    sa.sa_sigaction = handler;
-    sigemptyset(&sa.sa_mask);
-    if (sigaction(SIG, &sa, NULL) == -1)
-    {
-        ffmpegfs_error("start_maintenance_timer() sigaction failed: %s", strerror(errno));
-        return -1;
-    }
-
-    // Block timer signal temporarily
-    sigemptyset(&mask);
-    sigaddset(&mask, SIG);
-    if (sigprocmask(SIG_SETMASK, &mask, NULL) == -1)
-    {
-        ffmpegfs_error("start_maintenance_timer() sigprocmask failed: %s", strerror(errno));
-        return -1;
-    }
-
-    // Create the timer
-    sev.sigev_notify = SIGEV_SIGNAL;
-    sev.sigev_signo = SIG;
-    sev.sigev_value.sival_ptr = &timerid;
-    if (timer_create(CLOCKID, &sev, &timerid) == -1)
-    {
-        ffmpegfs_error("start_maintenance_timer() timer_create failed: %s", strerror(errno));
-        return -1;
-    }
-
-    // Start the timer
-    its.it_value.tv_sec = freq_nanosecs / 1000000000;
-    its.it_value.tv_nsec = freq_nanosecs % 1000000000;
-    its.it_interval.tv_sec = its.it_value.tv_sec;
-    its.it_interval.tv_nsec = its.it_value.tv_nsec;
-
-    if (timer_settime(timerid, 0, &its, NULL) == -1)
-    {
-        ffmpegfs_error("timer_settime() timer_create failed: %s", strerror(errno));
-        return -1;
-    }
-
-    return 0;
-}
-
 static void *ffmpegfs_init(struct fuse_conn_info *conn)
 {
     ffmpegfs_info("%s V%s initialising", PACKAGE_NAME, PACKAGE_VERSION);
@@ -595,7 +510,10 @@ static void *ffmpegfs_init(struct fuse_conn_info *conn)
 
     if (params.m_cache_maintenance)
     {
-        start_maintenance_timer(params.m_cache_maintenance);
+        if (start_cache_maintenance(params.m_cache_maintenance))
+        {
+            exit(1);
+        }
     }
 
     return NULL;
@@ -606,13 +524,9 @@ static void ffmpegfs_destroy(__attribute__((unused)) void * p)
     ffmpegfs_info("%s V%s terminating", PACKAGE_NAME, PACKAGE_VERSION);
     printf("%s V%s terminating\n", PACKAGE_NAME, PACKAGE_VERSION);
 
-    transcoder_exit();
+    stop_cache_maintenance();
 
-    ffmpegfs_trace("Unblocking signal %d\n", SIG);
-    if (sigprocmask(SIG_UNBLOCK, &mask, NULL) == -1)
-    {
-        ffmpegfs_error("timer_settime() sigprocmask failed: %s", strerror(errno));
-    }
+    transcoder_exit();
 
     cache_delete();
 
