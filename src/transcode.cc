@@ -487,7 +487,7 @@ static void *decoder_thread(void *arg)
 
     try
     {
-        ffmpegfs_debug("Transcoding '%s' to %s.", cache_entry->filename().c_str(), params.m_desttype);
+        ffmpegfs_info("Transcoding '%s' to %s.", cache_entry->filename().c_str(), params.m_desttype);
 
         if (transcoder == NULL)
         {
