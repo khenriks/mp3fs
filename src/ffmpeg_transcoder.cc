@@ -355,47 +355,52 @@ int FFMPEG_Transcoder::open_input_file(const char* filename)
 
 int FFMPEG_Transcoder::open_output_file(Buffer *buffer)
 {
+    int res = 0;
 
     // Pre-allocate the predicted file size to reduce memory reallocations
     if (!buffer->reserve(calculate_size()))
     {
         ffmpegfs_error("Out of memory pre-allocating buffer for '%s'.", m_in.m_pFormat_ctx->filename);
-        return -1;
+        return AVERROR(ENOMEM);
     }
 
-    /** Open the output file for writing. */
-    if (open_output_filestreams(buffer))
+    // Open the output file for writing.
+    res = open_output_filestreams(buffer);
+    if (res)
     {
-        return -1;
+        return res;
     }
 
     if (m_out.m_nAudio_stream_idx > -1)
     {
-        /** Initialize the resampler to be able to convert audio sample formats. */
-        if (init_resampler())
+        // Initialize the resampler to be able to convert audio sample formats.
+        res = init_resampler();
+        if (res)
         {
-            return -1;
+            return res;
         }
-        /** Initialize the FIFO buffer to store audio samples to be encoded. */
-        if (init_fifo())
+
+        // Initialize the FIFO buffer to store audio samples to be encoded.
+        res = init_fifo();
+        if (res)
         {
-            return -1;
+            return res;
         }
     }
 
-    /*
-     * Process metadata. The Decoder will call the Encoder to set appropriate
-     * tag values for the output file.
-     */
-    if (process_metadata())
+    // Process metadata. The Decoder will call the Encoder to set appropriate
+    // tag values for the output file.
+    res = process_metadata();
+    if (res)
     {
-        return -1;
+        return res;
     }
 
-    /** Write the header of the output file container. */
-    if (write_output_file_header())
+    // Write the header of the output file container.
+    res = write_output_file_header();
+    if (res)
     {
-        return -1;
+        return res;
     }
 
     return 0;
@@ -704,7 +709,7 @@ int FFMPEG_Transcoder::open_output_filestreams(Buffer *buffer)
         }
     }
 
-    /* open the output file */
+    // open the output file
     int nBufSize = 1024;
     output_io_context = ::avio_alloc_context(
                 (unsigned char *) ::av_malloc(nBufSize + FF_INPUT_BUFFER_PADDING_SIZE),
@@ -1929,10 +1934,10 @@ size_t FFMPEG_Transcoder::calculate_size()
                 }
                 }
             }
-//            else      // TODO #2260: Add picture size
-//            {
+            //            else      // TODO #2260: Add picture size
+            //            {
 
-//            }
+            //            }
         }
 
         m_nCalculated_size = size;
@@ -1948,18 +1953,16 @@ size_t FFMPEG_Transcoder::calculate_size()
  */
 int FFMPEG_Transcoder::encode_finish()
 {
-
     int ret = 0;
 
-    /** Write the trailer of the output file container. */
+    // Write the trailer of the output file container.
     ret = write_output_file_trailer();
     if (ret < 0)
     {
         ffmpegfs_error("Error writing trailer (error '%s') for '%s'.", ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
-        ret = -1;
     }
 
-    return 1;
+    return ret;
 }
 
 const ID3v1 * FFMPEG_Transcoder::id3v1tag() const

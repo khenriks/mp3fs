@@ -77,16 +77,18 @@ static bool transcode_until(struct Cache_Entry* cache_entry, off_t offset, size_
 
 static int transcode_finish(struct Cache_Entry* cache_entry, struct FFMPEG_Transcoder *transcoder)
 {
-    int len = transcoder->encode_finish();
-    if (len == -1)
+    int res = transcoder->encode_finish();
+    if (res < 0)
     {
-        return -1;
+        return res;
     }
 
     /* Check encoded buffer size. */
     cache_entry->m_cache_info.m_encoded_filesize = cache_entry->m_buffer->buffer_watermark();
     cache_entry->m_cache_info.m_finished = true;
     cache_entry->m_is_decoding = false;
+    cache_entry->m_cache_info.m_errno = 0;
+    cache_entry->m_cache_info.m_averror = 0;
 
     if (!cache_entry->m_buffer->reserve(cache_entry->m_cache_info.m_encoded_filesize))
     {
@@ -480,6 +482,7 @@ static void *decoder_thread(void *arg)
     Thread_Data *thread_data = (Thread_Data*)arg;
     Cache_Entry *cache_entry = (Cache_Entry *)thread_data->m_arg;
     FFMPEG_Transcoder *transcoder = new FFMPEG_Transcoder;
+    int averror = 0;
     bool timeout = false;
     bool success = true;
 
@@ -487,6 +490,7 @@ static void *decoder_thread(void *arg)
 
     try
     {
+
         ffmpegfs_info("Transcoding '%s' to %s.", cache_entry->filename().c_str(), params.m_desttype);
 
         if (transcoder == NULL)
@@ -500,7 +504,8 @@ static void *decoder_thread(void *arg)
             throw false;
         }
 
-        if (transcoder->open_input_file(cache_entry->filename().c_str()) < 0)
+        averror = transcoder->open_input_file(cache_entry->filename().c_str());
+        if (averror < 0)
         {
             throw false;
         }
@@ -510,7 +515,8 @@ static void *decoder_thread(void *arg)
             throw false;
         }
 
-        if (transcoder->open_output_file(cache_entry->m_buffer) == -1)
+        averror = transcoder->open_output_file(cache_entry->m_buffer);
+        if (averror < 0)
         {
             throw false;
         }
@@ -529,7 +535,14 @@ static void *decoder_thread(void *arg)
 
             //pos = cache_entry->m_buffer->tell();
             //printf("Progress %3zu%%\r", pos * 100/ size);
-            if (stat == -1 || (stat == 1 && transcode_finish(cache_entry, transcoder) == -1))
+            if (stat < 0)
+            {
+                //averror = stat;
+                success = false;
+                break;
+            }
+
+            if (stat == 1 && ((averror = transcode_finish(cache_entry, transcoder)) < 0))
             {
                 success = false;
                 break;
@@ -557,7 +570,8 @@ static void *decoder_thread(void *arg)
     {
         success = _success;
         cache_entry->m_cache_info.m_error = !success;
-        cache_entry->m_cache_info.m_errno = success ? 0 : errno;    // Preserve errno
+        cache_entry->m_cache_info.m_errno = success ? 0 : errno;        // Preserve errno
+        cache_entry->m_cache_info.m_averror = success ? 0 : averror;    // Preserve averror
 
         pthread_cond_signal(&thread_data->m_cond);  // unlock main thread
         cache_entry->unlock();
@@ -572,23 +586,25 @@ static void *decoder_thread(void *arg)
         cache_entry->m_is_decoding = false;
         cache_entry->m_cache_info.m_finished = false;
         cache_entry->m_cache_info.m_error = true;
-        cache_entry->m_cache_info.m_errno = EIO;    // Report I/O error
+        cache_entry->m_cache_info.m_errno = EIO;        // Report I/O error
+        cache_entry->m_cache_info.m_averror = averror;  // Preserve averror
 
         if (timeout)
         {
-            ffmpegfs_debug("Timeout! Transcoding aborted for '%s'.", cache_entry->filename().c_str());
+            ffmpegfs_info("Timeout! Transcoding aborted for '%s'.", cache_entry->filename().c_str());
         }
         else
         {
-            ffmpegfs_debug("Thread exit! Transcoding aborted for '%s'.", cache_entry->filename().c_str());
+            ffmpegfs_info("Thread exit! Transcoding aborted for '%s'.", cache_entry->filename().c_str());
         }
     }
     else
     {
         cache_entry->m_cache_info.m_error = !success;
-        cache_entry->m_cache_info.m_errno = success ? 0 : errno;    // Preserve errno
+        cache_entry->m_cache_info.m_errno = success ? 0 : errno;        // Preserve errno
+        cache_entry->m_cache_info.m_averror = success ? 0 : averror;    // Preserve averror
 
-        ffmpegfs_debug("Transcoding complete for '%s'. Result %s", cache_entry->filename().c_str(), success ? "SUCCESS" : "ERROR");
+        ffmpegfs_info("Transcoding complete for '%s'. Result %s", cache_entry->filename().c_str(), success ? "SUCCESS" : "ERROR");
     }
 
     cache_entry->m_thread_id = 0;
