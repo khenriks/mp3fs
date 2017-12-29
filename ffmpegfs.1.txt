@@ -135,6 +135,12 @@ When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
   * In GBytes: #G or #GB
   * In TBytes: #T or #TB
 
+=== Other ===
+*--max_threads*=COUNT, *-o max_threads*=COUNT
+    Limit concurrent transcoder threads. Set to 0 for unlimited threads.
+    Recommended values are up to 16 times number of CPU cores.
+    Default: 16 times number of detected cpu cores
+
 === Logging ===
 *--log_maxlevel*=LEVEL, *-o log_maxlevel*=LEVEL::
     Maximum level of messages to log, either ERROR, WARNING, INFO, DEBUG

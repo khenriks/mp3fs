@@ -403,6 +403,17 @@ void init_id3v1(ID3v1 *id3v1)
     id3v1->m_bGenre = 0;
 }
 
+void format_number(char *output, size_t size, unsigned int value)
+{
+    if (!value)
+    {
+        strncpy(output, "unlimited", size);
+        return;
+    }
+
+    snprintf(output, size, "%u", value);
+}
+
 void format_bitrate(char *output, size_t size, unsigned int value)
 {
     if (value > 1000000)
@@ -509,6 +520,15 @@ void format_size(char *output, size_t size, size_t value)
     {
         snprintf(output, size, "%zu bytes", value);
     }
+}
+
+string format_number(unsigned int value)
+{
+    char buffer[100];
+
+    format_number(buffer, sizeof(buffer), value);
+
+    return buffer;
 }
 
 string format_bitrate(unsigned int value)

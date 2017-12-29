@@ -146,6 +146,8 @@ using namespace std;
 
 string ffmpeg_geterror(int errnum);
 double ffmpeg_cvttime(int64_t ts, const AVRational & time_base);
+
+string format_number(unsigned int value);
 string format_bitrate(unsigned int value);
 string format_samplerate(unsigned int value);
 string format_time(time_t value);
@@ -160,6 +162,7 @@ int show_formats_devices(int device_only);
 const char * get_codec_name(enum AVCodecID codec_id);
 const char * get_codecs(const char * type, OUTPUTTYPE * output_type, enum AVCodecID * audio_codecid, enum AVCodecID * video_codecid, int m_enable_ismv);
 
+void format_number(char *output, size_t size, unsigned int value);
 void format_bitrate(char *output, size_t size, unsigned int value);
 void format_samplerate(char *output, size_t size, unsigned int value);
 void format_time(char *output, size_t size, time_t value);
