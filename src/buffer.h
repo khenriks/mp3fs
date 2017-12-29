@@ -1,7 +1,7 @@
 /*
- * data buffer class header for mp3fs
+ * cache class header for ffmpegfs
  *
- * Copyright (C) 2013 K. Henriksson
+ * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,27 +21,61 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#pragma once
+
 #include <stdint.h>
+#include <string>
 
-#include <cstddef>
+#define CACHE_CHECK_BIT(mask, var)  ((mask) == (mask & (var)))
 
-class Buffer {
+#define CLOSE_CACHE_NOOPT   0x00                        // Dummy, do nothing special
+#define CLOSE_CACHE_FREE    0x01                        // Free memory for cache entry
+#define CLOSE_CACHE_DELETE  (0x02 | CLOSE_CACHE_FREE)   // Delete cache entry, will unlink cached file! Implies CLOSE_CACHE_FREE.
+
+using namespace std;
+
+class Buffer
+{
 public:
-    Buffer();
-    ~Buffer();
+    explicit Buffer(const string & filename);
+    virtual ~Buffer();
 
+    bool open(bool erase_cache = false);                // Open cache, if erase_cache = true delete old file before opening
+    bool close(int flags = CLOSE_CACHE_NOOPT);
+    bool flush();
+    bool clear();
+    bool reserve(size_t size);
     size_t write(const uint8_t* data, size_t length);
-    size_t write(const uint8_t* data, size_t length, size_t offset);
-    uint8_t* write_prepare(size_t length);
-    uint8_t* write_prepare(size_t length, size_t offset);
-    void increment_pos(ptrdiff_t increment);
+    bool seek(size_t pos);
     size_t tell() const;
-    void copy_into(uint8_t* out_data, size_t offset, size_t size) const;
+    size_t size() const;
+    size_t buffer_watermark() const;
+    bool copy(uint8_t* out_data, size_t offset, size_t bufsize);
+
+    void lock();
+    void unlock();
+
+    const string & filename() const;
+    const string & cachefile() const;
+
+protected:
+    bool remove_file();
+
 private:
-    bool reallocate(size_t size);
-    uint8_t* buffer_data;
-    size_t buffer_pos;
-    size_t buffer_size;
+    uint8_t* write_prepare(size_t length);
+    void increment_pos(ptrdiff_t increment);
+    bool reallocate(size_t newsize);
+
+private:
+    pthread_mutex_t m_mutex;
+    const string &  m_filename;
+    string          m_cachefile;
+    size_t          m_buffer_pos;           // Read/write position
+    size_t          m_buffer_watermark;     // Number of bytes in buffer
+    volatile bool   m_is_open;
+    size_t          m_buffer_size;          // Current buffer size
+    uint8_t *       m_buffer;
+    int             m_fd;
 };
 
 #endif

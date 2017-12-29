@@ -1,6 +1,6 @@
 #!/bin/bash
 
-. "${BASH_SOURCE%/*}/funcs.sh"
+. "${BASH_SOURCE%/*}/funcs.sh" "$1"
 
 hash_image() {
     python <<END
@@ -11,5 +11,10 @@ print hashlib.sha1(artwork).hexdigest()
 END
 }
 
-[ "$(hash_image "$DIRNAME/obama.mp3")" = 794865299f4fac10ba5719b203f0c71b5b524e95 ]
-[ "$(hash_image "$DIRNAME/raven.mp3")" = 5cd44d9e64c90d137ed3614213e309afec060dbc ]
+echo Checking $DIRNAME/obama.$DESTTYPE
+[ "$(hash_image "$DIRNAME/obama.$DESTTYPE")" = 794865299f4fac10ba5719b203f0c71b5b524e95 ]
+
+echo Checking $DIRNAME/raven.$DESTTYPE
+[ "$(hash_image "$DIRNAME/raven.$DESTTYPE")" = 5cd44d9e64c90d137ed3614213e309afec060dbc ]
+
+echo OK

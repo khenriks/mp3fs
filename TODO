@@ -1,0 +1,18 @@
+ffmpegfs TODOs
+
+* Add intelligent stream copy, e.g., if transcoding a transport stream
+  that already represents a H264 video stream it would be possible to
+  simply repackage it to a mp4 container without recoding.
+* Add option to deinterlace video if required (will improve picture
+  quality when view in browsers via HTML5.
+* Improve Libav compatibility (maybe it is possible to use Libav 11+).
+* Make video size selectable,
+* Add album art support.
+* Improve recoding detection. Currently a file is recoded if the source
+  file size or timestamp changes, but not if different encoding options
+  are selected (e.g. a different bitrate).
+* DVD support: Detect IFO files and list separate DVD chapters or programs
+  as separate files. Currently VOB files will be transcodes as is not
+  allowing to access anything reasonable without seeking the stream.
+* Bluray support: Similar to DVD support - split into chapters or programs.
+* Many more ideas I'll have when I wake up and find them nice to have.

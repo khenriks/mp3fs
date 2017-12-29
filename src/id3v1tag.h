@@ -1,7 +1,7 @@
 /*
- * Ogg Vorbis decoder class header for mp3fs
+ * ID3v1 tag structure
  *
- * Copyright (C) 2015 Thomas Schwarzenberger
+ * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,30 +18,26 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef VORBIS_DECODER_H
-#define VORBIS_DECODER_H
+#ifndef ID3V1TAG_H
+#define ID3V1TAG_H
 
-#include "coders.h"
-#include "vorbis/vorbisfile.h"
+#pragma once
 
-#include <map>
-#include <string>
-
-class VorbisDecoder : public Decoder {
-public:
-    ~VorbisDecoder();
-    int open_file(const char* filename);
-    time_t mtime();
-    int process_metadata(Encoder* encoder);
-    int process_single_fr(Encoder* encoder, Buffer* buffer);
-private:
-    time_t mtime_;
-    OggVorbis_File vf;
-    vorbis_info *vi;
-    int current_section;
-    typedef std::map<std::string,int> meta_map_t;
-    static const meta_map_t metatag_map;
+struct ID3v1
+{
+    char m_sTAG[3];         // Contains "TAG"
+    char m_sSongTitle[30];  // Title of sound track
+    char m_sSongArtist[30]; // Artist Name
+    char m_sAlbumName[30];  // Album Name
+    char m_sYear[4];        // Year of publishing
+    char m_sComment[28];    // Any user comments
+    char m_bPad;            // Must be '\0'
+    char m_bTitleNo;
+    char m_bGenre;          // Type of music
 };
 
+extern void init_id3v1(ID3v1 *id3v1);
 
-#endif
+#define ID3V1_TAG_LENGTH sizeof(ID3v1)  // 128 bytes
+
+#endif // ID3V1TAG_H

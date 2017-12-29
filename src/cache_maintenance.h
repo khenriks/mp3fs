@@ -1,7 +1,7 @@
 /*
- * Encoder and decoder interfaces for ffmpegfs
+ * FFmpeg transcoder class header for ffmpegfs
  *
- * Copyright (C) 2013 K. Henriksson
+ * Copyright (C) 2017 Norbert Schlia (nschlia@oblivion-software.de)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,25 +18,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef CODERS_H
-#define CODERS_H
+#ifndef CACHE_MAINTENANCE_H
+#define CACHE_MAINTENANCE_H
 
 #pragma once
 
-/* Define lists of available encoder and decoder extensions. */
-extern const char* encoder_list[];
-extern const char* decoder_list[];
+int start_cache_maintenance(time_t interval);
+int stop_cache_maintenance();
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-/* Check for availability of audio types. */
-int check_encoder(const char* type);
-int check_decoder(const char* type);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+#endif // CACHE_MAINTENANCE_H

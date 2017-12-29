@@ -1,0 +1,349 @@
+= FFMPEGFS(1) =
+:doctype:       manpage
+:man source:    ffmpegfs
+:man version:   {revnumber}
+:man manual:    User Commands
+
+== NAME ==
+ffmpegfs - mounts and transcodes a multitude of formats like FLACs or OGGs
+to mp3s or mp4s on the fly
+
+
+== SYNOPSIS ==
+*ffmpegfs* ['OPTION']... 'IN_DIR' 'OUT_DIR'
+
+
+== DESCRIPTION ==
+The ffmpegfs(1) command will mount the directory 'IN_DIR' on 'OUT_DIR'.
+Thereafter, accessing 'OUT_DIR' will show the contents of 'IN_DIR', with
+all supported media files transparently renamed and transcoded to *mp3*/*mp4*
+format upon access.
+
+
+== OPTIONS ==
+Usage: ffmpegfs [OPTION]... IN_DIR OUT_DIR
+
+Mount IN_DIR on OUT_DIR, converting audio/video files to *mp3* or *mp4* upon access.
+
+=== Encoding options === 
+*--desttype*=TYPE, *-odesttype*=TYPE::
+    Select destination format. 'TYPE' can currently be
+    either *mp3* or *mp4*. To stream videos, *mp4* must be
+    selected.
+    Default: *mp4*
+
+=== Audio Options ===
+*--audiobitrate*=BITRATE, *-o audiobitrate*=BITRATE::
+    Audio encoding bitrate.
+    Default: 128 kbit
+*--audiosamplerate*=SAMPLERATE, *-o audiosamplerate*=SAMPLERATE::
+    Limits the output sample rate to 'SAMPLERATE'. If the source file
+    sample rate is more it will be downsampled automatically.
+    Typical values are 8000, 11025, 22050, 44100,
+    48000, 96000, 192000. Set to 0 to keep source rate.
+    Default: 44.1 kHz
++
+*Acceptable values for 'BITRATE':*
++
+*mp4:* 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, 160, 176, 192, 224, 
+256, 288, 320, 352, 384, 416 and 448 kbps.
++    
+*mp3:* For sampling frequencies of 32, 44.1, and 48 kHz, 'BITRATE' can be among 32,
+40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, and 320 kbps.
++
+For sampling frequencies of 16, 22.05, and 24 kHz, 'BITRATE' can be among 8,
+16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, and 160 kbps.
++
+When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
+160, 192, 224, 256, and 320 kbps.
+
+*BITRATE*:: can be defined as...
+ * n bit/s:  #  or #bps
+ * n kbit/s: #M or #Mbps
+ * n Mbit/s: #M or #Mbps
+
+*SAMPLERATE*:: can be defined as...
+ * In Hz:  #  or #Hz
+ * In kHz: #K or #KHz
+
+=== Video Options ===
+*--videobitrate*=BITRATE, *-o videobitrate*=BITRATE::
+    Video encoding bit rate. Setting this too high or low may
+    cause transcoding to fail.
+    Default: 2 Mbit
++    
+*mp4:* May be specfied as 500 to 25000 kbit.
+
+*BITRATE*:: can be defined as...
+ * n bit/s:  #  or #bps
+ * n kbit/s: #M or #Mbps
+ * n Mbit/s: #M or #Mbps
+
+=== Cache Options ===
+ *--expiry_time*=TIME, *-o expiry_time*=TIME::
+    Cache entries expire after 'TIME' and will be deleted
+    to save disk space.
+    Default: 1 week
+ *--max_inactive_suspend*=TIME, *-o max_inactive_suspend*=TIME::
+    While being accessed the file is transcoded to the target format
+    in the background. When the client quits transcoding will continue
+    until this time out. Transcoding is suspended until it is
+    accessed again, and transcoding will continue.
+    Default: 2 minutes
+ *--max_inactive_abort*=TIME, *-o max_inactive_abort*=TIME::
+    While being accessed the file is transcoded to the target format
+    in the background. When the client quits transcoding will continue
+    until this time out, and the transcoder thread quits
+    Default: 5 minutes
+ *--max_cache_size*=SIZE, *-o max_cache_size*=SIZE::
+    Set the maximum diskspace used by the cache. If the cache would grow
+    beyond this limit when a file is transcoded, old entries will be deleted
+    to keep the cache within the size limit.
+    Default: unlimited
+ *--min_diskspace*=SIZE, *-o min_diskspace*=SIZE::
+    Set the required diskspace on the cachepath mount. If the remaining
+    space would fall below 'SIZE' when a file is transcoded, old entries will
+    be deleted to keep the diskspace within the limit.
+    Default: 0 (no minimum space)
+ *--cachepath*=DIR, *-o cachepath*=DIR::
+    Sets the disk cache directory to 'DIR'. Will be created if not existing.
+    The user running ffmpegfs must have write access to the location.
+    Default: temp directory, e.g. /tmp
+ *--disable_cache*, -o *disable_cache*::
+    Disable the cache functionality.
+    Default: enabled
+ *--cache_maintenance*=TIME, *-o cache_maintenance*=TIME::
+    Starts cache maintenance in TIME intervals. This will enforce the expery_time,
+    max_cache_size and min_diskspace settings. Do not set too low as this will slow
+    down transcoding.
+    Only one ffmpegfs process will do the maintenance.
+    Default: 1 hour
+ *--prune_cache*::
+    Prune cache immediately according to the above settings.
+
+ *TIME*:: can be defined as...
+  * Seconds: #
+  * Minutes: #m
+  * Hours:   #h
+  * Days:    #d
+  * Weeks:   #w
+
+ *SIZE*:: can be defined as...
+  * In bytes:  # or #B
+  * In KBytes: #K or #KB
+  * In MBytes: #B or #MB
+  * In GBytes: #G or #GB
+  * In TBytes: #T or #TB
+
+=== Other ===
+*--max_threads*=COUNT, *-o max_threads*=COUNT
+    Limit concurrent transcoder threads. Set to 0 for unlimited threads.
+    Recommended values are up to 16 times number of CPU cores.
+    Default: 16 times number of detected cpu cores
+
+=== Logging ===
+*--log_maxlevel*=LEVEL, *-o log_maxlevel*=LEVEL::
+    Maximum level of messages to log, either ERROR, WARNING, INFO, DEBUG
+    or TRACE. Defaults to INFO, and always set to DEBUG in debug mode.
+    Note that the other log flags must also be set to enable logging.
+*--log_stderr*, *-o log_stderr*::
+    Enable outputting logging messages to stderr.
+    Enabled in debug mode.
+*--log_syslog*, *-o log_syslog*::
+    Enable outputting logging messages to syslog.
+*--logfile*=FILE, *-o logfile*=FILE::
+    File to output log messages to. By default, no
+    file will be written.
+
+=== General/FUSE options ===
+*-d*, *-o debug*::
+    Enable debug output. This will result in a large quantity of
+    diagnostic information being printed to stderr as the program runs.
+    This option will normally not be used. It implies *-f*.
+
+*-f*::
+    Run in foreground instead of detaching from the terminal.
+
+*-h*, *--help*::
+    Print usage information.
+
+*-V*, *--version*::
+    Output version information.
+
+*-s*::
+    Force single-threaded operation.
+
+== Usage ==
+Mount your filesystem like this:
+
+    ffmpegfs [--audiobitrate bitrate] [--videobitrate bitrate] musicdir mountpoint [-o fuse_options]
+
+For example,
+
+    ffmpegfs --audiobitrate 256 -videobitrate 2000000 /mnt/music /mnt/ffmpegfs -o allow_other,ro
+
+In recent versions of FUSE and ffmpegfs, the same can be achieved with the
+following entry in `/etc/fstab`:
+
+    ffmpegfs#/mnt/music /mnt/ffmpegfs fuse allow_other,ro,audiobitrate=256,videobitrate=2000000 0 0
+
+At this point files like `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
+show up as `/mnt/ffmpegfs/**.mp4`.
+
+Note that the "allow_other" option by default can only be used by root.
+You must either run ffmpegfs as root or better add a "user_allow_other" key
+to /etc/fuse.conf.
+
+"allow_other" is required to allow any user access to the mount, by
+default this is only possible for the user who launched ffmpegfs.
+
+== HOW IT WORKS ==
+When a file is opened, the decoder and encoder are initialised and
+the file metadata is read. At this time the final filesize can be
+determined approximately. This works well for *mp3* output files,
+but only fair to good for *mp4*.
+
+As the file is read, it is transcoded into an internal per-file
+buffer. This buffer continues to grow while the file is being read
+until the whole file is transcoded in memory. Once decoded the 
+file is kept in a disk buffer and can be accessed very fast.
+
+Transcoding is done in an extra thread, so if other processes should
+access the same file they will share the same transcoded data, saving
+CPU time. If the first process abandons the file before its end,
+transconding will continue for some time. If the file is accessed
+again before the timeout, transcoding will go on, if not it stops 
+and the chunk created so far discarded to save disk space.
+
+Seeking within a file will cause the file to be transcoded up to the
+seek point (if not already done). This is not usually a problem
+since most programs will read a file from start to finish. Future
+enhancements may provide true random seeking (But if this is feasible
+is yet unclear due to restrictions to positioning inside compressed
+streams).
+
+*mp3*: ID3 version 2.4 and 1.1 tags are created from the comments in the 
+source file. They are located at the start and end of the file 
+respectively. 
+
+*mp4*: Same applies to meta atoms in *mp4* containers.
+
+*mp3* target only: A special optimisation is made so that applications 
+which scan for id3v1 tags do not have to wait for the whole file to be 
+transcoded before reading the tag. This *dramatically* speeds up such
+applications.
+
+== SUPPORTED OUTPUT FORMATS ==
+A few words to the supported output formats which are *mp3* and *mp4* 
+currently. There is not much to say about the *mp3* output as these 
+are regular *mp3* files with no strings attached. They should play 
+well in any modern player.
+
+The *mp4* files created are special, though, as *mp4* is not quite suited
+for live streaming. Reason being that the start block of an *mp4* 
+contains a field with the size of the compressed data section. Suffice
+to say that this field cannot be filled in until the size is known,
+which means compression must be completed first, a seek done to the
+beginning, and the size atom updated.
+
+Alas, for a continous live stream, that size will never be known or
+for our transcoded files one would have to wait for the whole file
+to be recoded. If that was not enough some important pieces of 
+information are located at the end of the file, including meta tags
+with artist, album, etc.
+
+Subsequently many applications will go to the end of an *mp4* to read
+important information before going back to the head of the file and
+start playing. This will break the whole transcode-on-demand idea
+of ffmpegfs.
+
+To get around the restriction several extensions have been developed,
+one of which is called "faststart" that relocates the afformentioned
+data from the end to the beginning of the *mp4*. Additonally, the size field 
+can be left empty (0). isml (smooth live streaming) is another extension.
+
+For direct to stream transcoding several new features in *mp4* need to
+be used (ISMV, faststart, separate_moof/empty_moov to name them) 
+which are not implemented in older versions (or if available, not 
+working properly). 
+
+By default faststart files will be created with an empty size field so 
+that the file can be started to be written out at once instead of 
+decoding it as a whole before this is possible. That would mean it would 
+take some time before playback can start.
+
+The data part is divided into chunks of about 5 seconds length each, 
+this allowing to fill in the size fields early enough.
+
+As a draw back not all players support the format, or play back with 
+strange side effects. VLC plays the file, but updates the time display 
+every 5 seconds only. When streamed over HTML5 video tags, there will be no
+total time shown, but that is OK, as it is yet unknown. The playback
+cannot be positioned past the current playback position, only backwards.
+
+But that's the price of starting playback, fast.
+
+So there is a lot of work to be put into *mp4* support, still.
+
+The output format must be selectable for the desired audience, for
+streaming or opening the files locally, for example.
+
+== DEVELOPMENT ==
+ffmpegfs uses Git for revision control. You can obtain the full repository
+with:
+
+    git clone https://github.com/nschlia/ffmpegfs.git
+
+ffmpegfs is written in a mixture of C and C++ and uses the following libraries:
+
+* [FUSE](http://fuse.sourceforge.net/)
+
+If using the FFmpeg support (Libav works as well, but FFmpeg is recommended):
+
+* [FFmpeg](https://www.FFmpeg.org/) or [Libav](https://www.Libav.org/)
+
+== Future Plans ==
+* Create a windows version
+* Add DVD/Bluray support
+
+== AUTHORS ==
+This fork with FFmpeg support is maintained by Norbert Schlia 
+(nschlia@oblivion-software.de) since 2017.
+
+Based on work by K. Henriksson (from 2008 to 2017) and the original author 
+David Collett (from 2006 to 2008).
+
+Much thanks to them for the original work!
+
+== LICENSE ==
+This program can be distributed under the terms of the GNU GPL version 3
+or later. It can be found [online](http://www.gnu.org/licenses/gpl-3.0.html)
+or in the COPYING file.
+
+This file and other documentation files can be distributed under the terms of
+the GNU Free Documentation License 1.3 or later. It can be found
+[online](http://www.gnu.org/licenses/fdl-1.3.html) or in the COPYING.DOC file.
+
+== FFMPEG LICENSE ==
+FFmpeg is licensed under the GNU Lesser General Public License (LGPL) 
+version 2.1 or later. However, FFmpeg incorporates several optional 
+parts and optimizations that are covered by the GNU General Public 
+License (GPL) version 2 or later. If those parts get used the GPL 
+applies to all of FFmpeg. 
+
+See https://www.ffmpeg.org/legal.html for details.
+
+== COPYRIGHT ==
+This fork with FFmpeg support copyright \(C) 2017 Norbert Schlia
+(nschlia@oblivion-software.de).
+
+Based on work Copyright \(C) 2006-2008 David Collett, 2008-2013 
+K. Henriksson.
+
+Much thanks to them for the original work!
+
+This is free software: you are free to change and redistribute it under
+the terms of the GNU General Public License (GPL) version 3 or later.
+
+This manual is copyright \(C) 2010-2011 K. Henriksson and 2017 N. Schlia 
+and may be distributed under GNU Free Documentation License 1.3 or later.

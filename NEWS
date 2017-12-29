@@ -1,4 +1,102 @@
-mp3fs NEWS
+ffmpegfs NEWS
+
+Important changes in 0.95 (2017-12-XX)
+
+NOTE: The cache format has changed and is not compatible with prior versions.
+      Please do a "rm -Rf /tmp/ffmpegfs" before starting this version to
+      create a new cache.
+TODO: see new TODO file from now on.
+
+Changes in this release:
+* Heureka! This is the first beta release towards V1.0. From now on only bug
+  fixes will go into the code.
+* Implemented automatic cache maintenance (ensure cache size, disk space, delete
+  outdated entries).
+* Fixed checks ("make checks" works now. Known problem: mp4 sizes seem to differ
+  when using different FFmpeg releases. Will be addressed soon.).
+* Fixed mp3 format (The mp3s were completely braindead.).
+* Fixed suspend timeout coming although file currently accessed.
+* Fixed crash during shutdown because sqlite was used too late.
+* Fixed handling of multiple destination types in same cache.
+* Properly pass on errno/save and store in cache database.
+* Additional database fields for target parameters (bitrate, error code etc.).
+  Will be used in later versions to detect if a file needs re-transcoding.
+* Files will be recoded if source file changes (size or timestamp).
+* Report compiler version when run with -v parameter.
+* Set gcc optimisation higer (now -o3).
+
+Important changes in 0.94 (2017-12-19)
+
+Changes in this release:
+* Decided to rename mp3fs to ffmpegfs because the project has grown far beyond
+  a simple clone of mp3fs and the changes it will surely never be pushed back
+  to the parent project. A big random applause to the makers of mp3fs for giving
+  me a good head start!
+* Cache management: Keep cache size within limit, ensure min. disk space, prune
+  oldest entries
+* Fix many crashes
+* Fix memory leaks   
+* Fix mp4 check suite
+* Add mp3 check suite
+* Add --disable_cache parameter
+* Add --prune_cache parameter. Starts cache pruning manually.
+* TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
+  that already represents a H264 video stream it would be possible to
+  simply repackage it to a mp4 container without recoding.
+* TODO: Cover art support still missing
+
+nschlia@oblivion-software.de
+
+Important changes in 0.92-FFmpeg (2017-12-14)
+
+Changes in this release:
+* Files will now be decoded to /tmp/ instead of memory.
+* Full support for video files (mp4 target only).
+* Removed --statcachesize option as caching will be handled by new disk cache.
+* Fixed sync problems while accessing the same file concurrently
+* Fixed many crashes due to incorrect usage of FFmpeg
+* Cache directory user defineable
+* Delete cache entries after predefined time
+* Detect if file has changed and re-transcode
+* Limit cache size
+* Suspend transcode after n seconds
+* Exit transcode after n seconds
+* TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
+  that already represents a H264 video stream it would be possible to 
+  simply repackage it to a mp4 container without recoding.
+
+nschlia@oblivion-software.de
+
+Important changes in 0.91-FFmpeg (2017-10-04)
+
+Added FFmpeg for decoding and encoding. 
+
+Changes in this release:
+* Replaced decoding and encoding with FFmpeg.
+* Removed discrete FLAC/Ogg/MP3 libraries. FFmpeg supports a wide range of
+  formats, including these, so they are no longer required.
+* TODO: Supports a huge number of file formats now (run "mp3fs --codecs" for 
+  a list).
+* The standard target format is mp4 now (use "-o mp3" or "--output mp3"
+  to change back to mp3).
+* Many other formats are possible, e.g. "-o ogg", they will be added later
+  because due to the manner in which Fuse requires access to the files they
+  need to be implemented with care.
+* See manual or run "mp3fs -h" for even more new options.
+* Run "mp3fs -f" to get a list of all supported input formats.
+* Caching of file attributes is now the default as if
+  "--statcachesize=500" was given. Add "--statcachesize=0" to turn off
+  (not really a bright idea, though).
+* TODO: Files will now be decoded to /tmp/ instead of memory if larger
+  than 100MB. Add "--maxmemcache=X" to change. Examples for X: 80000,
+  80MB or 1GB. Do not set to a too large value as you may run out of
+  memory.
+* TODO: Support for video files.
+* TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
+  that already represents a H264 video stream it would be possible to 
+  simply repackage it to a mp4 container without recoding.
+
+nschlia@oblivion-software.de
 
 Important changes in 0.91 (2014-05-14)
 
@@ -70,6 +168,7 @@ Changes in this release:
 ========================================================================
 
 Copyright (C) 2010-2014 K. Henriksson
+Copyright (C) 2017 Norbert Schlia (FFmpeg support)
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or

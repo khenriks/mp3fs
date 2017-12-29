@@ -9,9 +9,11 @@
 Makefile.in
 Makefile
 .deps/
-mp3fs.1
+ffmpegfs.1
 /lib/libbase64.a
-/src/mp3fs
+/src/ffmpegfs
 /test/fpcompare
 /test/*.log
 /test/*.trs
+src/.directory
+build

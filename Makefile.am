@@ -1,24 +1,24 @@
 # Definitions for sub-makes
-export WARNINGS = -Wall -Wextra -Wconversion -Wno-sign-conversion
-export AM_CFLAGS = -std=c11 $(INCLUDES) $(WARNINGS)
-export AM_CXXFLAGS = -std=c++11 $(INCLUDES) $(WARNINGS)
+export WARNINGS = -Wall -Wextra -Wconversion 
+export AM_CFLAGS = -std=c11 $(INCLUDES) $(WARNINGS) -D_GNU_SOURCE
+export AM_CXXFLAGS = -std=c++11 $(INCLUDES) $(WARNINGS) -D_GNU_SOURCE
 
-SUBDIRS = lib src test
+SUBDIRS = src test
 
-dist_man_MANS = mp3fs.1
+dist_man_MANS = ffmpegfs.1
 
-MAINTAINERCLEANFILES = mp3fs.1
+MAINTAINERCLEANFILES = ffmpegfs.1
 
-EXTRA_DIST = INSTALL.md README.md mp3fs.1.txt
+EXTRA_DIST = INSTALL.md README.md ffmpegfs.1.txt
 
-mp3fs.1: mp3fs.1.txt
+ffmpegfs.1: ffmpegfs.1.txt
 	$(AM_V_GEN)a2x -a revnumber="$(VERSION)" \
 		-a revdate="$(shell date +'%B %Y')" -f manpage $<
 
 # Remove absolutely every generated file
 .PHONY: squeaky-clean
 squeaky-clean: maintainer-clean
-	rm -rf aclocal.m4 configure config Makefile.in lib/Makefile.in src/Makefile.in test/Makefile.in
+	rm -rf aclocal.m4 configure config Makefile.in src/Makefile.in test/Makefile.in
 
 dist-hook:
 	@echo 'Creating ChangeLog file from git log'
