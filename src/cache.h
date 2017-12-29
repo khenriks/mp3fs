@@ -34,7 +34,7 @@ using namespace std;
 typedef struct
 {
     string          m_filename;
-    char            m_target_format[11];
+    char            m_desttype[11];
     bool            m_enable_ismv;
     unsigned int    m_audiobitrate;
     unsigned int    m_audiosamplerate;
@@ -58,7 +58,8 @@ class Cache_Entry;
 
 class Cache
 {
-    typedef map<string, Cache_Entry *> cache_t;
+    typedef pair<string, string> cache_key_t;
+    typedef map<cache_key_t, Cache_Entry *> cache_t;
 
     friend class Cache_Entry;
 
@@ -86,9 +87,9 @@ public:
 protected:
     bool read_info(t_cache_info & cache_info);
     bool write_info(const t_cache_info & cache_info);
-    bool delete_info(const string &filename);
+    bool delete_info(const string & filename, const string & desttype);
 
-    Cache_Entry* create_entry(const string & filename);
+    Cache_Entry* create_entry(const string & filename, const string & desttype);
     bool delete_entry(Cache_Entry **cache_entry, int flags);
 
     void close_index();

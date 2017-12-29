@@ -95,31 +95,40 @@ bool Cache::load_index()
             throw false;
         }
 
-        // Create table and index if nit existing
-        sql =   "CREATE TABLE IF NOT EXISTS cache_entry\n"
-                "(\n"
-                "id                 INTEGER PRIMARY KEY ASC,\n"
-                "filename           TEXT UNIQUE NOT NULL,\n"
-                "target_format      CHAR(10) NOT NULL,\n"
-                "enable_ismv        BOOLEAN NOT NULL,\n"
-                "audiobitrate       UNSIGNED INT NOT NULL,\n"
-                "audiosamplerate    UNSIGNED INT NOT NULL,\n"
-                "videobitrate       UNSIGNED INT NOT NULL,\n"
-                "videowidth         UNSIGNED INT NOT NULL,\n"
-                "videoheight        UNSIGNED INT NOT NULL,\n"
-                "deinterlace        BOOLEAN NOT NULL,\n"
-                "predicted_filesize UNSIGNED BIG INT NOT NULL,\n"
-                "encoded_filesize   UNSIGNED BIG INT NOT NULL,\n"
-                "finished           BOOLEAN NOT NULL,\n"
-                "error              BOOLEAN NOT NULL,\n"
-                "errno              INT NOT NULL,\n"
-                "averror            INT NOT NULL,\n"
-                "creation_time      DATETIME NOT NULL,\n"
-                "access_time        DATETIME NOT NULL,\n"
-                "file_time          DATETIME NOT NULL,\n"
-                "file_size          UNSIGNED BIG INT NOT NULL\n"
-                ");\n"
-                "CREATE UNIQUE INDEX IF NOT EXISTS \"filename_idx\" ON \"cache_entry\" (\"filename\" ASC);\n";
+        // Create cache_entry table not already existing
+        sql =
+                "CREATE TABLE IF NOT EXISTS `cache_entry` (\n"
+                //
+                // Primary key: filename + desttype
+                //
+                "    `filename`             TEXT NOT NULL,\n"
+                "    `desttype`             CHAR ( 10 ) NOT NULL,\n"
+                //
+                // Encoding parameters
+                //
+                "    `enable_ismv`          BOOLEAN NOT NULL,\n"
+                "    `audiobitrate`         UNSIGNED INT NOT NULL,\n"
+                "    `audiosamplerate`      UNSIGNED INT NOT NULL,\n"
+                "    `videobitrate`         UNSIGNED INT NOT NULL,\n"
+                "    `videowidth`           UNSIGNED INT NOT NULL,\n"
+                "    `videoheight`          UNSIGNED INT NOT NULL,\n"
+                "    `deinterlace`          BOOLEAN NOT NULL,\n"
+                //
+                // Encoding results
+                //
+                "    `predicted_filesize`	UNSIGNED BIG INT NOT NULL,\n"
+                "    `encoded_filesize`     UNSIGNED BIG INT NOT NULL,\n"
+                "    `finished`             BOOLEAN NOT NULL,\n"
+                "    `error`                BOOLEAN NOT NULL,\n"
+                "    `errno`                INT NOT NULL,\n"
+                "    `averror`              INT NOT NULL,\n"
+                "    `creation_time`        DATETIME NOT NULL,\n"
+                "    `access_time`          DATETIME NOT NULL,\n"
+                "    `file_time`            DATETIME NOT NULL,\n"
+                "    `file_size`            UNSIGNED BIG INT NOT NULL,\n"
+                "    PRIMARY KEY(`filename`,`desttype`)\n"
+                ");\n";
+                //"CREATE UNIQUE INDEX IF NOT EXISTS `idx_cache_entry_key` ON `cache_entry` (`filename`,`desttype`);\n";
 
         if (SQLITE_OK != (ret = sqlite3_exec(m_cacheidx_db, sql, callback, 0, &errmsg)))
         {
@@ -137,7 +146,7 @@ bool Cache::load_index()
         // prepare the statements
 
         sql =   "INSERT OR REPLACE INTO cache_entry\n"
-                "(filename, target_format, enable_ismv, audiobitrate, audiosamplerate, videobitrate, videowidth, videoheight, deinterlace, predicted_filesize, encoded_filesize, finished, error, errno, averror, creation_time, access_time, file_time, file_size) VALUES\n"
+                "(filename, desttype, enable_ismv, audiobitrate, audiosamplerate, videobitrate, videowidth, videoheight, deinterlace, predicted_filesize, encoded_filesize, finished, error, errno, averror, creation_time, access_time, file_time, file_size) VALUES\n"
                 "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime(?, 'unixepoch'), datetime(?, 'unixepoch'), datetime(?, 'unixepoch'), ?);\n";
 
         if (SQLITE_OK != (ret = sqlite3_prepare_v2(m_cacheidx_db, sql, -1, &m_cacheidx_insert_stmt, NULL)))
@@ -146,7 +155,7 @@ bool Cache::load_index()
             throw false;
         }
 
-        sql =   "SELECT target_format, enable_ismv, audiobitrate, audiosamplerate, videobitrate, videowidth, videoheight, deinterlace, predicted_filesize, encoded_filesize, finished, error, errno, averror, strftime('%s', creation_time), strftime('%s', access_time), strftime('%s', file_time), file_size FROM cache_entry WHERE filename = ?;\n";
+        sql =   "SELECT desttype, enable_ismv, audiobitrate, audiosamplerate, videobitrate, videowidth, videoheight, deinterlace, predicted_filesize, encoded_filesize, finished, error, errno, averror, strftime('%s', creation_time), strftime('%s', access_time), strftime('%s', file_time), file_size FROM cache_entry WHERE filename = ? AND desttype = ?;\n";
 
         if (SQLITE_OK != (ret = sqlite3_prepare_v2(m_cacheidx_db, sql, -1, &m_cacheidx_select_stmt, NULL)))
         {
@@ -154,7 +163,7 @@ bool Cache::load_index()
             throw false;
         }
 
-        sql =   "DELETE FROM cache_entry WHERE filename = ?;\n";
+        sql =   "DELETE FROM cache_entry WHERE filename = ? AND desttype = ?;\n";
 
         if (SQLITE_OK != (ret = sqlite3_prepare_v2(m_cacheidx_db, sql, -1, &m_cacheidx_delete_stmt, NULL)))
         {
@@ -203,11 +212,17 @@ bool Cache::read_info(t_cache_info & cache_info)
 
     try
     {
-        assert(sqlite3_bind_parameter_count(m_cacheidx_select_stmt) == 1);
+        assert(sqlite3_bind_parameter_count(m_cacheidx_select_stmt) == 2);
 
         if (SQLITE_OK != (ret = sqlite3_bind_text(m_cacheidx_select_stmt, 1, cache_info.m_filename.c_str(), -1, NULL)))
         {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
+            ffmpegfs_error("SQLite3 select error 'filename': %d, %s", ret, sqlite3_errstr(ret));
+            throw false;
+        }
+
+        if (SQLITE_OK != (ret = sqlite3_bind_text(m_cacheidx_select_stmt, 2, cache_info.m_desttype, -1, NULL)))
+        {
+            ffmpegfs_error("SQLite3 select error 'desttype': %d, %s", ret, sqlite3_errstr(ret));
             throw false;
         }
 
@@ -218,8 +233,8 @@ bool Cache::read_info(t_cache_info & cache_info)
             const char *text                = (const char *)sqlite3_column_text(m_cacheidx_select_stmt, 0);
             if (text != NULL)
             {
-                cache_info.m_target_format[0] = '\0';
-                strncat(cache_info.m_target_format, text, sizeof(cache_info.m_target_format) - 1);
+                cache_info.m_desttype[0] = '\0';
+                strncat(cache_info.m_desttype, text, sizeof(cache_info.m_desttype) - 1);
             }
             
             cache_info.m_enable_ismv        = sqlite3_column_int(m_cacheidx_select_stmt, 1);
@@ -295,7 +310,7 @@ bool Cache::write_info(const t_cache_info & cache_info)
         assert(sqlite3_bind_parameter_count(m_cacheidx_insert_stmt) == 19);
 
         SQLBINDTXT(1, cache_info.m_filename.c_str());
-        SQLBINDTXT(2, cache_info.m_target_format);
+        SQLBINDTXT(2, cache_info.m_desttype);
         SQLBINDNUM(sqlite3_bind_int, 3, cache_info.m_enable_ismv);
         SQLBINDNUM(sqlite3_bind_int, 4, cache_info.m_audiobitrate);
         SQLBINDNUM(sqlite3_bind_int, 5, cache_info.m_audiosamplerate);
@@ -339,7 +354,7 @@ bool Cache::write_info(const t_cache_info & cache_info)
     return success;
 }
 
-bool Cache::delete_info(const string & filename)
+bool Cache::delete_info(const string & filename, const string & desttype)
 {
     int ret;
     bool success = true;
@@ -354,11 +369,17 @@ bool Cache::delete_info(const string & filename)
 
     try
     {
-        assert(sqlite3_bind_parameter_count(m_cacheidx_delete_stmt) == 1);
+        assert(sqlite3_bind_parameter_count(m_cacheidx_delete_stmt) == 2);
 
         if (SQLITE_OK != (ret = sqlite3_bind_text(m_cacheidx_delete_stmt, 1, filename.c_str(), -1, NULL)))
         {
-            ffmpegfs_error("SQLite3 select error: %d, %s", ret, sqlite3_errstr(ret));
+            ffmpegfs_error("SQLite3 select error 'filename': %d, %s", ret, sqlite3_errstr(ret));
+            throw false;
+        }
+
+        if (SQLITE_OK != (ret = sqlite3_bind_text(m_cacheidx_delete_stmt, 2, desttype.c_str(), -1, NULL)))
+        {
+            ffmpegfs_error("SQLite3 select error 'desttype': %d, %s", ret, sqlite3_errstr(ret));
             throw false;
         }
 
@@ -404,7 +425,7 @@ void Cache::close_index()
     sqlite3_shutdown();
 }
 
-Cache_Entry* Cache::create_entry(const string & filename)
+Cache_Entry* Cache::create_entry(const string & filename, const string & desttype)
 {
     Cache_Entry* cache_entry = new Cache_Entry(this, filename);
     if (cache_entry == NULL)
@@ -412,7 +433,7 @@ Cache_Entry* Cache::create_entry(const string & filename)
         ffmpegfs_error("Out of memory for '%s'.", filename.c_str());
         return NULL;
     }
-    m_cache.insert(make_pair(filename, cache_entry));
+    m_cache.insert(make_pair(make_pair(filename, desttype), cache_entry));
     return cache_entry;
 }
 
@@ -428,7 +449,7 @@ bool Cache::delete_entry(Cache_Entry ** cache_entry, int flags)
         // If CLOSE_CACHE_FREE is set, also free memory
         if (CACHE_CHECK_BIT(CLOSE_CACHE_FREE, flags))
         {
-            m_cache.erase((*cache_entry)->m_cache_info.m_filename);
+            m_cache.erase(make_pair((*cache_entry)->m_cache_info.m_filename, (*cache_entry)->m_cache_info.m_desttype));
 
             delete (*cache_entry);
             *cache_entry = NULL;
@@ -455,11 +476,11 @@ Cache_Entry* Cache::open(const char *filename)
         sanitised_name = resolved_name;
     }
 
-    cache_t::iterator p = m_cache.find(sanitised_name);
+    cache_t::iterator p = m_cache.find(make_pair(sanitised_name, params.m_desttype));
     if (p == m_cache.end())
     {
         ffmpegfs_trace("Created new transcoder for '%s'.", sanitised_name.c_str());
-        cache_entry = create_entry(sanitised_name);
+        cache_entry = create_entry(sanitised_name, params.m_desttype);
     }
     else
     {
@@ -498,7 +519,7 @@ bool Cache::prune_expired()
         return true;
     }
 
-    vector<string> filenames;
+    vector<cache_key_t> keys;
     sqlite3_stmt * stmt;
     time_t now = time(NULL);
     char sql[1024];
@@ -508,7 +529,7 @@ bool Cache::prune_expired()
 
     ffmpegfs_trace("Pruning expired cache entries older than %s...\n", buffer);
 
-    sprintf(sql, "SELECT filename, strftime('%%s', access_time) FROM cache_entry WHERE strftime('%%s', access_time) + %zu < %zu;\n", params.m_expiry_time, now);
+    sprintf(sql, "SELECT filename, desttype, strftime('%%s', access_time) FROM cache_entry WHERE strftime('%%s', access_time) + %zu < %zu;\n", params.m_expiry_time, now);
 
     sqlite3_prepare(m_cacheidx_db, sql, -1, &stmt, NULL);
 
@@ -516,28 +537,30 @@ bool Cache::prune_expired()
     while((ret = sqlite3_step(stmt)) == SQLITE_ROW)
     {
         const char *filename = (const char *) sqlite3_column_text(stmt, 0);
-        filenames.push_back(filename);
+        const char *desttype = (const char *) sqlite3_column_text(stmt, 1);
 
-        format_time(buffer, sizeof(buffer), now - (time_t)sqlite3_column_int64(stmt, 1));
+        keys.push_back(make_pair(filename, desttype));
+
+        format_time(buffer, sizeof(buffer), now - (time_t)sqlite3_column_int64(stmt, 2));
         ffmpegfs_trace("Found %s old entry: %s\n", buffer, filename);
     }
 
-    ffmpegfs_trace("%zu expired cache entries found.\n", filenames.size());
+    ffmpegfs_trace("%zu expired cache entries found.\n", keys.size());
 
     if (ret == SQLITE_DONE)
     {
-        for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); it++)
+        for (vector<cache_key_t>::const_iterator it = keys.begin(); it != keys.end(); it++)
         {
-            const string & filename = *it;
-            ffmpegfs_trace("Pruning: %s\n", filename.c_str());
+            const cache_key_t & key = *it;
+            ffmpegfs_trace("Pruning: %s Type: %s", key.first.c_str(), key.second.c_str());
 
-            cache_t::iterator p = m_cache.find(filename);
+            cache_t::iterator p = m_cache.find(key);
             if (p != m_cache.end())
             {
                 delete_entry(&p->second, CLOSE_CACHE_DELETE);
             }
 
-            delete_info(filename);
+            delete_info(key.first, key.second);
         }
     }
     else
@@ -558,7 +581,7 @@ bool Cache::prune_cache_size()
         return true;
     }
 
-    vector<string> filenames;
+    vector<cache_key_t> keys;
     vector<size_t> filesizes;
     sqlite3_stmt * stmt;
     const char * sql;
@@ -568,7 +591,7 @@ bool Cache::prune_cache_size()
 
     ffmpegfs_trace("Pruning oldest cache entries exceeding %s cache size...\n", buffer);
 
-    sql = "SELECT filename, encoded_filesize FROM cache_entry ORDER BY access_time ASC;\n";
+    sql = "SELECT filename, desttype, encoded_filesize FROM cache_entry ORDER BY access_time ASC;\n";
 
     sqlite3_prepare(m_cacheidx_db, sql, -1, &stmt, NULL);
 
@@ -577,8 +600,10 @@ bool Cache::prune_cache_size()
     while((ret = sqlite3_step(stmt)) == SQLITE_ROW)
     {
         const char *filename = (const char *) sqlite3_column_text(stmt, 0);
-        size_t size = (size_t)sqlite3_column_int64(stmt, 1);
-        filenames.push_back(filename);
+        const char *desttype = (const char *) sqlite3_column_text(stmt, 1);
+        size_t size = (size_t)sqlite3_column_int64(stmt, 2);
+
+        keys.push_back(make_pair(filename, desttype));
         filesizes.push_back(size);
         total_size += size;
     }
@@ -596,18 +621,19 @@ bool Cache::prune_cache_size()
         if (ret == SQLITE_DONE)
         {
             int n = 0;
-            for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); it++)
+            for (vector<cache_key_t>::const_iterator it = keys.begin(); it != keys.end(); it++)
             {
-                const string & filename = *it;
-                ffmpegfs_trace("Pruning: %s\n", filename.c_str());
+                const cache_key_t & key = *it;
 
-                cache_t::iterator p = m_cache.find(filename);
+                ffmpegfs_trace("Pruning: %s Type: %s", key.first.c_str(), key.second.c_str());
+
+                cache_t::iterator p = m_cache.find(key);
                 if (p != m_cache.end())
                 {
                     delete_entry(&p->second, CLOSE_CACHE_DELETE);
                 }
 
-                delete_info(filename);
+                delete_info(key.first, key.second);
 
                 total_size -= filesizes[n++];
 
@@ -653,12 +679,12 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
     ffmpegfs_trace("%s disk space before prune.\n", buffer);
     if (free_bytes < params.m_min_diskspace + predicted_filesize)
     {
-        vector<string> filenames;
+        vector<cache_key_t> keys;
         vector<size_t> filesizes;
         sqlite3_stmt * stmt;
         const char * sql;
 
-        sql = "SELECT filename, encoded_filesize FROM cache_entry ORDER BY access_time ASC;\n";
+        sql = "SELECT filename, desttype, encoded_filesize FROM cache_entry ORDER BY access_time ASC;\n";
 
         sqlite3_prepare(m_cacheidx_db, sql, -1, &stmt, NULL);
 
@@ -666,8 +692,10 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
         while((ret = sqlite3_step(stmt)) == SQLITE_ROW)
         {
             const char *filename = (const char *) sqlite3_column_text(stmt, 0);
-            size_t size = (size_t)sqlite3_column_int64(stmt, 1);
-            filenames.push_back(filename);
+            const char *desttype = (const char *) sqlite3_column_text(stmt, 1);
+            size_t size = (size_t)sqlite3_column_int64(stmt, 2);
+
+            keys.push_back(make_pair(filename, desttype));
             filesizes.push_back(size);
         }
 
@@ -682,18 +710,19 @@ bool Cache::prune_disk_space(size_t predicted_filesize)
         if (ret == SQLITE_DONE)
         {
             int n = 0;
-            for (vector<string>::const_iterator it = filenames.begin(); it != filenames.end(); it++)
+            for (vector<cache_key_t>::const_iterator it = keys.begin(); it != keys.end(); it++)
             {
-                const string & filename = *it;
-                ffmpegfs_trace("Pruning: %s\n", filename.c_str());
+                const cache_key_t & key = *it;
 
-                cache_t::iterator p = m_cache.find(filename);
+                ffmpegfs_trace("Pruning: %s Type: %s", key.first.c_str(), key.second.c_str());
+
+                cache_t::iterator p = m_cache.find(key);
                 if (p != m_cache.end())
                 {
                     delete_entry(&p->second, CLOSE_CACHE_DELETE);
                 }
 
-                delete_info(filename);
+                delete_info(key.first, key.second);
 
                 free_bytes += filesizes[n++];
 

@@ -2,21 +2,28 @@ ffmpegfs NEWS
 
 Important changes in 0.95 (2017-12-XX)
 
+NOTE: The cache format has changed and is not compatible with prior versions.
+      Please do a "rm -Rf /tmp/ffmpegfs" before starting this version to
+      create a new cache.
+TODO: see new TODO file from now on.
+
 Changes in this release:
-* This is the first beta release towards V1.0.
-* Implemented cache maintenance.
-* Fixed checks ("make checks" works).
-* Fixed mp3 format.
+* Heureka! This is the first beta release towards V1.0. From now on only bug
+  fixes will go into the code.
+* Implemented automatic cache maintenance (ensure cache size, disk space, delete
+  outdated entries).
+* Fixed checks ("make checks" works now. Known problem: mp4 sizes seem to differ
+  when using different FFmpeg releases. Will be addressed soon.).
+* Fixed mp3 format (The mp3s were completely braindead.).
 * Fixed suspend timeout coming although file currently accessed.
 * Fixed crash during shutdown because sqlite was used too late.
-* Properly pass on errno/save into db.
+* Fixed handling of multiple destination types in same cache.
+* Properly pass on errno/save and store in cache database.
 * Additional database fields for target parameters (bitrate, error code etc.).
-* Files will be recoded if source file changes.
-* Add compiler version to -v parameter
-* Set gcc optimisation to -o3
-* TODO: Add intelligent stream copy, e.g., if transcoding a transport stream
-  that already represents a H264 video stream it would be possible to
-  simply repackage it to a mp4 container without recoding.
+  Will be used in later versions to detect if a file needs re-transcoding.
+* Files will be recoded if source file changes (size or timestamp).
+* Report compiler version when run with -v parameter.
+* Set gcc optimisation higer (now -o3).
 
 Important changes in 0.94 (2017-12-19)
 

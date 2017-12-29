@@ -33,8 +33,8 @@ Cache_Entry::Cache_Entry(Cache *owner, const string & filename)
 {
     m_cache_info.m_filename = filename;
 
-    m_cache_info.m_target_format[0] = '\0';
-    strncat(m_cache_info.m_target_format, params.m_desttype, sizeof(m_cache_info.m_target_format) - 1);
+    m_cache_info.m_desttype[0] = '\0';
+    strncat(m_cache_info.m_desttype, params.m_desttype, sizeof(m_cache_info.m_desttype) - 1);
 
     m_buffer = new Buffer(m_cache_info.m_filename);
 
@@ -75,7 +75,7 @@ void Cache_Entry::clear(int fetch_file_time)
     init_id3v1(&m_id3v1);
 
     //string          m_filename;
-    //char            m_target_format[11];
+    //char            m_desttype[11];
 	
 #ifndef DISABLE_ISMV
     m_cache_info.m_enable_ismv = params.m_enable_ismv;
@@ -134,7 +134,7 @@ bool Cache_Entry::write_info()
 
 bool Cache_Entry::delete_info()
 {
-    return m_owner->delete_info(m_cache_info.m_filename);
+    return m_owner->delete_info(m_cache_info.m_filename, m_cache_info.m_desttype);
 }
 
 bool Cache_Entry::update_access(bool bUpdateDB /*= false*/)

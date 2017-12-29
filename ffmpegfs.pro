@@ -72,4 +72,5 @@ DISTFILES += \
     test/test_filesize \
     test/test_picture \
     test/test_tags \
-    test/funcs.sh
+    test/funcs.sh \
+    TODO
