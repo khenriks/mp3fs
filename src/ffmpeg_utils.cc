@@ -510,3 +510,39 @@ void format_size(char *output, size_t size, size_t value)
         snprintf(output, size, "%zu bytes", value);
     }
 }
+
+string format_bitrate(unsigned int value)
+{
+    char buffer[100];
+
+    format_bitrate(buffer, sizeof(buffer), value);
+
+    return buffer;
+}
+
+string format_samplerate(unsigned int value)
+{
+    char buffer[100];
+
+    format_samplerate(buffer, sizeof(buffer), value);
+
+    return buffer;
+}
+
+string format_time(time_t value)
+{
+    char buffer[100];
+
+    format_time(buffer, sizeof(buffer), value);
+
+    return buffer;
+}
+
+string format_size(size_t value)
+{
+    char buffer[100];
+
+    format_size(buffer, sizeof(buffer), value);
+
+    return buffer;
+}

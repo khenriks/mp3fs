@@ -146,6 +146,10 @@ using namespace std;
 
 string ffmpeg_geterror(int errnum);
 double ffmpeg_cvttime(int64_t ts, const AVRational & time_base);
+string format_bitrate(unsigned int value);
+string format_samplerate(unsigned int value);
+string format_time(time_t value);
+string format_size(size_t value);
 #endif
 
 #ifdef __cplusplus

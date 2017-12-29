@@ -470,7 +470,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         if (params.m_audiosamplerate && codec_ctx->sample_rate > (int)params.m_audiosamplerate)
         {
             // Limit sample rate
-            ffmpegfs_info("Limiting audio sample rate from %i Hz to %i Hz for '%s'.", codec_ctx->sample_rate, params.m_audiosamplerate, m_in.m_pFormat_ctx->filename);
+            ffmpegfs_info("Limiting audio sample rate from %s to %s for '%s'.", format_samplerate(codec_ctx->sample_rate).c_str(), format_samplerate(params.m_audiosamplerate).c_str(), m_in.m_pFormat_ctx->filename);
             codec_ctx->sample_rate          = params.m_audiosamplerate;
         }
         codec_ctx->sample_fmt               = output_codec->sample_fmts[0];
