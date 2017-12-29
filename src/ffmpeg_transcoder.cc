@@ -143,7 +143,7 @@ int FFMPEG_Transcoder::open_codec_context(int *stream_idx, AVCodecContext **avct
         dec = avcodec_find_decoder(codec_id);
         if (!dec)
         {
-            ffmpegfs_error("Failed to find %s codec.", get_media_type_string(type));
+            ffmpegfs_error("Failed to find %s input codec.", get_media_type_string(type));
             return AVERROR(EINVAL);
         }
 
@@ -155,7 +155,7 @@ int FFMPEG_Transcoder::open_codec_context(int *stream_idx, AVCodecContext **avct
 
         if (ret < 0)
         {
-            ffmpegfs_error("Failed to find %s input codec (error '%s').", get_media_type_string(type), ffmpeg_geterror(ret).c_str());
+            ffmpegfs_error("Failed to open %s input codec (error '%s').", get_media_type_string(type), ffmpeg_geterror(ret).c_str());
             return ret;
         }
 
@@ -434,17 +434,13 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
         return AVERROR(EINVAL);
     }
 
-#if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFmpeg 3
-    out_video_stream = avformat_new_stream(m_out.m_pFormat_ctx, NULL);
-#else
     out_video_stream = avformat_new_stream(m_out.m_pFormat_ctx, output_codec);
-#endif
     if (!out_video_stream)
     {
         ffmpegfs_error("Could not allocate stream for '%s'.", m_in.m_pFormat_ctx->filename);
         return AVERROR(ENOMEM);
     }
-    out_video_stream->id = m_out.m_pFormat_ctx->nb_streams-1;
+    out_video_stream->id = m_out.m_pFormat_ctx->nb_streams - 1;
 #if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFmpeg 3
     codec_ctx = avcodec_alloc_context3(output_codec);
     if (!codec_ctx)
@@ -534,7 +530,7 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
             // Rescal image if required
             const AVPixFmtDescriptor *fmtin = av_pix_fmt_desc_get((AVPixelFormat)in_video_stream->codec->pix_fmt);
             const AVPixFmtDescriptor *fmtout = av_pix_fmt_desc_get(codec_ctx->pix_fmt);
-            ffmpegfs_debug("Initialising pixel format conversion %s to %s for '%s'.", fmtin != NULL ? fmtin->name : "-", fmtout != NULL ? fmtout->name : "-", m_in.m_pFormat_ctx->filename);
+            ffmpegfs_debug("Initialising pixel format conversion from %s to %s for '%s'.", fmtin != NULL ? fmtin->name : "-", fmtout != NULL ? fmtout->name : "-", m_in.m_pFormat_ctx->filename);
             assert(m_pSws_ctx == NULL);
             m_pSws_ctx = sws_getContext(
                         // Source settings
@@ -625,12 +621,12 @@ int FFMPEG_Transcoder::add_stream(AVCodecID codec_id)
     /** Open the encoder for the audio stream to use it later. */
     if ((ret = avcodec_open2(codec_ctx, output_codec, &opt)) < 0)
     {
-        ffmpegfs_error("Could not open audio output codec (error '%s') for '%s'.", ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
+        ffmpegfs_error("Could not open %s output codec %s (error '%s') for '%s'.", get_media_type_string(output_codec->type), get_codec_name(codec_id), ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
         avcodec_free_context(&codec_ctx);
         return ret;
     }
 
-    ffmpegfs_debug("successfully opened %s output codec for '%s'.", get_codec_name(codec_id), m_in.m_pFormat_ctx->filename);
+    ffmpegfs_debug("Successfully opened %s output codec %s for '%s'.", get_media_type_string(output_codec->type), get_codec_name(codec_id), m_in.m_pFormat_ctx->filename);
 
 #if (LIBAVCODEC_VERSION_MAJOR > 56) // Check for FFmpeg 3
     ret = avcodec_parameters_from_context(out_video_stream->codecpar, codec_ctx);
@@ -659,7 +655,7 @@ int FFMPEG_Transcoder::open_output_filestreams(Buffer *buffer)
     int             ret = 0;
 
 #ifndef DISABLE_ISMV
-    ext = get_codecs(params.m_desttype, &m_out.m_output_type, &audio_codecid, &video_codecid, params.m_enable_ismv);
+    ext = get_codecs(params.m_desttype, &m_out.m_output_type, &audio_codec_id, &video_codecid, params.m_enable_ismv);
 #else
     ext = get_codecs(params.m_desttype, &m_out.m_output_type, &audio_codec_id, &video_codec_id, 0);
 #endif
@@ -687,7 +683,7 @@ int FFMPEG_Transcoder::open_output_filestreams(Buffer *buffer)
 
     //video_codecid = m_out.m_pFormat_ctx->oformat->video_codec;
 
-    if (m_in.m_nVideo_stream_idx != INVALID_STREAM)
+    if (m_in.m_nVideo_stream_idx != INVALID_STREAM && video_codec_id != AV_CODEC_ID_NONE)
     {
         ret = add_stream(video_codec_id);
         if (ret < 0)
@@ -698,9 +694,9 @@ int FFMPEG_Transcoder::open_output_filestreams(Buffer *buffer)
 
     //    m_in.m_nAudio_stream_idx = INVALID_STREAM;
 
-    //audio_codecid = m_out.m_pFormat_ctx->oformat->audio_codec;
+    //audio_codec_id = m_out.m_pFormat_ctx->oformat->audio_codec;
 
-    if (m_in.m_nAudio_stream_idx != INVALID_STREAM)
+    if (m_in.m_nAudio_stream_idx != INVALID_STREAM && audio_codec_id != AV_CODEC_ID_NONE)
     {
         ret = add_stream(audio_codec_id);
         if (ret < 0)
@@ -917,7 +913,7 @@ int FFMPEG_Transcoder::decode_frame(AVPacket *input_packet, int *data_present)
 {
     int decoded = 0;
 
-    if (input_packet->stream_index == m_in.m_nAudio_stream_idx)
+    if (input_packet->stream_index == m_in.m_nAudio_stream_idx && m_out.m_nAudio_stream_idx > -1)
     {
         /** Temporary storage of the input samples of the frame read from the file. */
         AVFrame *input_frame = NULL;
@@ -997,7 +993,7 @@ cleanup2:
 
         av_frame_free(&input_frame);
     }
-    else if (input_packet->stream_index == m_in.m_nVideo_stream_idx)
+    else if (input_packet->stream_index == m_in.m_nVideo_stream_idx && m_out.m_nVideo_stream_idx > -1)
     {
         AVFrame *input_frame = NULL;
         int ret = 0;
@@ -1064,9 +1060,10 @@ cleanup2:
         {
             if (m_pSws_ctx != NULL)
             {
-                AVCodecContext *c = m_out.m_pVideo_codec_ctx;
+                AVCodecContext *codec_ctx = m_out.m_pVideo_codec_ctx;
 
-                AVFrame * tmp_frame = alloc_picture(AV_PIX_FMT_YUV420P, c->width, c->height);
+                //AVFrame * tmp_frame = alloc_picture(AV_PIX_FMT_YUV420P, codec_ctx->width, codec_ctx->height);
+                AVFrame * tmp_frame = alloc_picture(codec_ctx->pix_fmt, codec_ctx->width, codec_ctx->height);
                 if (!tmp_frame)
                 {
                     return AVERROR(ENOMEM);
@@ -1074,7 +1071,7 @@ cleanup2:
 
                 sws_scale(m_pSws_ctx,
                           (const uint8_t * const *)input_frame->data, input_frame->linesize,
-                          0, c->height,
+                          0, codec_ctx->height,
                           tmp_frame->data, tmp_frame->linesize);
 
                 tmp_frame->pts = input_frame->pts;
@@ -1878,7 +1875,7 @@ size_t FFMPEG_Transcoder::calculate_size()
         size_t size = 0;
 
 #ifndef DISABLE_ISMV
-        ext = get_codecs(params.m_desttype, &m_out.m_output_type, &audio_codecid, &video_codecid, params.m_enable_ismv);
+        ext = get_codecs(params.m_desttype, &m_out.m_output_type, &audio_codec_id, &video_codecid, params.m_enable_ismv);
 #else
         ext = get_codecs(params.m_desttype, &m_out.m_output_type, &audio_codec_id, &video_codec_id, 0);
 #endif
@@ -1933,9 +1930,13 @@ size_t FFMPEG_Transcoder::calculate_size()
                 //    }
                 break;
             }
+            case AV_CODEC_ID_NONE:
+            {
+                break;
+            }
             default:
             {
-                ffmpegfs_error("Internal error - unsupported audio codec '%s' for '%s'.", get_codec_name(audio_codec_id), m_in.m_pFormat_ctx->filename);
+                ffmpegfs_error("Internal error - unsupported audio codec '%s' for format %s.", get_codec_name(audio_codec_id), params.m_desttype);
                 break;
             }
             }
@@ -1957,9 +1958,18 @@ size_t FFMPEG_Transcoder::calculate_size()
                     size += (size_t)(duration * 1.025  * (double)videobitrate / 8); // add 2.5% for overhead
                     break;
                 }
+                case AV_CODEC_ID_MJPEG:
+                {
+                    // TODO... size += ???
+                    break;
+                }
+                case AV_CODEC_ID_NONE:
+                {
+                    break;
+                }
                 default:
                 {
-                    ffmpegfs_error("Internal error - unsupported video codec '%s' for '%s'.", get_codec_name(video_codec_id), m_in.m_pFormat_ctx->filename);
+                    ffmpegfs_warning("Unsupported video codec '%s' for format %s.", get_codec_name(video_codec_id), params.m_desttype);
                     break;
                 }
                 }

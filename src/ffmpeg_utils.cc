@@ -287,7 +287,7 @@ const char * get_codecs(const char * type, OUTPUTTYPE * output_type, AVCodecID *
     if (!strcasecmp(type, "mp3"))
     {
         *audio_codecid = AV_CODEC_ID_MP3;
-        *video_codecid = AV_CODEC_ID_PNG;
+        *video_codecid = AV_CODEC_ID_NONE; //AV_CODEC_ID_MJPEG;
         if (output_type != NULL)
         {
             *output_type = TYPE_MP3;
