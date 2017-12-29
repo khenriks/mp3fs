@@ -1223,12 +1223,21 @@ int FFMPEG_Transcoder::add_samples_to_fifo(uint8_t **converted_input_samples, co
     }
 
     /** Store the new samples in the FIFO buffer. */
-    if (av_audio_fifo_write(m_pAudioFifo, (void **)converted_input_samples,
-                            frame_size) < frame_size)
+    ret = av_audio_fifo_write(m_pAudioFifo, (void **)converted_input_samples, frame_size);
+    if (ret < frame_size)
     {
-        ffmpegfs_error("Could not write data to FIFO for '%s'.", m_in.m_pFormat_ctx->filename);
+        if (ret < 0)
+        {
+            ffmpegfs_error("Could not write data to FIFO (error '%s') for '%s'.", ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
+        }
+        else
+        {
+            ffmpegfs_error("Could not write data to FIFO for '%s'.", m_in.m_pFormat_ctx->filename);
+            ret = AVERROR_EXIT;
+        }
         return AVERROR_EXIT;
     }
+
     return 0;
 }
 
@@ -1553,6 +1562,8 @@ int FFMPEG_Transcoder::load_encode_and_write()
 {
     /** Temporary storage of the output samples of the frame written to the file. */
     AVFrame *output_frame;
+    int ret = 0;
+
     /**
      * Use the maximum number of possible samples per frame.
      * If there is less than the maximum possible frame size in the FIFO
@@ -1562,25 +1573,38 @@ int FFMPEG_Transcoder::load_encode_and_write()
     int data_written;
 
     /** Initialize temporary storage for one output frame. */
-    if (init_audio_output_frame(&output_frame, frame_size))
-        return AVERROR_EXIT;
+    ret = init_audio_output_frame(&output_frame, frame_size);
+    if (ret < 0)
+    {
+        return ret;
+    }
 
     /**
      * Read as many samples from the FIFO buffer as required to fill the frame.
      * The samples are stored in the frame temporarily.
      */
-    if (av_audio_fifo_read(m_pAudioFifo, (void **)output_frame->data, frame_size) < frame_size)
+    ret = av_audio_fifo_read(m_pAudioFifo, (void **)output_frame->data, frame_size);
+    if (ret < frame_size)
     {
-        ffmpegfs_error("Could not read data from FIFO for '%s'.", m_in.m_pFormat_ctx->filename);
+        if (ret < 0)
+        {
+            ffmpegfs_error("Could not read data from FIFO (error '%s') for '%s'.", ffmpeg_geterror(ret).c_str(), m_in.m_pFormat_ctx->filename);
+        }
+        else
+        {
+            ffmpegfs_error("Could not read data from FIFO for '%s'.", m_in.m_pFormat_ctx->filename);
+            ret = AVERROR_EXIT;
+        }
         av_frame_free(&output_frame);
-        return AVERROR_EXIT;
+        return ret;
     }
 
     /** Encode one frame worth of audio samples. */
-    if (encode_audio_frame(output_frame, &data_written))
+    ret = encode_audio_frame(output_frame, &data_written);
+    if (ret < 0)
     {
         av_frame_free(&output_frame);
-        return AVERROR_EXIT;
+        return ret;
     }
     av_frame_free(&output_frame);
     return 0;
@@ -1716,7 +1740,8 @@ int FFMPEG_Transcoder::process_single_fr()
              * output sample format and put it into the FIFO buffer.
              */
 
-            if (read_decode_convert_and_store(&finished))
+            ret = read_decode_convert_and_store(&finished);
+            if (ret < 0)
             {
                 goto cleanup;
             }
@@ -1742,7 +1767,8 @@ int FFMPEG_Transcoder::process_single_fr()
              * Take one frame worth of audio samples from the FIFO buffer,
              * encode it and write it to the output file.
              */
-            if (load_encode_and_write())
+            ret = load_encode_and_write();
+            if (ret < 0)
             {
                 goto cleanup;
             }
@@ -1760,7 +1786,8 @@ int FFMPEG_Transcoder::process_single_fr()
                 /** Flush the encoder as it may have delayed frames. */
                 do
                 {
-                    if (encode_audio_frame(NULL, &data_written))
+                    ret = encode_audio_frame(NULL, &data_written);
+                    if (ret < 0)
                     {
                         goto cleanup;
                     }
@@ -1773,7 +1800,8 @@ int FFMPEG_Transcoder::process_single_fr()
     }
     else
     {
-        if (read_decode_convert_and_store(&finished))
+        ret = read_decode_convert_and_store(&finished);
+        if (ret < 0)
         {
             goto cleanup;
         }
@@ -1793,7 +1821,8 @@ int FFMPEG_Transcoder::process_single_fr()
         /** Encode one video frame. */
         int data_written = 0;
         output_frame->key_frame = 0;    // Leave that decision to decoder
-        if (encode_video_frame(output_frame, &data_written))
+        ret = encode_video_frame(output_frame, &data_written);
+        if (ret < 0)
         {
             av_frame_free(&output_frame);
             goto cleanup;
@@ -1813,7 +1842,8 @@ int FFMPEG_Transcoder::process_single_fr()
             int data_written = 0;
             do
             {
-                if (encode_video_frame(NULL, &data_written))
+                ret = encode_video_frame(NULL, &data_written);
+                if (ret < 0)
                 {
                     goto cleanup;
                 }
@@ -1993,7 +2023,6 @@ int64_t FFMPEG_Transcoder::seek(void * pOpaque, int64_t i4Offset, int nWhence)
         {
             i64ResOffset = buffer->tell();
         }
-
         else
         {
             nWhence &= ~(AVSEEK_SIZE | AVSEEK_FORCE);
