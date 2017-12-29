@@ -1,7 +1,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # Sets up package and initializes build system.
-AC_INIT([FFMPEGFS], [0.94])
+AC_INIT([FFMPEGFS], [0.95])
 AC_CONFIG_SRCDIR([src/ffmpegfs.c])
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign])
