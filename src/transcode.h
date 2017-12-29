@@ -28,7 +28,6 @@
 // For release 1.0: disable ISMV (smooth streaming) and image filters
 #define DISABLE_ISMV
 #define DISABLE_AVFILTER
-#define DISABLE_MAX_THREADS
 
 #define FUSE_USE_VERSION 26
 
@@ -72,9 +71,7 @@ extern struct ffmpegfs_params
     int             m_disable_cache;            // Disable cache
     time_t          m_cache_maintenance;        // Prune timer interval
     int             m_prune_cache;              // Prune cache immediately
-#ifndef DISABLE_MAX_THREADS
-    int             m_max_threads;              // TODO Feature #2250: Max. number of recoder threads
-#endif
+    unsigned int    m_max_threads;              // Max. number of recoder threads
 } params;
 
 /* Fuse operations struct */

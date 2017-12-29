@@ -26,6 +26,7 @@
 #include "coders.h"
 
 #include <regex.h>
+#include <sys/sysinfo.h>
 
 // TODO: Move this elsewehere, so this file can be library agnostic
 #pragma GCC diagnostic push
@@ -82,9 +83,7 @@ struct ffmpegfs_params params =
     .m_disable_cache        = 0,                        // default: enabled
     .m_cache_maintenance    = (60*60),                  // default: prune every 60 minutes
     .m_prune_cache          = 0,                        // Do not prune cache immediately
-#ifndef DISABLE_MAX_THREADS
-    .m_max_threads          = 0,                        // default: 4 * cpu cores (set later)
-#endif
+    .m_max_threads          = 0,                        // default: 16 * CPU cores (this value here is overwritten later)
 };
 
 enum
@@ -153,10 +152,8 @@ static struct fuse_opt ffmpegfs_opts[] =
     FFMPEGFS_OPT("--prune_cache",               m_prune_cache, 1),
 
     // Other
-#ifndef DISABLE_MAX_THREADS
     FFMPEGFS_OPT("--max_threads=%u",            m_max_threads, 0),
     FFMPEGFS_OPT("max_threads=%u",              m_max_threads, 0),
-#endif
 
     FFMPEGFS_OPT("-d",                          m_debug, 1),
     FFMPEGFS_OPT("debug",                       m_debug, 1),
@@ -315,15 +312,13 @@ static void usage(char *name)
           " * n MBytes: #B or #MB\n"
           " * n GBytes: #G or #GB\n"
           " * n TBytes: #T or #TB\n"
-      #ifndef DISABLE_MAX_THREADS
           "\n"
           "Other:\n"
           "\n"
           "     --max_threads=COUNT, -o max_threads=COUNT\n"
           "                           Limit concurrent transcoder threads. Set to 0 for unlimited threads."
-          "                           Reasonable values are up to 4 times number of CPU cores."
-          "                           Default: 4 times number of detected cpu cores\n"
-      #endif
+          "                           Recommended values are up to 16 times number of CPU cores."
+          "                           Default: 16 times number of detected cpu cores\n"
           "\n"
           "Logging:\n"
           "\n"
@@ -766,6 +761,7 @@ static void print_params()
     char max_cache_size[100];
     char min_diskspace[100];
     char cache_maintenance[100];
+    char max_threads[100];
 
     cache_path(cachepath, sizeof(cachepath));
 
@@ -791,6 +787,7 @@ static void print_params()
     {
         strcpy(cache_maintenance, "inactive");
     }
+    format_number(max_threads, sizeof(max_threads), params.m_max_threads);
 
     ffmpegfs_info(PACKAGE_NAME " options:\n\n"
                                "Base Path         : %s\n"
@@ -821,9 +818,7 @@ static void print_params()
                                "Cache Path        : %s\n"
                                "Disable Cache     : %s\n"
                                "Maintenance Timer : %s\n"
-              #ifndef DISABLE_MAX_THREADS
-                               "Max. Threads      : %u\n"
-              #endif
+                               "Max. Threads      : %s\n"
                   ,
                   params.m_basepath,
                   params.m_mountpath,
@@ -852,14 +847,9 @@ static void print_params()
                   min_diskspace,
                   cachepath,
                   params.m_disable_cache ? "yes" : "no",
-                  cache_maintenance
-#ifndef DISABLE_MAX_THREADS
-   , params.m_max_threads
-#endif
+                  cache_maintenance,
+                  max_threads
                   );
-
-
-
 }
 
 int main(int argc, char *argv[])
@@ -883,9 +873,8 @@ int main(int argc, char *argv[])
     av_log_set_callback(ffmpeg_log);
 #endif
 
-#ifndef DISABLE_MAX_THREADS
-    params.m_max_threads = get_nprocs() * 4;
-#endif
+    // Set default
+    params.m_max_threads = (unsigned)get_nprocs() * 16;
 
     if (fuse_opt_parse(&args, &params, ffmpegfs_opts, ffmpegfs_opt_proc))
     {
@@ -938,14 +927,12 @@ int main(int argc, char *argv[])
     if (!params.m_basepath)
     {
         fprintf(stderr, "ERROR: No valid basepath specified.\n\n");
-        //usage(argv[0]);
         return 1;
     }
 
     if (params.m_basepath[0] != '/')
     {
         fprintf(stderr, "ERROR: basepath must be an absolute path.\n\n");
-        //usage(argv[0]);
         return 1;
     }
 
@@ -953,28 +940,24 @@ int main(int argc, char *argv[])
     if (stat(params.m_basepath, &st) != 0 || !S_ISDIR(st.st_mode))
     {
         fprintf(stderr, "ERROR: basepath is not a valid directory: %s\n\n", params.m_basepath);
-        //usage(argv[0]);
         return 1;
     }
 
     if (!params.m_mountpath)
     {
         fprintf(stderr, "ERROR: No valid mountpath specified.\n\n");
-        //usage(argv[0]);
         return 1;
     }
 
     if (params.m_mountpath[0] != '/')
     {
         fprintf(stderr, "ERROR: mountpath must be an absolute path.\n\n");
-        //usage(argv[0]);
         return 1;
     }
 
     if (stat(params.m_mountpath, &st) != 0 || !S_ISDIR(st.st_mode))
     {
         fprintf(stderr, "ERROR: mountpath is not a valid directory: %s\n\n", params.m_mountpath);
-        //usage(argv[0]);
         return 1;
     }
 
@@ -982,7 +965,6 @@ int main(int argc, char *argv[])
     if (!check_encoder(params.m_desttype))
     {
         fprintf(stderr, "ERROR: No encoder available for desttype: %s\n\n", params.m_desttype);
-        //usage(argv[0]);
         return 1;
     }
 

@@ -39,7 +39,7 @@ typedef struct tagThread_Data
 
 static Cache *cache;
 static volatile bool thread_exit;
-static volatile int thread_count;
+static volatile unsigned int thread_count;
 
 extern "C" {
 static void *decoder_thread(void *arg);
@@ -214,28 +214,27 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
 
         if (!cache_entry->m_is_decoding && !cache_entry->m_cache_info.m_finished)
         {
-#ifndef DISABLE_MAX_THREADS
-            // NOT WORKING...
-            if (params.m_max_threads && thread_count >= params.m_max_threads)
-            {
-                ffmpegfs_warning("Too many active threads. Unable to start new thread.");
-
-                while (!thread_exit && thread_count >= params.m_max_threads)
-                {
-                    sleep(0);
-                }
-
-                if (thread_count >= params.m_max_threads)
-                {
-                    ffmpegfs_error("Unable to start new thread. Cancelling transcode.");
-                    _errno = EBUSY; // Report resource busy
-                    throw false;
-                }
-            }
-#endif
-
             if (begin_transcode)
             {
+                if (params.m_max_threads && thread_count >= params.m_max_threads)
+                {
+                    ffmpegfs_warning("Too many active threads. Deferring transcoder start until threads become available for '%s'.", filename);
+
+                    while (!thread_exit && thread_count >= params.m_max_threads)
+                    {
+                        sleep(0);
+                    }
+
+                    if (thread_count >= params.m_max_threads)
+                    {
+                        ffmpegfs_error("Unable to start new thread. Cancelling transcode for '%s'.", filename);
+                        _errno = EBUSY; // Report resource busy
+                        throw false;
+                    }
+
+                    ffmpegfs_info("Threads available again. Continuing with '%s'.", filename);
+                }
+
                 pthread_attr_t attr;
                 int stack_size = 0;
                 int s;
@@ -341,11 +340,11 @@ struct Cache_Entry* transcoder_new(const char* filename, int begin_transcode)
         {
             ffmpegfs_debug("Reading file from cache: '%s'.", filename);
 
-//            if (!cache->prune_cache())
-//            {
-//                _errno = errno;
-//                throw false;
-//            }
+            //            if (!cache->prune_cache())
+            //            {
+            //                _errno = errno;
+            //                throw false;
+            //            }
         }
 
         cache_entry->unlock();
@@ -490,7 +489,6 @@ static void *decoder_thread(void *arg)
 
     try
     {
-
         ffmpegfs_info("Transcoding '%s' to %s.", cache_entry->filename().c_str(), params.m_desttype);
 
         if (transcoder == NULL)
