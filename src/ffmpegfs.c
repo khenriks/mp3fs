@@ -938,14 +938,14 @@ int main(int argc, char *argv[])
     if (!params.m_basepath)
     {
         fprintf(stderr, "ERROR: No valid basepath specified.\n\n");
-        usage(argv[0]);
+        //usage(argv[0]);
         return 1;
     }
 
     if (params.m_basepath[0] != '/')
     {
         fprintf(stderr, "ERROR: basepath must be an absolute path.\n\n");
-        usage(argv[0]);
+        //usage(argv[0]);
         return 1;
     }
 
@@ -953,28 +953,28 @@ int main(int argc, char *argv[])
     if (stat(params.m_basepath, &st) != 0 || !S_ISDIR(st.st_mode))
     {
         fprintf(stderr, "ERROR: basepath is not a valid directory: %s\n\n", params.m_basepath);
-        usage(argv[0]);
+        //usage(argv[0]);
         return 1;
     }
 
     if (!params.m_mountpath)
     {
         fprintf(stderr, "ERROR: No valid mountpath specified.\n\n");
-        usage(argv[0]);
+        //usage(argv[0]);
         return 1;
     }
 
     if (params.m_mountpath[0] != '/')
     {
         fprintf(stderr, "ERROR: mountpath must be an absolute path.\n\n");
-        usage(argv[0]);
+        //usage(argv[0]);
         return 1;
     }
 
     if (stat(params.m_mountpath, &st) != 0 || !S_ISDIR(st.st_mode))
     {
         fprintf(stderr, "ERROR: mountpath is not a valid directory: %s\n\n", params.m_mountpath);
-        usage(argv[0]);
+        //usage(argv[0]);
         return 1;
     }
 
@@ -982,7 +982,7 @@ int main(int argc, char *argv[])
     if (!check_encoder(params.m_desttype))
     {
         fprintf(stderr, "ERROR: No encoder available for desttype: %s\n\n", params.m_desttype);
-        usage(argv[0]);
+        //usage(argv[0]);
         return 1;
     }
 
