@@ -37,7 +37,7 @@ AC_ARG_WITH([vorbis],
     [], [with_vorbis=yes])
 
 AS_IF([test "x$with_vorbis" != xno],
-    [PKG_CHECK_MODULES([vorbis], [vorbisfile >= 1.3.0],
+    [PKG_CHECK_MODULES([vorbis], [vorbisfile >= 1.3.0, vorbis],
         [AC_DEFINE([HAVE_VORBIS], [1], [Use Ogg Vorbis libraries.])])])
 
 AM_CONDITIONAL([HAVE_VORBIS], [test "x$with_vorbis" != xno])

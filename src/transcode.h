@@ -72,6 +72,9 @@ size_t transcoder_get_size(struct transcoder* trans);
 int check_encoder(const char* type);
 int check_decoder(const char* type);
 
+/* Print codec versions. */
+void print_codec_versions();
+
 /* Functions to print output until C++ conversion is done. */
 void mp3fs_debug(const char* f, ...) __attribute__ ((format(printf, 1, 2)));;
 void mp3fs_error(const char* f, ...) __attribute__ ((format(printf, 1, 2)));;

@@ -125,4 +125,16 @@ extern "C" {
         }
     }
 
+    void print_codec_versions() {
+#ifdef HAVE_MP3
+        printf("LAME library version: %s\n", get_lame_version());
+#endif
+#ifdef HAVE_FLAC
+        printf("FLAC library version: %s\n", FLAC__VERSION_STRING);
+#endif
+#ifdef HAVE_VORBIS
+        printf("%s\n", vorbis_version_string());
+#endif
+    }
+
 }

@@ -28,14 +28,6 @@
 
 #include "transcode.h"
 
-// TODO: Move this elsewehere, so this file can be library agnostic
-#ifdef HAVE_MP3
-#include <lame/lame.h>
-#endif
-#ifdef HAVE_FLAC
-#include <FLAC/format.h>
-#endif
-
 struct mp3fs_params params = {
     .basepath        = NULL,
     .bitrate         = 128,
@@ -166,12 +158,7 @@ static int mp3fs_opt_proc(void* data, const char* arg, int key,
         case KEY_VERSION:
             // TODO: Also output this information in debug mode
             printf("mp3fs version: %s\n", PACKAGE_VERSION);
-#ifdef HAVE_MP3
-            printf("LAME library version: %s\n", get_lame_version());
-#endif
-#ifdef HAVE_FLAC
-            printf("FLAC library version: %s\n", FLAC__VERSION_STRING);
-#endif
+            print_codec_versions();
             fuse_opt_add_arg(outargs, "--version");
             fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
             exit(0);
