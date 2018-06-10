@@ -3,11 +3,11 @@
 . "${BASH_SOURCE%/*}/funcs.sh"
 
 hash_image() {
-    python <<END
+    python3 <<END
 import hashlib, mutagen
 file = mutagen.File('$1')
 artwork = file.tags['APIC:'].data
-print hashlib.sha1(artwork).hexdigest()
+print(hashlib.sha1(artwork).hexdigest())
 END
 }
 
