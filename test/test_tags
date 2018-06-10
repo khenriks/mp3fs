@@ -7,7 +7,7 @@ get_metadata() {
 }
 
 cmp -s - <(get_metadata "$DIRNAME/obama.mp3") <<END
-APIC= (image/jpeg, 9833 bytes)
+APIC=cover front,  (image/jpeg, 9833 bytes)
 TALB=US State of the Union 2011
 TCON=Spoken
 TCOP=Public Domain
@@ -21,7 +21,7 @@ TSSE=MP3FS
 END
 
 cmp -s - <(get_metadata "$DIRNAME/raven.mp3") <<END
-APIC= (image/jpeg, 10226 bytes)
+APIC=cover front,  (image/jpeg, 10226 bytes)
 TALB=The Raven
 TCON=Speech
 TDRC=2007
