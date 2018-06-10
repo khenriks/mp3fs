@@ -109,7 +109,7 @@ struct transcoder* transcoder_new(char* filename) {
      */
     if (trans->decoder->process_metadata(trans->encoder) == -1) {
         mp3fs_debug("Error processing metadata.");
-        goto init_fail;
+        goto post_init_fail;
     }
 
     mp3fs_debug("Metadata processing finished.");
@@ -117,21 +117,20 @@ struct transcoder* transcoder_new(char* filename) {
     /* Render tag from Encoder to Buffer. */
     if (trans->encoder->render_tag(trans->buffer) == -1) {
         mp3fs_debug("Error rendering tag in Encoder.");
-        goto init_fail;
+        goto post_init_fail;
     }
 
     mp3fs_debug("Tag written to Buffer.");
 
     return trans;
 
+post_init_fail:
+    delete trans->encoder;
 encoder_fail:
+init_fail:
     delete trans->decoder;
 decoder_fail:
-init_fail:
-    delete trans->encoder;
-
     delete trans;
-
 trans_fail:
     return NULL;
 }
