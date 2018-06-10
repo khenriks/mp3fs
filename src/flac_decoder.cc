@@ -87,7 +87,7 @@ time_t FlacDecoder::mtime() {
  */
 int FlacDecoder::process_metadata(Encoder* encoder) {
     encoder_c = encoder;
-    if (!process_until_end_of_metadata()) {
+    if (!process_until_end_of_metadata() || !has_streaminfo) {
         mp3fs_debug("FLAC is invalid.");
         return -1;
     }
@@ -134,6 +134,7 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
         {
             /* Set our copy of STREAMINFO data. */
             info = FLAC::Metadata::StreamInfo(metadata);
+            has_streaminfo = true;
 
             mp3fs_debug("FLAC processing STREAMINFO");
 

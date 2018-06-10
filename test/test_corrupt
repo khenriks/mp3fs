@@ -1,0 +1,5 @@
+#!/bin/bash
+
+. "${BASH_SOURCE%/*}/funcs.sh"
+
+cat $DIRNAME/random.mp3

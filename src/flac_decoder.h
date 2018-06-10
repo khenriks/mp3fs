@@ -35,6 +35,7 @@
 
 class FlacDecoder : public Decoder, private FLAC::Decoder::File {
 public:
+    FlacDecoder() : has_streaminfo(false) {};
     int open_file(const char* filename);
     time_t mtime();
     int process_metadata(Encoder* encoder);
@@ -49,6 +50,7 @@ private:
     Buffer* buffer_c;
     time_t mtime_;
     FLAC::Metadata::StreamInfo info;
+    bool has_streaminfo;
     typedef std::map<std::string,int> meta_map_t;
     static const meta_map_t metatag_map;
 };

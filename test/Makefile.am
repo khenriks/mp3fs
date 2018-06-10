@@ -1,4 +1,4 @@
-TESTS = test_filenames test_tags test_audio test_filesize test_picture
+TESTS = test_filenames test_tags test_audio test_filesize test_picture test_corrupt
 
 EXTRA_DIST = $(TESTS) funcs.sh srcdir
 
