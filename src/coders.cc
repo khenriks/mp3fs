@@ -27,13 +27,13 @@
  * configuration.
  */
 #ifdef HAVE_MP3
-#include "mp3_encoder.h"
+#include "codecs/mp3_encoder.h"
 #endif
 #ifdef HAVE_FLAC
-#include "flac_decoder.h"
+#include "codecs/flac_decoder.h"
 #endif
 #ifdef HAVE_VORBIS
-#include "vorbis_decoder.h"
+#include "codecs/vorbis_decoder.h"
 #endif
 
 void Encoder::set_gain(double gainref, double album_gain, double track_gain) {

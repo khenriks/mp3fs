@@ -4,24 +4,5 @@ bin_PROGRAMS = mp3fs
 mp3fs_SOURCES = mp3fs.c fuseops.c transcode.cc transcode.h buffer.cc buffer.h coders.cc coders.h stats_cache.cc stats_cache.h logging.cc logging.h
 mp3fs_LDADD	= $(fuse_LIBS)
 
-# Flags for lib directory
-mp3fs_LDADD += ../lib/libbase64.a
-INCLUDES += -I../lib
-
-if HAVE_FLAC
-mp3fs_SOURCES += flac_decoder.cc flac_decoder.h
-mp3fs_LDADD += $(flac_LIBS)
-INCLUDES += $(flac_CFLAGS)
-endif
-
-if HAVE_VORBIS
-mp3fs_SOURCES += vorbis_decoder.cc vorbis_decoder.h picture.cc picture.h
-mp3fs_LDADD += $(vorbis_LIBS)
-INCLUDES += $(vorbis_CFLAGS)
-endif
-
-if HAVE_MP3
-mp3fs_SOURCES += mp3_encoder.cc mp3_encoder.h
-mp3fs_LDADD += $(id3tag_LIBS)
-INCLUDES += $(id3tag_CFLAGS)
-endif
+SUBDIRS = codecs lib
+mp3fs_LDADD += codecs/libcodecs.a lib/libbase64.a $(flac_LIBS) $(vorbis_LIBS) $(id3tag_LIBS)

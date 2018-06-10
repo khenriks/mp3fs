@@ -3,7 +3,7 @@ export WARNINGS = -Wall -Wextra -Wconversion -Wno-sign-conversion
 export AM_CFLAGS = -std=c11 $(INCLUDES) $(WARNINGS)
 export AM_CXXFLAGS = -std=c++11 $(INCLUDES) $(WARNINGS)
 
-SUBDIRS = lib src test
+SUBDIRS = src test
 
 dist_man_MANS = mp3fs.1
 

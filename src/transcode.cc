@@ -29,7 +29,7 @@
 
 #include "coders.h"
 #include "logging.h"
-#include "mp3_encoder.h"
+#include "codecs/mp3_encoder.h"
 #include "stats_cache.h"
 
 /* Transcoder parameters for open mp3 */

@@ -25,7 +25,7 @@
 
 #include <unistd.h>
 
-#include "base64.h"
+#include "lib/base64.h"
 #include "picture.h"
 #include "transcode.h"
 
