@@ -269,6 +269,7 @@ int main(int argc, char **argv)
         printf("%f\n", setbits/(max_raw_fingerprint_size*32.0));
     } else {
         fprintf(stderr, "ERROR: Couldn't calculate both fingerprints; can't compare.\n");
+        printf("1.0\n");
     }
 
     if (raw_fingerprints[0]) chromaprint_dealloc(raw_fingerprints[0]);
