@@ -237,24 +237,19 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
      * Some players = iTunes
      */
     id3_tag_options(id3tag, ID3_TAG_OPTION_COMPRESSION, 0);
-    id3_tag_setlength(id3tag, id3_tag_render(id3tag, 0) + 12);
+    id3_tag_setlength(id3tag, id3_tag_render(id3tag, nullptr) + 12);
 
-    // grow buffer and write v2 tag
-    uint8_t* write_ptr = buffer.write_prepare(id3_tag_render(id3tag, 0));
-    if (!write_ptr) {
-        return -1;
-    }
-    id3size = id3_tag_render(id3tag, write_ptr);
-    buffer.increment_pos(id3size);
+    // write v2 tag
+    id3size = id3_tag_render(id3tag, nullptr);
+    std::vector<uint8_t> tag24(id3size);
+    id3_tag_render(id3tag, tag24.data());
+    buffer.write(tag24);
 
-    /* Write v1 tag at end of buffer. */
+    // Write v1 tag at end of buffer.
     id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
-    write_ptr = buffer.write_prepare(id3v1_tag_length,
-            calculate_size() - id3v1_tag_length);
-    if (!write_ptr) {
-        return -1;
-    }
-    id3_tag_render(id3tag, write_ptr);
+    std::vector<uint8_t> tag1(id3v1_tag_length);
+    id3_tag_render(id3tag, tag1.data());
+    buffer.write(tag1, calculate_size() - id3v1_tag_length);
 
     return 0;
 }
@@ -317,19 +312,17 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
         }
     }
 
-    uint8_t* write_ptr = buffer.write_prepare(5*numsamples/4 + 7200);
-    if (!write_ptr) {
-        return -1;
-    }
+    std::vector<uint8_t> vbuffer(5*numsamples/4 + 7200);
 
     int len = lame_encode_buffer_int(lame_encoder, &lbuf[0], &rbuf[0],
-                                     numsamples, write_ptr,
-                                     5*numsamples/4 + 7200);
+                                     numsamples, vbuffer.data(),
+                                     (int)vbuffer.size());
     if (len < 0) {
         return -1;
     }
+    vbuffer.resize(len);
 
-    buffer.increment_pos(len);
+    buffer.write(vbuffer);
 
     return 0;
 }
@@ -340,17 +333,16 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
  * passed to encode_pcm_data().
  */
 int Mp3Encoder::encode_finish(Buffer& buffer) {
-    uint8_t* write_ptr = buffer.write_prepare(7200);
-    if (!write_ptr) {
-        return -1;
-    }
+    std::vector<uint8_t> vbuffer(7200);
 
-    int len = lame_encode_flush(lame_encoder, write_ptr, 7200);
+    int len = lame_encode_flush(lame_encoder, vbuffer.data(),
+                                (int)vbuffer.size());
     if (len < 0) {
         return -1;
     }
+    vbuffer.resize(len);
 
-    buffer.increment_pos(len);
+    buffer.write(vbuffer);
     actual_size = buffer.tell() + id3v1_tag_length;
 
     /*
@@ -358,15 +350,13 @@ int Mp3Encoder::encode_finish(Buffer& buffer) {
      * already put dummy bytes here when lame_init_params() was called.
      */
     if (params.vbr) {
-        uint8_t* write_ptr = buffer.write_prepare(MAX_VBR_FRAME_SIZE, id3size);
-        if (!write_ptr) {
-            return -1;
-        }
-        size_t vbr_tag_size = lame_get_lametag_frame(lame_encoder, write_ptr,
+        std::vector<uint8_t> tail(MAX_VBR_FRAME_SIZE);
+        size_t vbr_tag_size = lame_get_lametag_frame(lame_encoder, tail.data(),
                 MAX_VBR_FRAME_SIZE);
         if (vbr_tag_size > MAX_VBR_FRAME_SIZE) {
            return -1;
         }
+        buffer.write(tail, id3size);
     }
 
     return len;

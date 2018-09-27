@@ -21,27 +21,46 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include <stdint.h>
-
 #include <cstddef>
+#include <cstdint>
+#include <ios>
+#include <vector>
 
 class Buffer {
 public:
-    Buffer();
-    ~Buffer();
+    Buffer() {};
+    ~Buffer() {};
 
-    size_t write(const uint8_t* data, size_t length);
-    size_t write(const uint8_t* data, size_t length, size_t offset);
-    uint8_t* write_prepare(size_t length);
-    uint8_t* write_prepare(size_t length, size_t offset);
-    void increment_pos(ptrdiff_t increment);
-    size_t tell() const;
+    /**
+     * Write data to the current position in the Buffer. The position pointer
+     * will be updated.
+     */
+    void write(const std::vector<uint8_t>& data);
+
+    /**
+     * Write data to a specified position in the Buffer. The position pointer
+     * will not be updated.
+     */
+    void write(const std::vector<uint8_t>& data, size_t offset);
+
+    /**
+     * Give the value of the internal position pointer.
+     */
+    size_t tell() const { return buffer_pos_; }
+
+    /**
+     * Copy data of the given size and at the given offset from the buffer to
+     * the location given by out_data.
+     */
     void copy_into(uint8_t* out_data, size_t offset, size_t size) const;
 private:
-    bool reallocate(size_t size);
-    uint8_t* buffer_data;
-    size_t buffer_pos;
-    size_t buffer_size;
+    /**
+     * Ensure the Buffer has at least the size given.
+     */
+    void ensure_size(size_t size);
+
+    std::vector<uint8_t> data_;
+    std::streamoff buffer_pos_ = 0;
 };
 
 #endif
