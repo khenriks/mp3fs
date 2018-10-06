@@ -29,7 +29,6 @@
 
 #include "coders.h"
 #include "logging.h"
-#include "codecs/mp3_encoder.h"
 #include "stats_cache.h"
 
 /* Transcoder parameters for open mp3 */
@@ -147,45 +146,28 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
         len = transcoder_get_size(trans) - offset;
     }
 
-    // TODO: Avoid favoring MP3 in program structure.
-    /*
-     * If we are encoding to MP3 and the requested data overlaps the ID3v1 tag
-     * at the end of the file, do not encode data first up to that position.
-     * This optimizes the case where applications read the end of the file
-     * first to read the ID3v1 tag.
-     */
-    if (strcmp(params.desttype, "mp3") == 0 &&
-        (size_t)offset > trans->buffer.tell()
-        && offset + len >
-        (transcoder_get_size(trans) - Mp3Encoder::id3v1_tag_length)) {
+    // If the requested data has already been filled into the buffer, simply
+    // copy it out.
+    if (trans->buffer.valid_bytes(offset, len)) {
         trans->buffer.copy_into((uint8_t*)buff, offset, len);
 
         return len;
     }
 
-    bool success = true;
-    if (trans->decoder && trans->encoder) {
-        if (strcmp(params.desttype, "mp3") == 0 && params.vbr) {
-            /*
-             * The Xing data (which is pretty close to the beginning of the
-             * file) cannot be determined until the entire file is encoded, so
-             * transcode the entire file for any read.
-             */
-            success = transcode_until(trans,
-                    std::numeric_limits<size_t>::max());
-        } else {
-            success = transcode_until(trans, offset + len);
-        }
+    // If we don't already have the data and we can't produce it, return error.
+    if (!trans->decoder || !trans->encoder) {
+        return -1;
     }
-    if (!success) {
+
+    if (!transcode_until(trans,
+                         trans->encoder->no_partial_encode() ?
+                         std::numeric_limits<size_t>::max() : offset + len)) {
         return -1;
     }
 
     // truncate if we didn't actually get len
-    if (trans->buffer.tell() < (size_t) offset) {
-        len = 0;
-    } else if (trans->buffer.tell() < offset + len) {
-        len = trans->buffer.tell() - offset;
+    if (trans->buffer.tell() < offset + len) {
+        len = std::max<off_t>(trans->buffer.tell() - offset, 0);
     }
 
     trans->buffer.copy_into((uint8_t*)buff, offset, len);
@@ -206,8 +188,7 @@ int transcoder_finish(struct transcoder* trans) {
 
     // lame cleanup
     if (trans->encoder) {
-        int len = trans->encoder->encode_finish(trans->buffer);
-        if (len == -1) {
+        if (trans->encoder->encode_finish(trans->buffer) == -1) {
             return -1;
         }
 

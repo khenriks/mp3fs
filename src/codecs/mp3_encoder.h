@@ -21,6 +21,7 @@
 #ifndef MP3_ENCODER_H
 #define MP3_ENCODER_H
 
+#include "transcode.h"
 #include "coders.h"
 
 #include <map>
@@ -48,6 +49,13 @@ public:
     int encode_pcm_data(const int32_t* const data[], int numsamples,
                         int sample_size, Buffer& buffer);
     int encode_finish(Buffer& buffer);
+
+    /*
+     * The Xing data (which is pretty close to the beginning of the
+     * file) cannot be determined until the entire file is encoded, so
+     * transcode the entire file for any read.
+     */
+    bool no_partial_encode() { return params.vbr; }
 
 private:
     lame_t lame_encoder;

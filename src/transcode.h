@@ -19,6 +19,9 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#ifndef MP3FS_TRANSCODE_H
+#define MP3FS_TRANSCODE_H
+
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
@@ -85,3 +88,5 @@ int init_logging(const char* logfile, const char* max_level, int to_stderr,
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // MP3FS_TRANSCODE_H

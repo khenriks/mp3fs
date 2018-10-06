@@ -76,6 +76,8 @@ public:
                                 int sample_size, Buffer& buffer) = 0;
     virtual int encode_finish(Buffer& buffer) = 0;
 
+    virtual bool no_partial_encode() { return true; }
+
     static Encoder* CreateEncoder(const std::string file_type,
             size_t actual_size = 0);
 
