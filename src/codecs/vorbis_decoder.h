@@ -21,11 +21,12 @@
 #ifndef VORBIS_DECODER_H
 #define VORBIS_DECODER_H
 
-#include "coders.h"
-#include "vorbis/vorbisfile.h"
-
 #include <map>
 #include <string>
+
+#include <vorbis/vorbisfile.h>
+
+#include "codecs/coders.h"
 
 class VorbisDecoder : public Decoder {
 public:

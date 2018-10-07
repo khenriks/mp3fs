@@ -21,8 +21,7 @@
 #ifndef CODERS_H
 #define CODERS_H
 
-#include <stdint.h>
-
+#include <cstdint>
 #include <string>
 
 #include "buffer.h"

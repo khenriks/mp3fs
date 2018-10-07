@@ -18,7 +18,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "picture.h"
+#include "codecs/picture.h"
 
 #include <arpa/inet.h>
 

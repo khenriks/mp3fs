@@ -27,7 +27,7 @@
 #include <limits>
 #include <vector>
 
-#include "coders.h"
+#include "codecs/coders.h"
 #include "logging.h"
 #include "stats_cache.h"
 

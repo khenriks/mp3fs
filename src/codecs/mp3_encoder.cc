@@ -18,9 +18,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "mp3_encoder.h"
-
-#include <inttypes.h>
+#include "codecs/mp3_encoder.h"
 
 #include <cmath>
 #include <cstdlib>

@@ -26,8 +26,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "codecs/picture.h"
 #include "lib/base64.h"
-#include "picture.h"
 #include "logging.h"
 
 /* Free the OggVorbis_File data structure and close the open Ogg Vorbis file

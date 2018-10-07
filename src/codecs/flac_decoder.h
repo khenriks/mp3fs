@@ -21,8 +21,6 @@
 #ifndef FLAC_DECODER_H
 #define FLAC_DECODER_H
 
-#include "coders.h"
-
 #include <map>
 #include <string>
 
@@ -32,6 +30,8 @@
 #include <FLAC++/decoder.h>
 #include <FLAC++/metadata.h>
 #pragma GCC diagnostic pop
+
+#include "codecs/coders.h"
 
 class FlacDecoder : public Decoder, private FLAC::Decoder::File {
 public:

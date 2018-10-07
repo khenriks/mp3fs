@@ -1,5 +1,5 @@
 lib_LIBRARIES = libcodecs.a
-libcodecs_a_SOURCES =
+libcodecs_a_SOURCES = coders.cc coders.h
 INCLUDES = $(fuse_CFLAGS) -I..
 
 if HAVE_FLAC
