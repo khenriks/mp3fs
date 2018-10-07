@@ -22,7 +22,7 @@
 
 #include <arpa/inet.h>
 
-#include "transcode.h"
+#include "logging.h"
 
 /* Decode binary picture data. */
 bool Picture::decode() {
@@ -33,7 +33,7 @@ bool Picture::decode() {
         !consume_decode_string(description) ||
         !consume_no_decode(16) ||
         !consume_decode_string(picture_data_str)) {
-        mp3fs_error("Couldn't decode picture data as valid data.");
+        Log(ERROR) << "Couldn't decode picture data as valid data.";
         return false;
     }
 

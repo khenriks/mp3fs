@@ -21,9 +21,11 @@
 #include "flac_decoder.h"
 
 #include <algorithm>
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
-#include "transcode.h"
+#include "logging.h"
 
 /*
  * Open the given FLAC file and prepare for decoding. After this function,
@@ -37,17 +39,17 @@ int FlacDecoder::open_file(const char* filename) {
     set_metadata_respond(FLAC__METADATA_TYPE_VORBIS_COMMENT);
     set_metadata_respond(FLAC__METADATA_TYPE_PICTURE);
 
-    mp3fs_debug("FLAC ready to initialize.");
+    Log(DEBUG) << "FLAC ready to initialize.";
 
     int fd = open(filename, 0);
     if (fd < 0) {
-        mp3fs_debug("FLAC open failed.");
+        Log(ERROR) << "FLAC open failed.";
         return -1;
     }
 
     struct stat s;
     if (fstat(fd, &s) < 0) {
-        mp3fs_debug("FLAC stat failed.");
+        Log(ERROR) << "FLAC stat failed.";
         close(fd);
         return -1;
     }
@@ -55,19 +57,19 @@ int FlacDecoder::open_file(const char* filename) {
 
     FILE *file = fdopen(fd, "r");
     if (file == 0) {
-        mp3fs_debug("FLAC fdopen failed.");
+        Log(ERROR) << "FLAC fdopen failed.";
         close(fd);
         return -1;
     }
 
     /* Initialise decoder */
     if (init(file) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
-        mp3fs_debug("FLAC init failed.");
+        Log(ERROR) << "FLAC init failed.";
         fclose(file);
         return -1;
     }
 
-    mp3fs_debug("FLAC initialized successfully.");
+    Log(DEBUG) << "FLAC initialized successfully.";
 
     return 0;
 }
@@ -88,7 +90,7 @@ time_t FlacDecoder::mtime() {
 int FlacDecoder::process_metadata(Encoder* encoder) {
     encoder_c = encoder;
     if (!process_until_end_of_metadata() || !has_streaminfo) {
-        mp3fs_debug("FLAC is invalid.");
+        Log(ERROR) << "FLAC is invalid.";
         return -1;
     }
 
@@ -112,7 +114,7 @@ int FlacDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
     buffer_c = buffer;
     if (get_state() < FLAC__STREAM_DECODER_END_OF_STREAM) {
         if (!process_single()) {
-            mp3fs_debug("Error reading FLAC.");
+            Log(ERROR) << "Error reading FLAC.";
             return -1;
         }
 
@@ -136,7 +138,7 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
             info = FLAC::Metadata::StreamInfo(metadata);
             has_streaminfo = true;
 
-            mp3fs_debug("FLAC processing STREAMINFO");
+            Log(DEBUG) << "FLAC processing STREAMINFO";
 
             break;
         }
@@ -147,7 +149,7 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
                 album_gain = Encoder::invalid_db,
                 track_gain = Encoder::invalid_db;
 
-            mp3fs_debug("FLAC processing VORBIS_COMMENT");
+            Log(DEBUG) << "FLAC processing VORBIS_COMMENT";
 
             for (unsigned int i=0; i<vc.get_num_comments(); ++i) {
                 const FLAC::Metadata::VorbisComment::Entry comment = vc.get_comment(i);
@@ -176,7 +178,7 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
             /* add a picture tag for each picture block */
             const FLAC::Metadata::Picture picture(metadata);
 
-            mp3fs_debug("FLAC processing PICTURE");
+            Log(DEBUG) << "FLAC processing PICTURE";
 
             encoder_c->set_picture_tag(picture.get_mime_type(),
                                        picture.get_type(),
@@ -210,8 +212,8 @@ FlacDecoder::write_callback(const FLAC__Frame* frame,
 
 /* Error callback for FLAC */
 void FlacDecoder::error_callback(FLAC__StreamDecoderErrorStatus status) {
-    mp3fs_error("FLAC error: %s",
-                FLAC__StreamDecoderErrorStatusString[status]);
+    Log(ERROR) << "FLAC error: " <<
+            FLAC__StreamDecoderErrorStatusString[status];
 }
 
 /*

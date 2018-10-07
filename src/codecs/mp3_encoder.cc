@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "logging.h"
-#include "transcode.h"
 
 /* Copied from lame */
 #define MAX_VBR_FRAME_SIZE 2880
@@ -57,7 +56,7 @@ static void lame_debug(const char *fmt, va_list list) {
 Mp3Encoder::Mp3Encoder(size_t _actual_size) : actual_size(_actual_size) {
     id3tag = id3_tag_new();
 
-    mp3fs_debug("LAME ready to initialize.");
+    Log(DEBUG) << "LAME ready to initialize.";
 
     lame_encoder = lame_init();
 
@@ -101,15 +100,15 @@ int Mp3Encoder::set_stream_params(uint64_t num_samples, int sample_rate,
     lame_set_in_samplerate(lame_encoder, sample_rate);
     lame_set_num_channels(lame_encoder, channels);
 
-    mp3fs_debug("LAME partially initialized.");
+    Log(DEBUG) << "LAME partially initialized.";
 
     /* Initialise encoder */
     if (lame_init_params(lame_encoder) == -1) {
-        mp3fs_debug("lame_init_params failed.");
+        Log(ERROR) << "lame_init_params failed.";
         return -1;
     }
 
-    mp3fs_debug("LAME initialized.");
+    Log(DEBUG) << "LAME initialized.";
 
     /*
      * Set the length in the ID3 tag, as this is the most convenient place
@@ -219,7 +218,7 @@ void Mp3Encoder::set_picture_tag(const char* mime_type, int type,
  * http://replaygain.hydrogenaudio.org/proposal/player_scale.html
  */
 void Mp3Encoder::set_gain_db(const double dbgain) {
-    mp3fs_debug("LAME setting gain to %f.", dbgain);
+    Log(DEBUG) << "LAME setting gain to " <<  dbgain << ".";
     lame_set_scale(lame_encoder, (float)pow(10.0, dbgain/20));
 }
 

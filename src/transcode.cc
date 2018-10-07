@@ -70,7 +70,7 @@ extern "C" {
 /* Allocate and initialize the transcoder */
 
 struct transcoder* transcoder_new(char* filename) {
-    mp3fs_debug("Creating transcoder object for %s", filename);
+    Log(DEBUG) << "Creating transcoder object for " << filename;
 
     /* Allocate transcoder structure */
     struct transcoder* trans = new struct transcoder;
@@ -86,13 +86,13 @@ struct transcoder* transcoder_new(char* filename) {
         goto decoder_fail;
     }
 
-    mp3fs_debug("Ready to initialize decoder.");
+    Log(DEBUG) << "Ready to initialize decoder.";
 
     if (trans->decoder->open_file(filename) == -1) {
         goto init_fail;
     }
 
-    mp3fs_debug("Decoder initialized successfully.");
+    Log(DEBUG) << "Decoder initialized successfully.";
 
     stats_cache.get_filesize(trans->filename, trans->decoder->mtime(),
             trans->encoded_filesize);
@@ -107,19 +107,19 @@ struct transcoder* transcoder_new(char* filename) {
      * tag values for the output file.
      */
     if (trans->decoder->process_metadata(trans->encoder) == -1) {
-        mp3fs_debug("Error processing metadata.");
+        Log(ERROR) << "Error processing metadata.";
         goto post_init_fail;
     }
 
-    mp3fs_debug("Metadata processing finished.");
+    Log(DEBUG) << "Metadata processing finished.";
 
     /* Render tag from Encoder to Buffer. */
     if (trans->encoder->render_tag(trans->buffer) == -1) {
-        mp3fs_debug("Error rendering tag in Encoder.");
+        Log(ERROR) << "Error rendering tag in Encoder.";
         goto post_init_fail;
     }
 
-    mp3fs_debug("Tag written to Buffer.");
+    Log(DEBUG) << "Tag written to Buffer.";
 
     return trans;
 
@@ -138,7 +138,7 @@ trans_fail:
 
 ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
                         size_t len) {
-    mp3fs_debug("Reading %zu bytes from offset %jd.", len, (intmax_t)offset);
+    Log(DEBUG) << "Reading " << len << " bytes from offset " << offset << ".";
     if ((size_t)offset > transcoder_get_size(trans)) {
         return -1;
     }
@@ -194,8 +194,9 @@ int transcoder_finish(struct transcoder* trans) {
 
         /* Check encoded buffer size. */
         trans->encoded_filesize = trans->encoder->get_actual_size();
-        mp3fs_debug("Finishing file. Predicted size: %zu, final size: %zu",
-                    trans->encoder->calculate_size(), trans->encoded_filesize);
+        Log(DEBUG) << "Finishing file. Predicted size: " <<
+                trans->encoder->calculate_size() << ", final size: " <<
+                trans->encoded_filesize;
         delete trans->encoder;
         trans->encoder = NULL;
     }

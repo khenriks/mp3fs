@@ -19,11 +19,14 @@
  */
 
 #include "stats_cache.h"
-#include "transcode.h"
 
 #include <algorithm>
 #include <cerrno>
+#include <sys/stat.h>
 #include <vector>
+
+#include "logging.h"
+#include "transcode.h"
 
 namespace {
 
@@ -65,12 +68,12 @@ bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
         if (mtime > file_stat.get_mtime()) {
             // The decoded file has changed since this entry was created, so
             // remove the invalid entry.
-            mp3fs_debug("Removed out of date file '%s' from stats cache",
-                    p->first.c_str());
+            Log(DEBUG) << "Removed out of date file '" <<  p->first <<
+                    "' from stats cache";
             cache.erase(p);
         } else {
-            mp3fs_debug("Found file '%s' in stats cache with size %zu",
-                    p->first.c_str(), file_stat.get_size());
+            Log(DEBUG) << "Found file '" << p->first <<
+                    "' in stats cache with size " << file_stat.get_size();
             in_cache = true;
             filesize = file_stat.get_size();
             file_stat.update_atime();
@@ -88,12 +91,12 @@ void StatsCache::put_filesize(const std::string& filename, size_t filesize,
     pthread_mutex_lock(&mutex);
     cache_t::iterator p = cache.find(filename);
     if (p == cache.end()) {
-        mp3fs_debug("Added file '%s' to stats cache with size %zu",
-                filename.c_str(), file_stat.get_size());
+        Log(DEBUG) << "Added file '" << filename <<
+                "' to stats cache with size " << file_stat.get_size();
         cache.insert(std::make_pair(filename, file_stat));
     } else if (mtime >= p->second.get_mtime()) {
-        mp3fs_debug("Updated file '%s' in stats cache with size %zu",
-                filename.c_str(), file_stat.get_size());
+        Log(DEBUG) << "Updated file '" << filename <<
+                "' in stats cache with size " << file_stat.get_size();
         p->second = file_stat;
     }
     bool needs_pruning = cache.size() > params.statcachesize;
@@ -107,7 +110,7 @@ void StatsCache::put_filesize(const std::string& filename, size_t filesize,
  * Prune invalid and old cache entries until the cache is at 90% of capacity.
  */
 void StatsCache::prune() {
-    mp3fs_debug("Pruning stats cache");
+    Log(DEBUG) << "Pruning stats cache";
     size_t target_size = 9 * params.statcachesize / 10; // 90%
     typedef std::vector<cache_entry_t> entry_vector;
     entry_vector sorted_entries;
@@ -140,8 +143,8 @@ void StatsCache::prune() {
         struct stat s;
         if (stat(decoded_file.c_str(), &s) < 0 ||
                 s.st_mtime > file_stat.get_mtime()) {
-            mp3fs_debug("Removed out of date file '%s' from stats cache",
-                    decoded_file.c_str());
+            Log(DEBUG) << "Removed out of date file '" << decoded_file <<
+                    "' from stats cache";
             errno = 0;
             pthread_mutex_lock(&mutex);
             remove_entry(decoded_file, file_stat);
@@ -153,8 +156,8 @@ void StatsCache::prune() {
     pthread_mutex_lock(&mutex);
     for (entry_vector::iterator p = sorted_entries.begin();
             p != sorted_entries.end() && cache.size() > target_size; ++p) {
-        mp3fs_debug("Pruned oldest file '%s' from stats cache",
-                p->first.c_str());
+        Log(DEBUG) << "Pruned oldest file '" << p->first <<
+                "' from stats cache";
         remove_entry(p->first, p->second);
     }
     pthread_mutex_unlock(&mutex);

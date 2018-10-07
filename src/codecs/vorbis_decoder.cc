@@ -22,19 +22,20 @@
 
 #include <algorithm>
 #include <cstdlib>
-
+#include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "lib/base64.h"
 #include "picture.h"
-#include "transcode.h"
+#include "logging.h"
 
 /* Free the OggVorbis_File data structure and close the open Ogg Vorbis file
  * after the decoding process has finished.
  */
 VorbisDecoder::~VorbisDecoder() {
     ov_clear(&vf);
-    mp3fs_debug("Ogg Vorbis decoder: Closed.");
+    Log(DEBUG) << "Ogg Vorbis decoder: Closed.";
 }
 
 /*
@@ -43,17 +44,17 @@ VorbisDecoder::~VorbisDecoder() {
  */
 int VorbisDecoder::open_file(const char* filename) {
 
-    mp3fs_debug("Ogg Vorbis decoder: Initializing.");
+    Log(DEBUG) << "Ogg Vorbis decoder: Initializing.";
 
     int fd = open(filename, 0);
     if (fd < 0) {
-        mp3fs_debug("Ogg Vorbis decoder: open failed.");
+        Log(ERROR) << "Ogg Vorbis decoder: open failed.";
         return -1;
     }
 
     struct stat s;
     if (fstat(fd, &s) < 0) {
-        mp3fs_debug("Ogg Vorbis decoder: fstat failed.");
+        Log(ERROR) << "Ogg Vorbis decoder: fstat failed.";
         close(fd);
         return -1;
     }
@@ -61,14 +62,14 @@ int VorbisDecoder::open_file(const char* filename) {
 
     FILE *file = fdopen(fd, "r");
     if (file == 0) {
-        mp3fs_debug("Ogg Vorbis decoder: fdopen failed.");
+        Log(ERROR) << "Ogg Vorbis decoder: fdopen failed.";
         close(fd);
         return -1;
     }
 
     /* Initialise decoder */
     if (ov_open(file, &vf, NULL, 0) < 0) {
-        mp3fs_debug("Ogg Vorbis decoder: Initialization failed.");
+        Log(ERROR) << "Ogg Vorbis decoder: Initialization failed.";
         fclose(file);
         return -1;
     }
@@ -93,12 +94,12 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
     vorbis_comment *vc = NULL;
 
     if ((vi = ov_info(&vf, -1)) == NULL) {
-        mp3fs_debug("Ogg Vorbis decoder: Failed to retrieve the file info.");
+        Log(ERROR) << "Ogg Vorbis decoder: Failed to retrieve the file info.";
         return -1;
     }
 
     if (vi->channels > 2) {
-        mp3fs_debug("Ogg Vorbis decoder: Only mono/stereo audio currently supported.");
+        Log(ERROR) << "Ogg Vorbis decoder: Only mono/stereo audio currently supported.";
         return -1;
     }
 
@@ -106,12 +107,12 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
             ov_pcm_total(&vf, -1),
             (int)vi->rate,
             vi->channels) == -1) {
-        mp3fs_debug("Ogg Vorbis decoder: Failed to set encoder stream parameters.");
+        Log(ERROR) << "Ogg Vorbis decoder: Failed to set encoder stream parameters.";
         return -1;
     }
 
     if ((vc = ov_comment(&vf, -1)) == NULL) {
-        mp3fs_debug("Ogg Vorbis decoder: Failed to retrieve the Ogg Vorbis comment.");
+        Log(ERROR) << "Ogg Vorbis decoder: Failed to retrieve the Ogg Vorbis comment.";
         return -1;
     }
 
@@ -155,8 +156,9 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
             base64_decode_alloc(tagvalue.c_str(), tagvalue.size(),
                                 &data, &data_len);
             if (data == nullptr) {
-                mp3fs_debug("Failed to decode METADATA_BLOCK_PICTURE; invalid "
-                            "base64 or could not allocate memory.");
+                Log(ERROR) <<
+                        "Failed to decode METADATA_BLOCK_PICTURE; invalid "
+                        "base64 or could not allocate memory.";
                 return -1;
             }
 
@@ -205,7 +207,7 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
         long samples_per_channel = total_samples / vi->channels;
 
         if (samples_per_channel < 1) {
-            mp3fs_debug("Ogg Vorbis decoder: Not enough samples per channel.");
+            Log(ERROR) << "Ogg Vorbis decoder: Not enough samples per channel.";
             return -1;
         }
 
@@ -223,7 +225,7 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
         /* Send integer buffer to encoder */
         if (encoder->encode_pcm_data(encode_buffer_ptr,
                                      (int)samples_per_channel, 16, *buffer) < 0) {
-            mp3fs_debug("Ogg Vorbis decoder: Failed to encode integer buffer.");
+            Log(ERROR) << "Ogg Vorbis decoder: Failed to encode integer buffer.";
 
             return -1;
         }
@@ -231,11 +233,11 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
         return 0;
     }
     else if (total_samples == 0) {
-        mp3fs_debug("Ogg Vorbis decoder: Reached end of file.");
+        Log(DEBUG) << "Ogg Vorbis decoder: Reached end of file.";
         return 1;
     }
     else {
-        mp3fs_debug("Ogg Vorbis decoder: Failed to read file.");
+        Log(ERROR) << "Ogg Vorbis decoder: Failed to read file.";
         return -1;
     }
 }
