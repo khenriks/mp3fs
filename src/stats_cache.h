@@ -21,10 +21,10 @@
 #ifndef STATS_CACHE_H
 #define STATS_CACHE_H
 
+#include <ctime>
 #include <map>
 #include <pthread.h>
 #include <string>
-#include <sys/time.h>
 
 /*
  * Holds the size and modified time for a file, and is used in the file stats

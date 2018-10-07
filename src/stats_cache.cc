@@ -44,9 +44,7 @@ FileStat::FileStat(size_t _size, time_t _mtime) : size(_size), mtime(_mtime) {
 }
 
 void FileStat::update_atime() {
-    struct timeval tv;
-    gettimeofday(&tv, 0);
-    atime = tv.tv_sec;
+    atime = time(nullptr);
 }
 
 bool FileStat::operator==(const FileStat& other) const {
