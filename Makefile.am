@@ -14,9 +14,13 @@ MAINTAINERCLEANFILES = mp3fs.1
 
 EXTRA_DIST = INSTALL.md README.md mp3fs.1.txt
 
+DATE_FMT = %B %Y
+SOURCE_DATE_EPOCH ?= $(shell date +%s)
+REVDATE = $(shell date -u -d "@(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u "+$(DATE_FMT)")
+
 mp3fs.1: mp3fs.1.txt
 	$(AM_V_GEN)a2x -a revnumber="$(VERSION)" \
-		-a revdate="$(shell date +'%B %Y')" -f manpage $<
+		-a revdate="$(REVDATE)" -f manpage $<
 
 # Remove absolutely every generated file
 .PHONY: squeaky-clean
