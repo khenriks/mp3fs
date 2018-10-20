@@ -3,11 +3,15 @@
 . "${BASH_SOURCE%/*}/funcs.sh"
 
 get_metadata() {
-    mutagen-inspect "$1" | fgrep = | sort
+    python3 <<END
+import mutagen
+file = mutagen.File('$1')
+tags = ['%s=%s' % (k, v) for k, v in file.tags.items() if k[0] == 'T']
+print('\n'.join(sorted(tags)))
+END
 }
 
 cmp -s - <(get_metadata "$DIRNAME/obama.mp3") <<END
-APIC=cover front,  (image/jpeg, 9833 bytes)
 TALB=US State of the Union 2011
 TCON=Spoken
 TCOP=Public Domain
@@ -21,7 +25,6 @@ TSSE=MP3FS
 END
 
 cmp -s - <(get_metadata "$DIRNAME/raven.mp3") <<END
-APIC=cover front,  (image/jpeg, 10226 bytes)
 TALB=The Raven
 TCON=Speech
 TDRC=2007
