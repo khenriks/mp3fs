@@ -54,7 +54,7 @@ ID3 version 2.4 and 1.1 tags are created from the vorbis comments in
 the FLAC or Ogg Vorbis file. They are located at the start and end of
 the file respectively.
 
-A special optimisation is made so that applicatins which scan for
+A special optimisation is made so that applications which scan for
 id3v1 tags do not have to wait for the whole file to be transcoded
 before reading the tag. This *dramatically* speeds up such
 applications.
