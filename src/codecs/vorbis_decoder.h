@@ -34,7 +34,7 @@ public:
     int open_file(const char* filename);
     time_t mtime();
     int process_metadata(Encoder* encoder);
-    int process_single_fr(Encoder* encoder, Buffer* buffer);
+    int process_single_fr(Encoder* encoder);
 private:
     time_t mtime_;
     OggVorbis_File vf;

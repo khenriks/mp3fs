@@ -33,7 +33,7 @@ class Mp3Encoder : public Encoder {
 public:
     static const size_t id3v1_tag_length = 128;
 
-    Mp3Encoder(size_t actual_size);
+    Mp3Encoder(Buffer& buffer, size_t actual_size);
     ~Mp3Encoder();
 
     int set_stream_params(uint64_t num_samples, int sample_rate,
@@ -43,12 +43,12 @@ public:
                          const char* description, const uint8_t* data,
                          int data_length);
     void set_gain_db(const double dbgain);
-    int render_tag(Buffer& buffer);
+    int render_tag();
     size_t get_actual_size() const;
     size_t calculate_size() const;
     int encode_pcm_data(const int32_t* const data[], int numsamples,
-                        int sample_size, Buffer& buffer);
-    int encode_finish(Buffer& buffer);
+                        int sample_size);
+    int encode_finish();
 
     /*
      * The Xing data (which is pretty close to the beginning of the
@@ -62,6 +62,7 @@ private:
     size_t actual_size;    // Use this as the size instead of computing it.
     struct id3_tag* id3tag;
     size_t id3size;
+    Buffer& buffer_;
     typedef std::map<int,const char*> meta_map_t;
     static const meta_map_t metatag_map;
 };

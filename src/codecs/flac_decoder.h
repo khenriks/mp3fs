@@ -39,7 +39,7 @@ public:
     int open_file(const char* filename);
     time_t mtime();
     int process_metadata(Encoder* encoder);
-    int process_single_fr(Encoder* encoder, Buffer* buffer);
+    int process_single_fr(Encoder* encoder);
 protected:
     FLAC__StreamDecoderWriteStatus write_callback(const FLAC__Frame* frame,
                                                   const FLAC__int32* const buffer[]);
@@ -47,7 +47,6 @@ protected:
     void error_callback(FLAC__StreamDecoderErrorStatus status);
 private:
     Encoder* encoder_c;
-    Buffer* buffer_c;
     time_t mtime_;
     FLAC::Metadata::StreamInfo info;
     bool has_streaminfo;

@@ -51,7 +51,8 @@ static void lame_debug(const char *fmt, va_list list) {
  * particular file. Currently error handling is poor. If we run out
  * of memory, these routines will fail silently.
  */
-Mp3Encoder::Mp3Encoder(size_t _actual_size) : actual_size(_actual_size) {
+Mp3Encoder::Mp3Encoder(Buffer& buffer, size_t _actual_size) :
+actual_size(_actual_size), buffer_(buffer) {
     id3tag = id3_tag_new();
 
     Log(DEBUG) << "LAME ready to initialize.";
@@ -225,7 +226,7 @@ void Mp3Encoder::set_gain_db(const double dbgain) {
  * thing to go into the Buffer. The ID3v1 tag will also be written 128
  * bytes from the calculated end of the buffer. It has a fixed size.
  */
-int Mp3Encoder::render_tag(Buffer& buffer) {
+int Mp3Encoder::render_tag() {
     /*
      * Disable ID3 compression because it hardly saves space and some
      * players don't like it.
@@ -240,13 +241,13 @@ int Mp3Encoder::render_tag(Buffer& buffer) {
     id3size = id3_tag_render(id3tag, nullptr);
     std::vector<uint8_t> tag24(id3size);
     id3_tag_render(id3tag, tag24.data());
-    buffer.write(tag24);
+    buffer_.write(tag24);
 
     // Write v1 tag at end of buffer.
     id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
     std::vector<uint8_t> tag1(id3v1_tag_length);
     id3_tag_render(id3tag, tag1.data());
-    buffer.write(tag1, calculate_size() - id3v1_tag_length);
+    buffer_.write(tag1, calculate_size() - id3v1_tag_length);
 
     return 0;
 }
@@ -291,7 +292,7 @@ size_t Mp3Encoder::calculate_size() const {
  * the format used by the FLAC library.
  */
 int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
-                                int sample_size, Buffer& buffer) {
+                                int sample_size) {
     /*
      * We need to properly resample input data to a format LAME wants. LAME
      * requires samples in a C89 sized type, left aligned (i.e. scaled to
@@ -319,7 +320,7 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
     }
     vbuffer.resize(len);
 
-    buffer.write(vbuffer);
+    buffer_.write(vbuffer);
 
     return 0;
 }
@@ -329,7 +330,7 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
  * Buffer. This should be called after all input data has already been
  * passed to encode_pcm_data().
  */
-int Mp3Encoder::encode_finish(Buffer& buffer) {
+int Mp3Encoder::encode_finish() {
     std::vector<uint8_t> vbuffer(7200);
 
     int len = lame_encode_flush(lame_encoder, vbuffer.data(),
@@ -339,8 +340,8 @@ int Mp3Encoder::encode_finish(Buffer& buffer) {
     }
     vbuffer.resize(len);
 
-    buffer.write(vbuffer);
-    actual_size = buffer.tell() + id3v1_tag_length;
+    buffer_.write(vbuffer);
+    actual_size = buffer_.tell() + id3v1_tag_length;
 
     /*
      * Write the VBR tag data at id3size bytes after the beginning. lame
@@ -353,7 +354,7 @@ int Mp3Encoder::encode_finish(Buffer& buffer) {
         if (vbr_tag_size > MAX_VBR_FRAME_SIZE) {
            return -1;
         }
-        buffer.write(tail, id3size);
+        buffer_.write(tail, id3size);
     }
 
     return len;

@@ -109,9 +109,8 @@ int FlacDecoder::process_metadata(Encoder* encoder) {
  * result going into the given Buffer. For FLAC, this function does little,
  * with most work handled by write_callback().
  */
-int FlacDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
+int FlacDecoder::process_single_fr(Encoder* encoder) {
     encoder_c = encoder;
-    buffer_c = buffer;
     if (get_state() < FLAC__STREAM_DECODER_END_OF_STREAM) {
         if (!process_single()) {
             Log(ERROR) << "Error reading FLAC.";
@@ -202,8 +201,7 @@ FLAC__StreamDecoderWriteStatus
 FlacDecoder::write_callback(const FLAC__Frame* frame,
                             const FLAC__int32* const buffer[]) {
     if(encoder_c->encode_pcm_data(buffer, frame->header.blocksize,
-                                  frame->header.bits_per_sample,
-                                  *buffer_c) == -1) {
+                                  frame->header.bits_per_sample) == -1) {
         return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
 

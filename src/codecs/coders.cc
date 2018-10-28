@@ -60,9 +60,10 @@ void Encoder::set_gain(double gainref, double album_gain, double track_gain) {
 }
 
 /* Create instance of class derived from Encoder. */
-Encoder* Encoder::CreateEncoder(std::string file_type, size_t actual_size) {
+Encoder* Encoder::CreateEncoder(std::string file_type, Buffer& buffer,
+                                size_t actual_size) {
 #ifdef HAVE_MP3
-    if (file_type == "mp3") return new Mp3Encoder(actual_size);
+    if (file_type == "mp3") return new Mp3Encoder(buffer, actual_size);
 #endif
     return NULL;
 }
@@ -105,7 +106,8 @@ extern "C" {
 
     /* Check if an encoder is available to encode to the specified type. */
     int check_encoder(const char* type) {
-        Encoder* enc = Encoder::CreateEncoder(type);
+        Buffer b;
+        Encoder* enc = Encoder::CreateEncoder(type, b);
         if (enc) {
             delete enc;
             return 1;

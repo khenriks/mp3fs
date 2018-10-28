@@ -194,7 +194,7 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
  * of the Encoder will be used to process the resulting audio data, with the
  * result going into the given Buffer.
  */
-int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
+int VorbisDecoder::process_single_fr(Encoder* encoder) {
     std::vector<int16_t> decode_buffer(2048);
 
     long read_bytes = ov_read(&vf, (char*)decode_buffer.data(),
@@ -224,7 +224,7 @@ int VorbisDecoder::process_single_fr(Encoder* encoder, Buffer* buffer) {
 
         /* Send integer buffer to encoder */
         if (encoder->encode_pcm_data(encode_buffer_ptr,
-                                     (int)samples_per_channel, 16, *buffer) < 0) {
+                                     (int)samples_per_channel, 16) < 0) {
             Log(ERROR) << "Ogg Vorbis decoder: Failed to encode integer buffer.";
 
             return -1;

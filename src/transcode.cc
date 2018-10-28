@@ -52,8 +52,7 @@ StatsCache stats_cache;
  */
 bool transcode_until(struct transcoder* trans, size_t end) {
     while (trans->encoder && trans->buffer.tell() < end) {
-        int stat = trans->decoder->process_single_fr(trans->encoder,
-                                                     &trans->buffer);
+        int stat = trans->decoder->process_single_fr(trans->encoder);
         if (stat == -1 || (stat == 1 && transcoder_finish(trans) == -1)) {
             errno = EIO;
             return false;
@@ -96,7 +95,7 @@ struct transcoder* transcoder_new(char* filename) {
 
     stats_cache.get_filesize(trans->filename, trans->decoder->mtime(),
             trans->encoded_filesize);
-    trans->encoder = Encoder::CreateEncoder(params.desttype,
+    trans->encoder = Encoder::CreateEncoder(params.desttype, trans->buffer,
             trans->encoded_filesize);
     if (!trans->encoder) {
         goto encoder_fail;
@@ -114,7 +113,7 @@ struct transcoder* transcoder_new(char* filename) {
     Log(DEBUG) << "Metadata processing finished.";
 
     /* Render tag from Encoder to Buffer. */
-    if (trans->encoder->render_tag(trans->buffer) == -1) {
+    if (trans->encoder->render_tag() == -1) {
         Log(ERROR) << "Error rendering tag in Encoder.";
         goto post_init_fail;
     }
@@ -188,7 +187,7 @@ int transcoder_finish(struct transcoder* trans) {
 
     // lame cleanup
     if (trans->encoder) {
-        if (trans->encoder->encode_finish(trans->buffer) == -1) {
+        if (trans->encoder->encode_finish() == -1) {
             return -1;
         }
 
