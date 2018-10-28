@@ -1,0 +1,5 @@
+#!/bin/bash
+
+. "${BASH_SOURCE%/*}/funcs.sh"
+
+./concurrent_read "$DIRNAME/obama.mp3"

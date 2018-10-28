@@ -12,6 +12,7 @@ Makefile
 mp3fs.1
 *.a
 /src/mp3fs
+/test/concurrent_read
 /test/fpcompare
 /test/*.log
 /test/*.trs
