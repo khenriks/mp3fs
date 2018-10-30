@@ -23,12 +23,12 @@ Mount your filesystem like this:
 
 For example,
 
-    mp3fs -b 128 /mnt/music /mnt/mp3 -o allow_other,ro
+    mp3fs -b 128 /mnt/music /mnt/mp3 -o allow_other,ro,auto_cache
 
 In recent versions of FUSE and mp3fs, the same can be achieved with the
 following entry in `/etc/fstab`:
 
-    mp3fs#/mnt/music /mnt/mp3 fuse allow_other,ro,bitrate=128 0 0
+    mp3fs#/mnt/music /mnt/mp3 fuse allow_other,ro,auto_cache,bitrate=128 0 0
 
 At this point the files `/mnt/music/**.flac` and `/mnt/music/**.ogg` will
 show up as `/mnt/mp3/**.mp3`.
