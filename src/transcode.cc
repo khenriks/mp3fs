@@ -25,6 +25,7 @@
 #include <cstdarg>
 #include <cstring>
 #include <limits>
+#include <mutex>
 #include <vector>
 
 #include "codecs/coders.h"
@@ -39,6 +40,8 @@ struct transcoder {
 
     Encoder* encoder;
     Decoder* decoder;
+
+    std::mutex mutex;
 };
 
 namespace {
@@ -137,6 +140,7 @@ trans_fail:
 
 ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
                         size_t len) {
+    std::lock_guard<std::mutex> l(trans->mutex);
     Log(DEBUG) << "Reading " << len << " bytes from offset " << offset << ".";
     if ((size_t)offset > transcoder_get_size(trans)) {
         return -1;
