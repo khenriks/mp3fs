@@ -32,6 +32,9 @@ struct mp3fs_params params = {
     .basepath        = NULL,
     .bitrate         = 128,
     .debug           = 0,
+#ifdef HAVE_MP3
+    .desttype        = "mp3",
+#endif
     .gainmode        = 1,
     .gainref         = 89.0,
     .log_maxlevel    = "INFO",
@@ -41,9 +44,6 @@ struct mp3fs_params params = {
     .quality         = 5,
     .statcachesize   = 0,
     .vbr             = 0,
-#ifdef HAVE_MP3
-    .desttype  = "mp3",
-#endif
 };
 
 enum {

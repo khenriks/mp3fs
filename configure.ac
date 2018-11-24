@@ -2,7 +2,7 @@
 
 # Sets up package and initializes build system.
 AC_INIT([MP3FS], [0.91])
-AC_CONFIG_SRCDIR([src/mp3fs.c])
+AC_CONFIG_SRCDIR([src/mp3fs.cc])
 AC_CONFIG_AUX_DIR([config])
 AM_INIT_AUTOMAKE([foreign])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])

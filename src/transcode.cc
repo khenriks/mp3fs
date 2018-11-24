@@ -66,9 +66,6 @@ bool transcode_until(struct transcoder* trans, size_t end) {
 
 }
 
-/* Use "C" linkage to allow access from C code. */
-extern "C" {
-
 /* Allocate and initialize the transcoder */
 
 struct transcoder* transcoder_new(char* filename) {
@@ -264,6 +261,4 @@ int init_logging(const char* logfile, const char* max_level, int to_stderr,
     }
 
     return InitLogging(logfile, it->second, to_stderr, to_syslog);
-}
-
 }

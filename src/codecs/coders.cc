@@ -101,42 +101,37 @@ const char* decoder_list[] = {
 
 const size_t decoder_list_len = sizeof(decoder_list)/sizeof(const char*);
 
-/* Use "C" linkage to allow access from C code. */
-extern "C" {
-
-    /* Check if an encoder is available to encode to the specified type. */
-    int check_encoder(const char* type) {
-        Buffer b;
-        Encoder* enc = Encoder::CreateEncoder(type, b);
-        if (enc) {
-            delete enc;
-            return 1;
-        } else {
-            return 0;
-        }
+/* Check if an encoder is available to encode to the specified type. */
+int check_encoder(const char* type) {
+    Buffer b;
+    Encoder* enc = Encoder::CreateEncoder(type, b);
+    if (enc) {
+        delete enc;
+        return 1;
+    } else {
+        return 0;
     }
+}
 
-    /* Check if a decoder is available to decode from the specified type. */
-    int check_decoder(const char* type) {
-        Decoder* dec = Decoder::CreateDecoder(type);
-        if (dec) {
-            delete dec;
-            return 1;
-        } else {
-            return 0;
-        }
+/* Check if a decoder is available to decode from the specified type. */
+int check_decoder(const char* type) {
+    Decoder* dec = Decoder::CreateDecoder(type);
+    if (dec) {
+        delete dec;
+        return 1;
+    } else {
+        return 0;
     }
+}
 
-    void print_codec_versions() {
+void print_codec_versions() {
 #ifdef HAVE_MP3
-        printf("LAME library version: %s\n", get_lame_version());
+    printf("LAME library version: %s\n", get_lame_version());
 #endif
 #ifdef HAVE_FLAC
-        printf("FLAC library version: %s\n", FLAC__VERSION_STRING);
+    printf("FLAC library version: %s\n", FLAC__VERSION_STRING);
 #endif
 #ifdef HAVE_VORBIS
-        printf("%s\n", vorbis_version_string());
+    printf("%s\n", vorbis_version_string());
 #endif
-    }
-
 }

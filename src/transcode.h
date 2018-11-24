@@ -59,10 +59,6 @@ extern const size_t encoder_list_len;
 extern const char* decoder_list[];
 extern const size_t decoder_list_len;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Functions for doing transcoding, called by main program body */
 struct transcoder* transcoder_new(char* filename);
 ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
@@ -84,9 +80,5 @@ void mp3fs_error(const char* f, ...) __attribute__ ((format(printf, 1, 2)));;
 
 int init_logging(const char* logfile, const char* max_level, int to_stderr,
                  int to_syslog);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif  // MP3FS_TRANSCODE_H

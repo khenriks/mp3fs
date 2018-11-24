@@ -43,7 +43,7 @@ char* translate_path(const char* path) {
      * Allocate buffer. The +2 is for the terminating '\0' and to
      * accomodate possibly translating .mp3 to .flac later.
      */
-    result = malloc(strlen(params.basepath) + strlen(path) + 2);
+    result = (char*)malloc(strlen(params.basepath) + strlen(path) + 2);
 
     if (result) {
         strcpy(result, params.basepath);
@@ -138,7 +138,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     }
 
     /* 2 for directory separator and NULL byte */
-    origfile = malloc(strlen(origpath) + NAME_MAX + 2);
+    origfile = (char*)malloc(strlen(origpath) + NAME_MAX + 2);
     if (!origfile) {
         goto origfile_fail;
     }
@@ -368,12 +368,18 @@ static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
     return 0;
 }
 
-struct fuse_operations mp3fs_ops = {
-    .getattr  = mp3fs_getattr,
-    .readlink = mp3fs_readlink,
-    .readdir  = mp3fs_readdir,
-    .open     = mp3fs_open,
-    .read     = mp3fs_read,
-    .statfs   = mp3fs_statfs,
-    .release  = mp3fs_release,
-};
+static fuse_operations init_mp3fs_ops() {
+    fuse_operations ops;
+
+    ops.getattr  = mp3fs_getattr;
+    ops.readlink = mp3fs_readlink;
+    ops.open     = mp3fs_open;
+    ops.read     = mp3fs_read;
+    ops.statfs   = mp3fs_statfs;
+    ops.release  = mp3fs_release;
+    ops.readdir  = mp3fs_readdir;
+
+    return ops;
+}
+
+struct fuse_operations mp3fs_ops = init_mp3fs_ops();
