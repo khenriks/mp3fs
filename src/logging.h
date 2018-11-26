@@ -29,7 +29,7 @@
 
 class Logging {
 public:
-    enum class level { ERROR = 1, INFO = 2, DEBUG = 3 };
+    enum class level { INVALID = 0, ERROR = 1, INFO = 2, DEBUG = 3 };
 
     /*
      * Arguments:
@@ -70,14 +70,14 @@ private:
     const bool to_syslog_;
 };
 
+Logging::level StringToLevel(std::string level);
+
 bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr,
                  bool to_syslog);
 
 constexpr auto ERROR = Logging::level::ERROR;
 constexpr auto INFO = Logging::level::INFO;
 constexpr auto DEBUG = Logging::level::DEBUG;
-
-void log_with_level(Logging::level level, const char* format, va_list ap);
 
 void log_with_level(Logging::level level, const char* prefix,
                     const char* format, va_list ap);

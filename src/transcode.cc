@@ -231,34 +231,3 @@ size_t transcoder_get_size(struct transcoder* trans) {
         return trans->buffer.tell();
     }
 }
-
-void mp3fs_debug(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    log_with_level(DEBUG, format, args);
-    va_end(args);
-}
-
-void mp3fs_error(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    log_with_level(ERROR, format, args);
-    va_end(args);
-}
-
-int init_logging(const char* logfile, const char* max_level, int to_stderr,
-                 int to_syslog) {
-    static const std::map<std::string, Logging::level> level_map = {
-        {"DEBUG", DEBUG},
-        {"INFO", INFO},
-        {"ERROR", ERROR},
-    };
-    auto it = level_map.find(max_level);
-
-    if (it == level_map.end()) {
-        fprintf(stderr, "Invalid logging level string: %s\n", max_level);
-        return false;
-    }
-
-    return InitLogging(logfile, it->second, to_stderr, to_syslog);
-}

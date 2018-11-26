@@ -30,6 +30,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include "codecs/coders.h"
+#include "logging.h"
 #include "transcode.h"
 
 /*
@@ -74,8 +76,8 @@ void find_original(char* path) {
     char* ext = strrchr(path, '.');
 
     if (ext && strcmp(ext + 1, params.desttype) == 0) {
-        for (size_t i=0; i<decoder_list_len; ++i) {
-            strcpy(ext + 1, decoder_list[i]);
+        for (size_t i=0; i<decoder_list.size(); ++i) {
+            strcpy(ext + 1, decoder_list[i].c_str());
             if (access(path, F_OK) == 0) {
                 /* File exists with this extension */
                 return;
@@ -93,7 +95,7 @@ static int mp3fs_readlink(const char *path, char *buf, size_t size) {
     char* origpath;
     ssize_t len;
 
-    mp3fs_debug("readlink %s", path);
+    Log(DEBUG) << "readlink " << path;
 
     errno = 0;
 
@@ -128,7 +130,7 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     DIR *dp;
     struct dirent *de;
 
-    mp3fs_debug("readdir %s", path);
+    Log(DEBUG) << "readdir " << path;
 
     errno = 0;
 
@@ -180,7 +182,7 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     char* origpath;
     struct transcoder* trans;
 
-    mp3fs_debug("getattr %s", path);
+    Log(DEBUG) << "getattr " << path;
 
     errno = 0;
 
@@ -231,7 +233,7 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     struct transcoder* trans;
     int fd;
 
-    mp3fs_debug("open %s", path);
+    Log(DEBUG) << "open " << path;
 
     errno = 0;
 
@@ -281,7 +283,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     ssize_t read = 0;
     struct transcoder* trans;
 
-    mp3fs_debug("read %s: %zu bytes from %jd", path, size, (intmax_t)offset);
+    Log(DEBUG) << "read " << path << ": " << size << " bytes from " << offset;
 
     errno = 0;
 
@@ -307,7 +309,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     trans = (struct transcoder*)fi->fh;
 
     if (!trans) {
-        mp3fs_error("Tried to read from unopen file: %s", origpath);
+        Log(ERROR) << "Tried to read from unopen file: " << origpath;
         goto transcoder_fail;
     }
 
@@ -328,7 +330,7 @@ translate_fail:
 static int mp3fs_statfs(const char *path, struct statvfs *stbuf) {
     char* origpath;
 
-    mp3fs_debug("statfs %s", path);
+    Log(DEBUG) << "statfs " << path;
 
     errno = 0;
 
@@ -358,7 +360,7 @@ translate_fail:
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
     struct transcoder* trans;
 
-    mp3fs_debug("release %s", path);
+    Log(DEBUG) << "release " << path;
 
     trans = (struct transcoder*)fi->fh;
     if (trans) {

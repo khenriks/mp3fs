@@ -25,7 +25,6 @@
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
-#include <syslog.h>
 
 /* Global program parameters */
 extern struct mp3fs_params {
@@ -53,12 +52,6 @@ extern struct fuse_operations mp3fs_ops;
  */
 struct transcoder;
 
-/* Define lists of available encoder and decoder extensions. */
-extern const char* encoder_list[];
-extern const size_t encoder_list_len;
-extern const char* decoder_list[];
-extern const size_t decoder_list_len;
-
 /* Functions for doing transcoding, called by main program body */
 struct transcoder* transcoder_new(char* filename);
 ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
@@ -66,19 +59,5 @@ ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
 int transcoder_finish(struct transcoder* trans);
 void transcoder_delete(struct transcoder* trans);
 size_t transcoder_get_size(struct transcoder* trans);
-
-/* Check for availability of audio types. */
-int check_encoder(const char* type);
-int check_decoder(const char* type);
-
-/* Print codec versions. */
-void print_codec_versions();
-
-/* Functions to print output until C++ conversion is done. */
-void mp3fs_debug(const char* f, ...) __attribute__ ((format(printf, 1, 2)));;
-void mp3fs_error(const char* f, ...) __attribute__ ((format(printf, 1, 2)));;
-
-int init_logging(const char* logfile, const char* max_level, int to_stderr,
-                 int to_syslog);
 
 #endif  // MP3FS_TRANSCODE_H

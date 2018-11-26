@@ -80,16 +80,14 @@ Decoder* Decoder::CreateDecoder(std::string file_type) {
 }
 
 /* Define list of available encoder extensions. */
-const char* encoder_list[] = {
+const std::vector<std::string> encoder_list = {
 #ifdef HAVE_MP3
     "mp3",
 #endif
 };
 
-const size_t encoder_list_len = sizeof(encoder_list)/sizeof(const char*);
-
 /* Define list of available decoder extensions. */
-const char* decoder_list[] = {
+const std::vector<std::string> decoder_list = {
 #ifdef HAVE_FLAC
     "flac",
 #endif
@@ -98,8 +96,6 @@ const char* decoder_list[] = {
     "oga",
 #endif
 };
-
-const size_t decoder_list_len = sizeof(decoder_list)/sizeof(const char*);
 
 /* Check if an encoder is available to encode to the specified type. */
 int check_encoder(const char* type) {

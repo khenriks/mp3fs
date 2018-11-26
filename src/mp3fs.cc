@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "codecs/coders.h"
+#include "logging.h"
 #include "transcode.h"
 
 struct mp3fs_params params = {
@@ -184,8 +186,8 @@ int main(int argc, char *argv[]) {
         params.log_maxlevel = "DEBUG";
     }
 
-    if (!init_logging(params.logfile, params.log_maxlevel, params.log_stderr,
-                      params.log_syslog)) {
+    if (!InitLogging(params.logfile, StringToLevel(params.log_maxlevel),
+                     params.log_stderr, params.log_syslog)) {
         fprintf(stderr, "Failed to initialize logging module.\n");
         fprintf(stderr, "Maybe log file couldn't be opened for writing?\n");
         return 1;
@@ -228,32 +230,19 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    mp3fs_debug("MP3FS options:\n"
-                "basepath:       %s\n"
-                "bitrate:        %u\n"
-                "desttype:       %s\n"
-                "gainmode:       %d\n"
-                "gainref:        %f\n"
-                "log_maxlevel:   %s\n"
-                "log_stderr:     %u\n"
-                "log_syslog:     %u\n"
-                "logfile:        %s\n"
-                "quality:        %u\n"
-                "statcachesize:  %u\n"
-                "vbr:            %u\n"
-                ,
-                params.basepath,
-                params.bitrate,
-                params.desttype,
-                params.gainmode,
-                params.gainref,
-                params.log_maxlevel,
-                params.log_stderr,
-                params.log_syslog,
-                params.logfile,
-                params.quality,
-                params.statcachesize,
-                params.vbr);
+    Log(DEBUG) << "MP3FS options:" << std::endl
+               << "basepath:       " << params.basepath << std::endl
+               << "bitrate:        " << params.bitrate << std::endl
+               << "desttype:       " << params.desttype << std::endl
+               << "gainmode:       " << params.gainmode << std::endl
+               << "gainref:        " << params.gainref << std::endl
+               << "log_maxlevel:   " << params.log_maxlevel << std::endl
+               << "log_stderr:     " << params.log_stderr << std::endl
+               << "log_syslog:     " << params.log_syslog << std::endl
+               << "logfile:        " << params.logfile << std::endl
+               << "quality:        " << params.quality << std::endl
+               << "statcachesize:  " << params.statcachesize << std::endl
+               << "vbr:            " << params.vbr;
 
     // start FUSE
     ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);

@@ -76,14 +76,29 @@ Logging::Logger Log(Logging::level lev) {
     return {lev, logging};
 }
 
-bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr,
-                 bool to_syslog) {
-    logging = new Logging(logfile, max_level, to_stderr, to_syslog);
-    return !logging->GetFail();
+Logging::level StringToLevel(std::string level) {
+    static const std::map<std::string, Logging::level> level_map = {
+        {"DEBUG", DEBUG},
+        {"INFO", INFO},
+        {"ERROR", ERROR},
+    };
+    auto it = level_map.find(level);
+
+    if (it == level_map.end()) {
+        std::cerr << "Invalid logging level string: " << level << std::endl;
+        return Logging::level::INVALID;
+    }
+
+    return it->second;
 }
 
-void log_with_level(Logging::level level, const char* format, va_list ap) {
-    log_with_level(level, "", format, ap);
+bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr,
+                 bool to_syslog) {
+    if (max_level == Logging::level::INVALID) {
+        return false;
+    }
+    logging = new Logging(logfile, max_level, to_stderr, to_syslog);
+    return !logging->GetFail();
 }
 
 void log_with_level(Logging::level level, const char* prefix,
