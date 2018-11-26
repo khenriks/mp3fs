@@ -44,12 +44,12 @@ char* translate_path(const char* path) {
      * accomodate possibly translating .mp3 to .flac later.
      */
     result = malloc(strlen(params.basepath) + strlen(path) + 2);
-    
+
     if (result) {
         strcpy(result, params.basepath);
         strcat(result, path);
     }
-    
+
     return result;
 }
 
@@ -92,27 +92,27 @@ void find_original(char* path) {
 static int mp3fs_readlink(const char *path, char *buf, size_t size) {
     char* origpath;
     ssize_t len;
-    
+
     mp3fs_debug("readlink %s", path);
-    
+
     errno = 0;
-    
+
     origpath = translate_path(path);
     if (!origpath) {
         goto translate_fail;
     }
-    
+
     find_original(origpath);
-    
+
     len = readlink(origpath, buf, size - 2);
     if (len == -1) {
         goto readlink_fail;
     }
-    
+
     buf[len] = '\0';
-    
+
     transcoded_name(buf);
-    
+
 readlink_fail:
     free(origpath);
 translate_fail:
@@ -127,33 +127,33 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
     char* origfile;
     DIR *dp;
     struct dirent *de;
-    
+
     mp3fs_debug("readdir %s", path);
-    
+
     errno = 0;
-    
+
     origpath = translate_path(path);
     if (!origpath) {
         goto translate_fail;
     }
-    
+
     /* 2 for directory separator and NULL byte */
     origfile = malloc(strlen(origpath) + NAME_MAX + 2);
     if (!origfile) {
         goto origfile_fail;
     }
-    
+
     dp = opendir(origpath);
     if (!dp) {
         goto opendir_fail;
     }
-    
+
     while ((de = readdir(dp))) {
         struct stat st;
-        
+
         snprintf(origfile, strlen(origpath) + NAME_MAX + 2, "%s/%s", origpath,
                  de->d_name);
-        
+
         if (lstat(origfile, &st) == -1) {
             goto stat_fail;
         } else {
@@ -162,10 +162,10 @@ static int mp3fs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
                 transcoded_name(de->d_name);
             }
         }
-        
+
         if (filler(buf, de->d_name, &st, 0)) break;
     }
-    
+
 stat_fail:
     closedir(dp);
 opendir_fail:
@@ -179,16 +179,16 @@ translate_fail:
 static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     char* origpath;
     struct transcoder* trans;
-    
+
     mp3fs_debug("getattr %s", path);
-    
+
     errno = 0;
-    
+
     origpath = translate_path(path);
     if (!origpath) {
         goto translate_fail;
     }
-    
+
     /* pass-through for regular files */
     if (lstat(origpath, stbuf) == 0) {
         goto passthrough;
@@ -196,13 +196,13 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
         /* Not really an error. */
         errno = 0;
     }
-    
+
     find_original(origpath);
-    
+
     if (lstat(origpath, stbuf) == -1) {
         goto stat_fail;
     }
-    
+
     /*
      * Get size for resulting mp3 from regular file, otherwise it's a
      * symbolic link. */
@@ -211,13 +211,13 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
         if (!trans) {
             goto transcoder_fail;
         }
-        
+
         stbuf->st_size = transcoder_get_size(trans);
         stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
-        
+
         transcoder_delete(trans);
     }
-    
+
 transcoder_fail:
 stat_fail:
 passthrough:
@@ -230,18 +230,18 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     char* origpath;
     struct transcoder* trans;
     int fd;
-    
+
     mp3fs_debug("open %s", path);
-    
+
     errno = 0;
-    
+
     origpath = translate_path(path);
     if (!origpath) {
         goto translate_fail;
     }
-    
+
     fd = open(origpath, fi->flags);
-    
+
     /* File does exist, but can't be opened. */
     if (fd == -1 && errno != ENOENT) {
         goto open_fail;
@@ -249,23 +249,23 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
         /* Not really an error. */
         errno = 0;
     }
-    
+
     /* File is real and can be opened. */
     if (fd != -1) {
         close(fd);
         goto passthrough;
     }
-    
+
     find_original(origpath);
-    
+
     trans = transcoder_new(origpath);
     if (!trans) {
         goto transcoder_fail;
     }
-    
+
     /* Store transcoder in the fuse_file_info structure. */
     fi->fh = (uint64_t)trans;
-    
+
 transcoder_fail:
 passthrough:
 open_fail:
@@ -280,16 +280,16 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     int fd;
     ssize_t read = 0;
     struct transcoder* trans;
-    
+
     mp3fs_debug("read %s: %zu bytes from %jd", path, size, (intmax_t)offset);
-    
+
     errno = 0;
-    
+
     origpath = translate_path(path);
     if (!origpath) {
         goto translate_fail;
     }
-    
+
     /* If this is a real file, pass the call through. */
     fd = open(origpath, O_RDONLY);
     if (fd != -1) {
@@ -303,16 +303,16 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
         /* File does not exist, and this is fine. */
         errno = 0;
     }
-    
+
     trans = (struct transcoder*)fi->fh;
-    
+
     if (!trans) {
         mp3fs_error("Tried to read from unopen file: %s", origpath);
         goto transcoder_fail;
     }
-    
+
     read = transcoder_read(trans, buf, offset, size);
-    
+
 transcoder_fail:
 passthrough:
 open_fail:
@@ -327,11 +327,11 @@ translate_fail:
 
 static int mp3fs_statfs(const char *path, struct statvfs *stbuf) {
     char* origpath;
-    
+
     mp3fs_debug("statfs %s", path);
-    
+
     errno = 0;
-    
+
     origpath = translate_path(path);
     if (!origpath) {
         goto translate_fail;
@@ -357,14 +357,14 @@ translate_fail:
 
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
     struct transcoder* trans;
-    
+
     mp3fs_debug("release %s", path);
-    
+
     trans = (struct transcoder*)fi->fh;
     if (trans) {
         transcoder_delete(trans);
     }
-    
+
     return 0;
 }
 

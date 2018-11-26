@@ -47,7 +47,7 @@ private:
     // The modified time of the decoded file when the size was computed.
     time_t mtime;
 };
-    
+
 class StatsCache {
 public:
     typedef std::map<std::string, FileStat> cache_t;
