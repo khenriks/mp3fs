@@ -30,6 +30,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <memory>
+
 #include "codecs/coders.h"
 #include "logging.h"
 #include "transcode.h"
@@ -180,7 +182,6 @@ translate_fail:
 
 static int mp3fs_getattr(const char *path, struct stat *stbuf) {
     char* origpath;
-    struct transcoder* trans;
 
     Log(DEBUG) << "getattr " << path;
 
@@ -209,15 +210,13 @@ static int mp3fs_getattr(const char *path, struct stat *stbuf) {
      * Get size for resulting mp3 from regular file, otherwise it's a
      * symbolic link. */
     if (S_ISREG(stbuf->st_mode)) {
-        trans = transcoder_new(origpath);
-        if (!trans) {
+        Transcoder trans(origpath);
+        if (!trans.init()) {
             goto transcoder_fail;
         }
 
-        stbuf->st_size = transcoder_get_size(trans);
+        stbuf->st_size = trans.get_size();
         stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
-
-        transcoder_delete(trans);
     }
 
 transcoder_fail:
@@ -230,7 +229,7 @@ translate_fail:
 
 static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     char* origpath;
-    struct transcoder* trans;
+    std::unique_ptr<Transcoder> trans;
     int fd;
 
     Log(DEBUG) << "open " << path;
@@ -260,13 +259,13 @@ static int mp3fs_open(const char *path, struct fuse_file_info *fi) {
 
     find_original(origpath);
 
-    trans = transcoder_new(origpath);
-    if (!trans) {
+    trans.reset(new Transcoder(origpath));
+    if (!trans->init()) {
         goto transcoder_fail;
     }
 
     /* Store transcoder in the fuse_file_info structure. */
-    fi->fh = (uint64_t)trans;
+    fi->fh = (uint64_t)trans.release();
 
 transcoder_fail:
 passthrough:
@@ -281,7 +280,7 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     char* origpath;
     int fd;
     ssize_t read = 0;
-    struct transcoder* trans;
+    Transcoder* trans;
 
     Log(DEBUG) << "read " << path << ": " << size << " bytes from " << offset;
 
@@ -306,14 +305,14 @@ static int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
         errno = 0;
     }
 
-    trans = (struct transcoder*)fi->fh;
+    trans = (Transcoder*)fi->fh;
 
     if (!trans) {
         Log(ERROR) << "Tried to read from unopen file: " << origpath;
         goto transcoder_fail;
     }
 
-    read = transcoder_read(trans, buf, offset, size);
+    read = trans->read(buf, offset, size);
 
 transcoder_fail:
 passthrough:
@@ -358,13 +357,11 @@ translate_fail:
 }
 
 static int mp3fs_release(const char *path, struct fuse_file_info *fi) {
-    struct transcoder* trans;
-
     Log(DEBUG) << "release " << path;
 
-    trans = (struct transcoder*)fi->fh;
+    Transcoder* trans = (Transcoder*)fi->fh;
     if (trans) {
-        transcoder_delete(trans);
+        delete trans;
     }
 
     return 0;

@@ -32,31 +32,109 @@
 #include "logging.h"
 #include "stats_cache.h"
 
-/* Transcoder parameters for open mp3 */
-struct transcoder {
-    Buffer buffer;
-    std::string filename;
-    size_t encoded_filesize;
-
-    Encoder* encoder;
-    Decoder* decoder;
-
-    std::mutex mutex;
-};
-
 namespace {
 
 StatsCache stats_cache;
 
-/*
- * Transcode the buffer until the buffer has enough or until an error occurs.
- * The buffer needs at least 'end' bytes before transcoding stops. Returns true
- * if no errors and false otherwise.
- */
-bool transcode_until(struct transcoder* trans, size_t end) {
-    while (trans->encoder && trans->buffer.tell() < end) {
-        int stat = trans->decoder->process_single_fr(trans->encoder);
-        if (stat == -1 || (stat == 1 && transcoder_finish(trans) == -1)) {
+}
+
+bool Transcoder::init() {
+    /* Create Encoder and Decoder objects. */
+    decoder_.reset(Decoder::CreateDecoder(strrchr(filename_.c_str(), '.') + 1));
+    if (!decoder_) {
+        return false;
+    }
+
+    Log(DEBUG) << "Ready to initialize decoder.";
+
+    if (decoder_->open_file(filename_.c_str()) == -1) {
+        return false;
+    }
+
+    Log(DEBUG) << "Decoder initialized successfully.";
+
+    stats_cache.get_filesize(filename_, decoder_->mtime(),
+                             encoded_filesize_);
+    encoder_.reset(Encoder::CreateEncoder(params.desttype, buffer_,
+                                          encoded_filesize_));
+    if (!encoder_) {
+        return false;
+    }
+
+    /*
+     * Process metadata. The Decoder will call the Encoder to set appropriate
+     * tag values for the output file.
+     */
+    if (decoder_->process_metadata(encoder_.get()) == -1) {
+        Log(ERROR) << "Error processing metadata.";
+        return false;
+    }
+
+    Log(DEBUG) << "Metadata processing finished.";
+
+    /* Render tag from Encoder to Buffer. */
+    if (encoder_->render_tag() == -1) {
+        Log(ERROR) << "Error rendering tag in Encoder.";
+        return false;
+    }
+
+    Log(DEBUG) << "Tag written to Buffer.";
+
+    return true;
+}
+
+ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
+    std::lock_guard<std::mutex> l(mutex_);
+    Log(DEBUG) << "Reading " << len << " bytes from offset " << offset << ".";
+    if ((size_t)offset > get_size()) {
+        return -1;
+    }
+    if (offset + len > get_size()) {
+        len = get_size() - offset;
+    }
+
+    // If the requested data has already been filled into the buffer, simply
+    // copy it out.
+    if (buffer_.valid_bytes(offset, len)) {
+        buffer_.copy_into((uint8_t*)buff, offset, len);
+
+        return len;
+    }
+
+    // If we don't already have the data and we can't produce it, return error.
+    if (!decoder_ || !encoder_) {
+        return -1;
+    }
+
+    if (!transcode_until(encoder_->no_partial_encode() ?
+                         std::numeric_limits<size_t>::max() : offset + len)) {
+        return -1;
+    }
+
+    // truncate if we didn't actually get len
+    if (buffer_.tell() < offset + len) {
+        len = std::max<off_t>(buffer_.tell() - offset, 0);
+    }
+
+    buffer_.copy_into((uint8_t*)buff, offset, len);
+
+    return len;
+}
+
+size_t Transcoder::get_size() const {
+    if (encoded_filesize_ != 0) {
+        return encoded_filesize_;
+    } else if (encoder_) {
+        return encoder_->calculate_size();
+    } else {
+        return buffer_.tell();
+    }
+}
+
+bool Transcoder::transcode_until(size_t end) {
+    while (encoder_ && buffer_.tell() < end) {
+        int stat = decoder_->process_single_fr(encoder_.get());
+        if (stat == -1 || (stat == 1 && !finish())) {
             errno = EIO;
             return false;
         }
@@ -64,170 +142,32 @@ bool transcode_until(struct transcoder* trans, size_t end) {
     return true;
 }
 
-}
-
-/* Allocate and initialize the transcoder */
-
-struct transcoder* transcoder_new(char* filename) {
-    Log(DEBUG) << "Creating transcoder object for " << filename;
-
-    /* Allocate transcoder structure */
-    struct transcoder* trans = new struct transcoder;
-    if (!trans) {
-        goto trans_fail;
-    }
-
-    /* Create Encoder and Decoder objects. */
-    trans->filename = filename;
-    trans->encoded_filesize = 0;
-    trans->decoder = Decoder::CreateDecoder(strrchr(filename, '.') + 1);
-    if (!trans->decoder) {
-        goto decoder_fail;
-    }
-
-    Log(DEBUG) << "Ready to initialize decoder.";
-
-    if (trans->decoder->open_file(filename) == -1) {
-        goto init_fail;
-    }
-
-    Log(DEBUG) << "Decoder initialized successfully.";
-
-    stats_cache.get_filesize(trans->filename, trans->decoder->mtime(),
-            trans->encoded_filesize);
-    trans->encoder = Encoder::CreateEncoder(params.desttype, trans->buffer,
-            trans->encoded_filesize);
-    if (!trans->encoder) {
-        goto encoder_fail;
-    }
-
-    /*
-     * Process metadata. The Decoder will call the Encoder to set appropriate
-     * tag values for the output file.
-     */
-    if (trans->decoder->process_metadata(trans->encoder) == -1) {
-        Log(ERROR) << "Error processing metadata.";
-        goto post_init_fail;
-    }
-
-    Log(DEBUG) << "Metadata processing finished.";
-
-    /* Render tag from Encoder to Buffer. */
-    if (trans->encoder->render_tag() == -1) {
-        Log(ERROR) << "Error rendering tag in Encoder.";
-        goto post_init_fail;
-    }
-
-    Log(DEBUG) << "Tag written to Buffer.";
-
-    return trans;
-
-post_init_fail:
-    delete trans->encoder;
-encoder_fail:
-init_fail:
-    delete trans->decoder;
-decoder_fail:
-    delete trans;
-trans_fail:
-    return NULL;
-}
-
-/* Read some bytes into the internal buffer and into the given buffer. */
-
-ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
-                        size_t len) {
-    std::lock_guard<std::mutex> l(trans->mutex);
-    Log(DEBUG) << "Reading " << len << " bytes from offset " << offset << ".";
-    if ((size_t)offset > transcoder_get_size(trans)) {
-        return -1;
-    }
-    if (offset + len > transcoder_get_size(trans)) {
-        len = transcoder_get_size(trans) - offset;
-    }
-
-    // If the requested data has already been filled into the buffer, simply
-    // copy it out.
-    if (trans->buffer.valid_bytes(offset, len)) {
-        trans->buffer.copy_into((uint8_t*)buff, offset, len);
-
-        return len;
-    }
-
-    // If we don't already have the data and we can't produce it, return error.
-    if (!trans->decoder || !trans->encoder) {
-        return -1;
-    }
-
-    if (!transcode_until(trans,
-                         trans->encoder->no_partial_encode() ?
-                         std::numeric_limits<size_t>::max() : offset + len)) {
-        return -1;
-    }
-
-    // truncate if we didn't actually get len
-    if (trans->buffer.tell() < offset + len) {
-        len = std::max<off_t>(trans->buffer.tell() - offset, 0);
-    }
-
-    trans->buffer.copy_into((uint8_t*)buff, offset, len);
-
-    return len;
-}
-
-/* Close the input file and free everything but the initial buffer. */
-
-int transcoder_finish(struct transcoder* trans) {
-    // flac cleanup
+bool Transcoder::finish() {
+    // Decoder cleanup
     time_t decoded_file_mtime = 0;
-    if (trans->decoder) {
-        decoded_file_mtime = trans->decoder->mtime();
-        delete trans->decoder;
-        trans->decoder = NULL;
+    if (decoder_) {
+        decoded_file_mtime = decoder_->mtime();
+        decoder_.reset(nullptr);
     }
 
-    // lame cleanup
-    if (trans->encoder) {
-        if (trans->encoder->encode_finish() == -1) {
-            return -1;
+    // Encoder cleanup
+    if (encoder_) {
+        if (encoder_->encode_finish() == -1) {
+            return false;
         }
 
         /* Check encoded buffer size. */
-        trans->encoded_filesize = trans->encoder->get_actual_size();
+        encoded_filesize_ = encoder_->get_actual_size();
         Log(DEBUG) << "Finishing file. Predicted size: " <<
-                trans->encoder->calculate_size() << ", final size: " <<
-                trans->encoded_filesize;
-        delete trans->encoder;
-        trans->encoder = NULL;
+            encoder_->calculate_size() << ", final size: " <<
+            encoded_filesize_;
+        encoder_.reset(nullptr);
     }
 
-    if (params.statcachesize > 0 && trans->encoded_filesize != 0) {
-        stats_cache.put_filesize(trans->filename, trans->encoded_filesize,
-                decoded_file_mtime);
+    if (params.statcachesize > 0 && encoded_filesize_ != 0) {
+        stats_cache.put_filesize(filename_, encoded_filesize_,
+                                 decoded_file_mtime);
     }
 
-    return 0;
-}
-
-/* Free the transcoder structure. */
-
-void transcoder_delete(struct transcoder* trans) {
-    if (trans->decoder) {
-        delete trans->decoder;
-    }
-    if (trans->encoder) {
-        delete trans->encoder;
-    }
-    delete trans;
-}
-
-/* Return size of output file, as computed by Encoder. */
-size_t transcoder_get_size(struct transcoder* trans) {
-    if (trans->encoded_filesize != 0) {
-        return trans->encoded_filesize;
-    } else if (trans->encoder) {
-        return trans->encoder->calculate_size();
-    } else {
-        return trans->buffer.tell();
-    }
+    return true;
 }

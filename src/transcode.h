@@ -24,7 +24,14 @@
 
 #define FUSE_USE_VERSION 26
 
+#include <memory>
+#include <mutex>
+
 #include <fuse.h>
+
+#include "buffer.h"
+#include "codecs/coders.h"
+#include "logging.h"
 
 /* Global program parameters */
 extern struct mp3fs_params {
@@ -46,18 +53,41 @@ extern struct mp3fs_params {
 /* Fuse operations struct */
 extern struct fuse_operations mp3fs_ops;
 
-/*
- * Forward declare transcoder struct. Don't actually define it here, to avoid
- * including coders.h and turning into C++.
- */
-struct transcoder;
+/* Transcoder for open file */
+class Transcoder {
+public:
+    Transcoder(char* filename) : filename_(filename), encoded_filesize_(0) {
+        Log(DEBUG) << "Creating transcoder object for " << filename;
+    };
+    ~Transcoder() {};
 
-/* Functions for doing transcoding, called by main program body */
-struct transcoder* transcoder_new(char* filename);
-ssize_t transcoder_read(struct transcoder* trans, char* buff, off_t offset,
-                        size_t len);
-int transcoder_finish(struct transcoder* trans);
-void transcoder_delete(struct transcoder* trans);
-size_t transcoder_get_size(struct transcoder* trans);
+    /** Initialize the transcoder */
+    bool init();
+
+    /** Read bytes into the internal buffer and into the given buffer. */
+    ssize_t read(char* buff, off_t offset, size_t len);
+
+    /** Return size of output file, as computed by Encoder. */
+    size_t get_size() const;
+private:
+    /**
+     * Transcode into the buffer until the buffer has at least end bytes or
+     * until an error occurs.
+     * Returns true if no errors and false otherwise.
+     */
+    bool transcode_until(size_t end);
+
+    /** Close the input file and free everything but the buffer. */
+    bool finish();
+
+    Buffer buffer_;
+    std::string filename_;
+    size_t encoded_filesize_;
+
+    std::unique_ptr<Encoder> encoder_;
+    std::unique_ptr<Decoder> decoder_;
+
+    std::mutex mutex_;
+};
 
 #endif  // MP3FS_TRANSCODE_H
