@@ -27,7 +27,7 @@
 #include <lame/lame.h>
 
 #include "codecs/coders.h"
-#include "transcode.h"
+#include "mp3fs.h"
 
 class Mp3Encoder : public Encoder {
 public:

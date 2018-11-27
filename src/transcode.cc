@@ -30,6 +30,7 @@
 
 #include "codecs/coders.h"
 #include "logging.h"
+#include "mp3fs.h"
 #include "stats_cache.h"
 
 namespace {

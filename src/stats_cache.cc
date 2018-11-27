@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "logging.h"
-#include "transcode.h"
+#include "mp3fs.h"
 
 namespace {
 

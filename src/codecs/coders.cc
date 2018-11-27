@@ -20,8 +20,6 @@
 
 #include "codecs/coders.h"
 
-#include "transcode.h"
-
 /*
  * Conditionally include specific encoders and decoders based on
  * configuration.

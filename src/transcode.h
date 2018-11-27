@@ -22,36 +22,12 @@
 #ifndef MP3FS_TRANSCODE_H
 #define MP3FS_TRANSCODE_H
 
-#define FUSE_USE_VERSION 26
-
 #include <memory>
 #include <mutex>
-
-#include <fuse.h>
 
 #include "buffer.h"
 #include "codecs/coders.h"
 #include "logging.h"
-
-/* Global program parameters */
-extern struct mp3fs_params {
-    const char *basepath;
-    unsigned int bitrate;
-    int debug;
-    const char* desttype;
-    int gainmode;
-    float gainref;
-    const char* log_maxlevel;
-    int log_stderr;
-    int log_syslog;
-    const char* logfile;
-    unsigned int quality;
-    unsigned int statcachesize;
-    int vbr;
-} params;
-
-/* Fuse operations struct */
-extern struct fuse_operations mp3fs_ops;
 
 /* Transcoder for open file */
 class Transcoder {

@@ -21,6 +21,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+#define FUSE_USE_VERSION 26
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,12 +30,14 @@
 #include <dirent.h>
 #include <limits.h>
 #include <fcntl.h>
+#include <fuse.h>
 #include <unistd.h>
 
 #include <memory>
 
 #include "codecs/coders.h"
 #include "logging.h"
+#include "mp3fs.h"
 #include "transcode.h"
 
 /*

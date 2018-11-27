@@ -31,9 +31,16 @@
 #include <fuse_darwin.h>
 #endif
 
+#define FUSE_USE_VERSION 26
+
+#include <fuse.h>
+
 #include "codecs/coders.h"
 #include "logging.h"
-#include "transcode.h"
+#include "mp3fs.h"
+
+/* Fuse operations struct */
+extern struct fuse_operations mp3fs_ops;
 
 struct mp3fs_params params = {
     .basepath        = NULL,
