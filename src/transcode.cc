@@ -39,16 +39,18 @@ StatsCache stats_cache;
 
 }
 
-bool Transcoder::init() {
+bool Transcoder::open() {
     /* Create Encoder and Decoder objects. */
     decoder_.reset(Decoder::CreateDecoder(strrchr(filename_.c_str(), '.') + 1));
     if (!decoder_) {
+        errno = EIO;
         return false;
     }
 
     Log(DEBUG) << "Ready to initialize decoder.";
 
     if (decoder_->open_file(filename_.c_str()) == -1) {
+        errno = EIO;
         return false;
     }
 
@@ -59,6 +61,7 @@ bool Transcoder::init() {
     encoder_.reset(Encoder::CreateEncoder(params.desttype, buffer_,
                                           encoded_filesize_));
     if (!encoder_) {
+        errno = EIO;
         return false;
     }
 
@@ -68,6 +71,7 @@ bool Transcoder::init() {
      */
     if (decoder_->process_metadata(encoder_.get()) == -1) {
         Log(ERROR) << "Error processing metadata.";
+        errno = EIO;
         return false;
     }
 
@@ -76,6 +80,7 @@ bool Transcoder::init() {
     /* Render tag from Encoder to Buffer. */
     if (encoder_->render_tag() == -1) {
         Log(ERROR) << "Error rendering tag in Encoder.";
+        errno = EIO;
         return false;
     }
 

@@ -163,7 +163,7 @@ int mp3fs_getattr(const char *path, struct stat *stbuf) {
      * symbolic link. */
     if (S_ISREG(stbuf->st_mode)) {
         Transcoder trans(origpath);
-        if (!trans.init()) {
+        if (!trans.open()) {
             return -errno;
         }
 
@@ -200,7 +200,7 @@ int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     find_original(&origpath);
 
     std::unique_ptr<Transcoder> trans(new Transcoder(origpath));
-    if (!trans->init()) {
+    if (!trans->open()) {
         return -errno;
     }
 

@@ -38,8 +38,8 @@ public:
     };
     ~Transcoder() {};
 
-    /** Initialize the transcoder */
-    bool init();
+    /** Initialize the transcoder. This is equivalent of a file open. */
+    bool open();
 
     /** Read bytes into the internal buffer and into the given buffer. */
     ssize_t read(char* buff, off_t offset, size_t len);
