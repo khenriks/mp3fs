@@ -1,0 +1,7 @@
+#!/bin/bash
+
+. "${BASH_SOURCE%/*}/funcs.sh"
+
+sha1sum -c --status << EOF
+fa724b4678e526b86e648fa53ca4ca19f829ba1d $DIRNAME/obama.flac
+EOF
