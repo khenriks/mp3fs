@@ -35,6 +35,7 @@
 #include "codecs/coders.h"
 #include "logging.h"
 #include "mp3fs.h"
+#include "reader.h"
 #include "transcode.h"
 
 namespace {
@@ -183,19 +184,15 @@ int mp3fs_open(const char *path, struct fuse_file_info *fi) {
 
     int fd = open(origpath.c_str(), fi->flags);
 
-    /* File does exist, but can't be opened. */
-    if (fd == -1 && errno != ENOENT) {
+    if (fd != -1) {  // File exists and was successfully opened.
+        fi->fh = reinterpret_cast<uint64_t>(new FileReader(fd));
+        return 0;
+    } else if (errno != ENOENT) {  // File exists but can't be opened.
         return -errno;
-    } else {
-        /* Not really an error. */
-        errno = 0;
     }
 
-    /* File is real and can be opened. */
-    if (fd != -1) {
-        close(fd);
-        return 0;
-    }
+    // File does not exist; try again after translating path.
+    errno = 0;
 
     find_original(&origpath);
 
@@ -205,7 +202,7 @@ int mp3fs_open(const char *path, struct fuse_file_info *fi) {
     }
 
     /* Store transcoder in the fuse_file_info structure. */
-    fi->fh = (uint64_t)trans.release();
+    fi->fh = reinterpret_cast<uint64_t>(trans.release());
 
     return 0;
 }
@@ -216,30 +213,14 @@ int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
 
     errno = 0;
 
-    std::string origpath = translate_path(path);
+    Reader* reader = reinterpret_cast<Reader*>(fi->fh);
 
-    /* If this is a real file, pass the call through. */
-    int fd = open(origpath.c_str(), O_RDONLY);
-    if (fd != -1) {
-        ssize_t read = pread(fd, buf, size, offset);
-        close(fd);
-        return (int)read;
-    } else if (errno != ENOENT) {
-        /* File does exist, but can't be opened. */
-        return -errno;
-    } else {
-        /* File does not exist, and this is fine. */
-        errno = 0;
-    }
-
-    Transcoder* trans = (Transcoder*)fi->fh;
-
-    if (!trans) {
-        Log(ERROR) << "Tried to read from unopen file: " << origpath;
+    if (!reader) {
+        Log(ERROR) << "Tried to read from unopen file: " << path;
         return 0;
     }
 
-    ssize_t read = trans->read(buf, offset, size);
+    ssize_t read = reader->read(buf, offset, size);
 
     if (read >= 0) {
         return (int)read;
@@ -273,9 +254,9 @@ int mp3fs_statfs(const char *path, struct statvfs *stbuf) {
 int mp3fs_release(const char *path, struct fuse_file_info *fi) {
     Log(DEBUG) << "release " << path;
 
-    Transcoder* trans = (Transcoder*)fi->fh;
-    if (trans) {
-        delete trans;
+    Reader* reader = reinterpret_cast<Reader*>(fi->fh);
+    if (reader) {
+        delete reader;
     }
 
     return 0;

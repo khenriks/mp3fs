@@ -28,21 +28,23 @@
 #include "buffer.h"
 #include "codecs/coders.h"
 #include "logging.h"
+#include "reader.h"
 
 /* Transcoder for open file */
-class Transcoder {
+class Transcoder : public Reader {
 public:
     Transcoder(const std::string& filename) :
     filename_(filename), encoded_filesize_(0) {
         Log(DEBUG) << "Creating transcoder object for " << filename;
-    };
-    ~Transcoder() {};
+    }
+
+    ~Transcoder() override {}
 
     /** Initialize the transcoder. This is equivalent of a file open. */
     bool open();
 
     /** Read bytes into the internal buffer and into the given buffer. */
-    ssize_t read(char* buff, off_t offset, size_t len);
+    ssize_t read(char* buff, off_t offset, size_t len) override;
 
     /** Return size of output file, as computed by Encoder. */
     size_t get_size() const;
