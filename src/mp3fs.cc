@@ -21,10 +21,15 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdio>
+#include <iostream>
+
+#define FUSE_USE_VERSION 26
+
+#include <fuse.h>
+#ifdef __APPLE__
+#include <fuse_darwin.h>
+#endif
 
 #include "codecs/coders.h"
 #include "logging.h"
@@ -139,6 +144,20 @@ General options:\n\
 \n", stdout);
 }
 
+void print_versions(std::ostream&& out) {
+#ifdef GIT_VERSION
+    out << "mp3fs git version: " << GIT_VERSION << std::endl;
+#else
+    out << "mp3fs version: " << PACKAGE_VERSION << std::endl;
+#endif
+    print_codec_versions(out);
+    out << "FUSE library version: " << FUSE_MAJOR_VERSION << "." <<
+        FUSE_MINOR_VERSION << std::endl;
+#ifdef __APPLE__
+    out << "OS X FUSE version: " << osxfuse_version() << std::endl;
+#endif
+}
+
 static int mp3fs_opt_proc(void* data, const char* arg, int key,
                           struct fuse_args *outargs) {
     (void)data;
@@ -158,11 +177,7 @@ static int mp3fs_opt_proc(void* data, const char* arg, int key,
             exit(1);
 
         case KEY_VERSION:
-            // TODO: Also output this information in debug mode
-            printf("mp3fs version: %s\n", PACKAGE_VERSION);
-            print_codec_versions();
-            fuse_opt_add_arg(outargs, "--version");
-            fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
+            print_versions(std::move(std::cout));
             exit(0);
     }
 
@@ -229,6 +244,8 @@ int main(int argc, char *argv[]) {
         usage(argv[0]);
         return 1;
     }
+
+    print_versions(Log(DEBUG));
 
     Log(DEBUG) << "MP3FS options:" << std::endl
                << "basepath:       " << params.basepath << std::endl

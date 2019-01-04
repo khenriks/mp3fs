@@ -22,6 +22,7 @@
 #define CODERS_H
 
 #include <cstdint>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -99,7 +100,7 @@ public:
 };
 
 /* Print codec versions. */
-void print_codec_versions();
+void print_codec_versions(std::ostream& out);
 
 /* Define lists of available encoder and decoder extensions. */
 extern const std::vector<std::string> decoder_list;

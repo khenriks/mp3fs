@@ -120,14 +120,14 @@ int check_decoder(const char* type) {
     }
 }
 
-void print_codec_versions() {
+void print_codec_versions(std::ostream& out) {
 #ifdef HAVE_MP3
-    printf("LAME library version: %s\n", get_lame_version());
+    out << "LAME library version: " << get_lame_version() << std::endl;
 #endif
 #ifdef HAVE_FLAC
-    printf("FLAC library version: %s\n", FLAC__VERSION_STRING);
+    out << "FLAC library version: " << FLAC__VERSION_STRING << std::endl;
 #endif
 #ifdef HAVE_VORBIS
-    printf("%s\n", vorbis_version_string());
+    out << vorbis_version_string() << std::endl;
 #endif
 }
