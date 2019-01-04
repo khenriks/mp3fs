@@ -32,7 +32,7 @@ The commands to install the prerequisites follow.
 
 If building from git:
 
-    aptitude install autoconf automake asciidoc
+    aptitude install autoconf automake asciidoc xmlto
 
 ### Ubuntu
 
@@ -40,7 +40,7 @@ If building from git:
 
 If building from git:
 
-    apt install autoconf automake asciidoc
+    apt install autoconf automake asciidoc xmlto
 
 ### macOS with Homebrew
 
