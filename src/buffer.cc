@@ -20,7 +20,6 @@
 
 #include "buffer.h"
 
-#include <cerrno>
 #include <cstdlib>
 #include <cstring>
 
@@ -57,7 +56,18 @@ void Buffer::copy_into(uint8_t* out_data, size_t offset, size_t size) const {
 bool Buffer::valid_bytes(size_t offset, size_t size) const {
     std::streamoff end = offset + size;
 
-    return end <= start_bound_ || (std::streamoff)offset >= end_bound_;
+    /*
+     * Bytes are valid if [ offset,end ) lies within
+     * [ 0,start_bound_ ) U [ end_bound,data_.size() )
+     *
+     * This requires that end <= data_.size(), and further that
+     *   a) end <= start_bound_,
+     *   b) offset >= end_bound_, or
+     *   c) start_bound_ == end_bound_.
+     */
+    return end <= (std::streamoff)data_.size() &&
+        (end <= start_bound_ || (std::streamoff)offset >= end_bound_ ||
+         start_bound_ == end_bound_);
 }
 
 void Buffer::mark_valid(std::streamoff start, std::streamoff end) {
