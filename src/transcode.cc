@@ -93,27 +93,30 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
     std::lock_guard<std::mutex> l(mutex_);
     Log(DEBUG) << "Reading " << len << " bytes from offset " << offset << ".";
     if ((size_t)offset > get_size()) {
-        return -1;
+        return 0;
     }
     if (offset + len > get_size()) {
         len = get_size() - offset;
+        Log(DEBUG) << "Actual length to read: " << len;
     }
 
     // If the requested data has already been filled into the buffer, simply
     // copy it out.
     if (buffer_.valid_bytes(offset, len)) {
         buffer_.copy_into((uint8_t*)buff, offset, len);
-
         return len;
     }
 
     // If we don't already have the data and we can't produce it, return error.
     if (!decoder_ || !encoder_) {
+        Log(ERROR) << "Can't generate data with closed coders.";
+        errno = EINVAL;
         return -1;
     }
 
     if (!transcode_until(encoder_->no_partial_encode() ?
                          std::numeric_limits<size_t>::max() : offset + len)) {
+        errno = EIO;
         return -1;
     }
 
@@ -141,7 +144,6 @@ bool Transcoder::transcode_until(size_t end) {
     while (encoder_ && buffer_.tell() < end) {
         int stat = decoder_->process_single_fr(encoder_.get());
         if (stat == -1 || (stat == 1 && !finish())) {
-            errno = EIO;
             return false;
         }
     }
