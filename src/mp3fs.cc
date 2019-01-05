@@ -21,7 +21,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <cstdio>
 #include <iostream>
 
 #define FUSE_USE_VERSION 26
@@ -42,23 +41,7 @@
 /* Fuse operations struct */
 extern struct fuse_operations mp3fs_ops;
 
-struct mp3fs_params params = {
-    .basepath        = NULL,
-    .bitrate         = 128,
-    .debug           = 0,
-#ifdef HAVE_MP3
-    .desttype        = "mp3",
-#endif
-    .gainmode        = 1,
-    .gainref         = 89.0,
-    .log_maxlevel    = "INFO",
-    .log_stderr      = 0,
-    .log_syslog      = 0,
-    .logfile         = "",
-    .quality         = 5,
-    .statcachesize   = 0,
-    .vbr             = 0,
-};
+namespace {
 
 enum {
     KEY_HELP,
@@ -68,7 +51,7 @@ enum {
 
 #define MP3FS_OPT(t, p, v) { t, offsetof(struct mp3fs_params, p), v }
 
-static struct fuse_opt mp3fs_opts[] = {
+struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("-b %u",                bitrate, 0),
     MP3FS_OPT("bitrate=%u",           bitrate, 0),
     MP3FS_OPT("-d",                   debug, 1),
@@ -103,52 +86,53 @@ static struct fuse_opt mp3fs_opts[] = {
     FUSE_OPT_END
 };
 
-void usage(char *name) {
-    printf("Usage: %s [OPTION]... IN_DIR OUT_DIR\n", name);
-    fputs("\
-Mount IN_DIR on OUT_DIR, converting FLAC/Ogg Vorbis files to MP3 upon access.\n\
-\n\
-Encoding options:\n\
-    -b RATE, -obitrate=RATE\n\
-                           encoding bitrate: Acceptable values for RATE\n\
-                           include 96, 112, 128, 160, 192, 224, 256, and\n\
-                           320; 128 is the default\n\
-    --gainmode=<0,1,2>, -ogainmode=<0,1,2>\n\
-                           what to do with ReplayGain tags:\n\
-                           0 - ignore, 1 - prefer album gain (default),\n\
-                           2 - prefer track gain\n\
-    --gainref=REF, -ogainref=REF\n\
-                           reference value to use for ReplayGain in \n\
-                           decibels: defaults to 89 dB\n\
-    --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL\n\
-                           maximum level of messages to log, either ERROR,\n\
-                           INFO, or DEBUG. Defaults to INFO, and always set\n\
-                           to DEBUG in debug mode. Note that the other log\n\
-                           flags must also be set to enable logging\n\
-    --log_stderr, -olog_stderr\n\
-                           enable outputting logging messages to stderr.\n\
-                           Enabled in debug mode.\n\
-    --log_syslog, -olog_syslog\n\
-                           enable outputting logging messages to syslog\n\
-    --logfile=FILE, -ologfile=FILE\n\
-                           file to output log messages to. By default, no\n\
-                           file will be written.\n\
-    --quality=<0..9>, -oquality=<0..9>\n\
-                           encoding quality: 0 is slowest, 9 is fastest;\n\
-                           5 is the default\n\
-    --statcachesize=SIZE, -ostatcachesize=SIZE\n\
-                           Set the number of entries for the file stats\n\
-                           cache.  Necessary for decent performance when\n\
-                           VBR is enabled.  Each entry takes 100-200 bytes.\n\
-    --vbr, -ovbr           Use variable bit rate encoding.  When set, the\n\
-                           bit rate set with '-b' sets the maximum bit rate.\n\
-                           Performance will be terrible unless the\n\
-                           statcachesize is enabled.\n\
-\n\
-General options:\n\
-    -h, --help             display this help and exit\n\
-    -V, --version          output version information and exit\n\
-\n", stdout);
+void usage(const std::string& name) {
+    std::cout << "Usage: " << name << " [OPTION]... IN_DIR OUT_DIR" <<
+        std::endl;
+    std::cout << R"(
+Mount IN_DIR on OUT_DIR, converting FLAC/Ogg Vorbis files to MP3 upon access.
+
+Encoding options:
+    -b RATE, -obitrate=RATE
+                           encoding bitrate: Acceptable values for RATE
+                           include 96, 112, 128, 160, 192, 224, 256, and
+                           320; 128 is the default
+    --gainmode=<0,1,2>, -ogainmode=<0,1,2>
+                           what to do with ReplayGain tags:
+                           0 - ignore, 1 - prefer album gain (default),
+                           2 - prefer track gain
+    --gainref=REF, -ogainref=REF
+                           reference value to use for ReplayGain in
+                           decibels: defaults to 89 dB
+    --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL
+                           maximum level of messages to log, either ERROR,
+                           INFO, or DEBUG. Defaults to INFO, and always set
+                           to DEBUG in debug mode. Note that the other log
+                           flags must also be set to enable logging
+    --log_stderr, -olog_stderr
+                           enable outputting logging messages to stderr.
+                           Enabled in debug mode.
+    --log_syslog, -olog_syslog
+                           enable outputting logging messages to syslog
+    --logfile=FILE, -ologfile=FILE
+                           file to output log messages to. By default, no
+                           file will be written.
+    --quality=<0..9>, -oquality=<0..9>
+                           encoding quality: 0 is slowest, 9 is fastest;
+                           5 is the default
+    --statcachesize=SIZE, -ostatcachesize=SIZE
+                           Set the number of entries for the file stats
+                           cache.  Necessary for decent performance when
+                           VBR is enabled.  Each entry takes 100-200 bytes.
+    --vbr, -ovbr           Use variable bit rate encoding.  When set, the
+                           bit rate set with '-b' sets the maximum bit rate.
+                           Performance will be terrible unless the
+                           statcachesize is enabled.
+
+General options:
+    -h, --help             display this help and exit
+    -V, --version          output version information and exit
+)" << std::endl;
 }
 
 void print_versions(std::ostream&& out) {
@@ -165,9 +149,7 @@ void print_versions(std::ostream&& out) {
 #endif
 }
 
-static int mp3fs_opt_proc(void* data, const char* arg, int key,
-                          struct fuse_args *outargs) {
-    (void)data;
+int mp3fs_opt_proc(void*, const char* arg, int key, struct fuse_args *outargs) {
     switch(key) {
         case FUSE_OPT_KEY_NONOPT:
             // check for flacdir and bitrate parameters
@@ -191,13 +173,31 @@ static int mp3fs_opt_proc(void* data, const char* arg, int key,
     return 1;
 }
 
-int main(int argc, char *argv[]) {
-    int ret;
+}  // namespace
 
+struct mp3fs_params params = {
+    .basepath        = NULL,
+    .bitrate         = 128,
+    .debug           = 0,
+#ifdef HAVE_MP3
+    .desttype        = "mp3",
+#endif
+    .gainmode        = 1,
+    .gainref         = 89.0,
+    .log_maxlevel    = "INFO",
+    .log_stderr      = 0,
+    .log_syslog      = 0,
+    .logfile         = "",
+    .quality         = 5,
+    .statcachesize   = 0,
+    .vbr             = 0,
+};
+
+int main(int argc, char *argv[]) {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
     if (fuse_opt_parse(&args, &params, mp3fs_opts, mp3fs_opt_proc)) {
-        fprintf(stderr, "Error parsing options.\n\n");
+        std::cerr << "Error parsing options.\n" << std::endl;
         usage(argv[0]);
         return 1;
     }
@@ -210,44 +210,45 @@ int main(int argc, char *argv[]) {
 
     if (!InitLogging(params.logfile, StringToLevel(params.log_maxlevel),
                      params.log_stderr, params.log_syslog)) {
-        fprintf(stderr, "Failed to initialize logging module.\n");
-        fprintf(stderr, "Maybe log file couldn't be opened for writing?\n");
+        std::cerr << "Failed to initialize logging module." << std::endl;
+        std::cerr << "Maybe log file couldn't be opened for writing?" <<
+            std::endl;
         return 1;
     }
 
     if (!params.basepath) {
-        fprintf(stderr, "No valid flacdir specified.\n\n");
+        std::cerr << "No valid flacdir specified.\n" << std::endl;
         usage(argv[0]);
         return 1;
     }
 
     if (params.basepath[0] != '/') {
-        fprintf(stderr, "flacdir must be an absolute path.\n\n");
+        std::cerr << "flacdir must be an absolute path.\n" << std::endl;
         usage(argv[0]);
         return 1;
     }
 
     struct stat st;
     if (stat(params.basepath, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        fprintf(stderr, "flacdir is not a valid directory: %s\n",
-                params.basepath);
-        fprintf(stderr, "Hint: Did you specify bitrate using the old "
-                "syntax instead of the new -b?\n\n");
+        std::cerr << "flacdir is not a valid directory: " << params.basepath <<
+            std::endl;
+        std::cerr << "Hint: Did you specify bitrate using the old "
+            "syntax instead of the new -b?\n" << std::endl;
         usage(argv[0]);
         return 1;
     }
 
     if (params.quality > 9) {
-        fprintf(stderr, "Invalid encoding quality value: %u\n\n",
-                params.quality);
+        std::cerr << "Invalid encoding quality value: " << params.quality <<
+            std::endl << std::endl;
         usage(argv[0]);
         return 1;
     }
 
     /* Check for valid destination type. */
     if (!check_encoder(params.desttype)) {
-        fprintf(stderr, "No encoder available for desttype: %s\n\n",
-                params.desttype);
+        std::cerr << "No encoder available for desttype: " << params.desttype <<
+            std::endl << std::endl;
         usage(argv[0]);
         return 1;
     }
@@ -269,7 +270,7 @@ int main(int argc, char *argv[]) {
                << "vbr:            " << params.vbr;
 
     // start FUSE
-    ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);
+    int ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);
 
     fuse_opt_free_args(&args);
 
