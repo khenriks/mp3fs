@@ -22,6 +22,7 @@
  */
 
 #include <iostream>
+#include <memory>
 
 #define FUSE_USE_VERSION 26
 
@@ -196,7 +197,10 @@ struct mp3fs_params params = {
 int main(int argc, char *argv[]) {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-    if (fuse_opt_parse(&args, &params, mp3fs_opts, mp3fs_opt_proc)) {
+    std::unique_ptr<fuse_args, void(*)(fuse_args*)>
+    args_ptr(&args, fuse_opt_free_args);
+
+    if (fuse_opt_parse(args_ptr.get(), &params, mp3fs_opts, mp3fs_opt_proc)) {
         std::cerr << "Error parsing options.\n" << std::endl;
         usage(argv[0]);
         return 1;
@@ -270,9 +274,5 @@ int main(int argc, char *argv[]) {
                << "vbr:            " << params.vbr;
 
     // start FUSE
-    int ret = fuse_main(args.argc, args.argv, &mp3fs_ops, NULL);
-
-    fuse_opt_free_args(&args);
-
-    return ret;
+    return fuse_main(args_ptr->argc, args_ptr->argv, &mp3fs_ops, NULL);
 }
