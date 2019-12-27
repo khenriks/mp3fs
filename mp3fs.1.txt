@@ -83,4 +83,6 @@ This is free software: you are free to change and redistribute it under
 the terms of the GNU General Public License (GPL) version 3 or later.
 
 This manual is copyright \(C) 2010-2011 K. Henriksson and may be
-distributed under GNU Free Documentation License 1.3 or later.
+distributed under the GNU Free Documentation License (GFDL) 1.3 or later with no
+invariant sections, or alternatively under the GNU General Public License (GPL)
+version 3 or later.

@@ -1,10 +1,6 @@
 Installation Instructions for mp3fs
 ===================================
 
-This file is copyright (C) 2013-2014 K. Henriksson. It can be distributed
-under the terms of the GFDL 1.3 or later. See README.md for more
-information.
-
 Prerequisites
 -------------
 
@@ -70,3 +66,12 @@ To build and install, run:
     ./configure
     make
     make install
+
+License
+-------
+
+This file is copyright (C) 2013-2014 K. Henriksson.
+
+This documentation may be distributed under the GNU Free Documentation License
+(GFDL) 1.3 or later with no invariant sections, or alternatively under the GNU
+General Public License (GPL) version 3 or later.
