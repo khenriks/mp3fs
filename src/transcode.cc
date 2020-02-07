@@ -56,10 +56,9 @@ bool Transcoder::open() {
 
     Log(DEBUG) << "Decoder initialized successfully.";
 
-    stats_cache.get_filesize(filename_, decoder_->mtime(),
-                             encoded_filesize_);
-    encoder_.reset(Encoder::CreateEncoder(params.desttype, buffer_,
-                                          encoded_filesize_));
+    stats_cache.get_filesize(filename_, decoder_->mtime(), encoded_filesize_);
+    encoder_.reset(
+        Encoder::CreateEncoder(params.desttype, buffer_, encoded_filesize_));
     if (!encoder_) {
         errno = EIO;
         return false;
@@ -114,8 +113,9 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
         return -1;
     }
 
-    if (!transcode_until(encoder_->no_partial_encode() ?
-                         std::numeric_limits<size_t>::max() : offset + len)) {
+    if (!transcode_until(encoder_->no_partial_encode()
+                             ? std::numeric_limits<size_t>::max()
+                             : offset + len)) {
         errno = EIO;
         return -1;
     }
@@ -166,9 +166,9 @@ bool Transcoder::finish() {
 
         /* Check encoded buffer size. */
         encoded_filesize_ = encoder_->get_actual_size();
-        Log(DEBUG) << "Finishing file. Predicted size: " <<
-            encoder_->calculate_size() << ", final size: " <<
-            encoded_filesize_;
+        Log(DEBUG) << "Finishing file. Predicted size: "
+                   << encoder_->calculate_size()
+                   << ", final size: " << encoded_filesize_;
         encoder_.reset(nullptr);
     }
 

@@ -1,0 +1,7 @@
+#!/bin/bash -e
+
+cd "${BASH_SOURCE%/*}"
+
+. ./check_format
+
+multidriver format,check_format_single

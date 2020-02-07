@@ -1,0 +1,19 @@
+#!/bin/bash -e
+# check_format verifies that files are formatted correctly using clang-format.
+
+. "${BASH_SOURCE%/*}/common.sh"
+
+check_format_single () {
+    file=$1
+    clang-format "$file" | diff -u "$file" -
+}
+
+fix_format_msg () {
+    files="$1"
+    echo "To fix these files, run"
+    echo "  clang-format -i $files"
+}
+
+if in_main ; then
+    driver check_format_single fix_format_msg
+fi

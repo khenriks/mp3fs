@@ -25,7 +25,6 @@
 
 #include "logging.h"
 
-
 void Buffer::write(const std::vector<uint8_t>& data) {
     ensure_size(buffer_pos_ + data.size());
     std::copy(data.begin(), data.end(), data_.begin() + buffer_pos_);
@@ -49,8 +48,7 @@ void Buffer::ensure_size(size_t size) {
 }
 
 void Buffer::copy_into(uint8_t* out_data, size_t offset, size_t size) const {
-    std::copy(data_.begin() + offset, data_.begin() + offset + size,
-              out_data);
+    std::copy(data_.begin() + offset, data_.begin() + offset + size, out_data);
 }
 
 bool Buffer::valid_bytes(size_t offset, size_t size) const {
@@ -66,8 +64,8 @@ bool Buffer::valid_bytes(size_t offset, size_t size) const {
      *   c) start_bound_ == end_bound_.
      */
     return end <= (std::streamoff)data_.size() &&
-        (end <= start_bound_ || (std::streamoff)offset >= end_bound_ ||
-         start_bound_ == end_bound_);
+           (end <= start_bound_ || (std::streamoff)offset >= end_bound_ ||
+            start_bound_ == end_bound_);
 }
 
 void Buffer::mark_valid(std::streamoff start, std::streamoff end) {
@@ -80,8 +78,9 @@ void Buffer::mark_valid(std::streamoff start, std::streamoff end) {
             end_bound_ = start;
         }
     } else {
-        Log(ERROR) << "Cannot mark [" << start << "," << end << ") as valid "
-        "with start_bound=" << start_bound_ << " and end_bound=" << end_bound_;
+        Log(ERROR) << "Cannot mark [" << start << "," << end
+                   << ") as valid with start_bound=" << start_bound_
+                   << " and end_bound=" << end_bound_;
         start_bound_ = end;
     }
 }

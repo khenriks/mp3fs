@@ -18,13 +18,14 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "codecs/coders.h"
-#include "mp3fs.h"
 #include "path.h"
 
 #include <unistd.h>
 
 #include <string>
+
+#include "codecs/coders.h"
+#include "mp3fs.h"
 
 std::string Path::NormalSource() const {
     return std::string(params.basepath) + relative_path_;

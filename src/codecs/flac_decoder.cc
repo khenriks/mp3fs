@@ -20,10 +20,11 @@
 
 #include "codecs/flac_decoder.h"
 
-#include <algorithm>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <algorithm>
 
 #include "logging.h"
 
@@ -55,7 +56,7 @@ int FlacDecoder::open_file(const char* filename) {
     }
     mtime_ = s.st_mtime;
 
-    FILE *file = fdopen(fd, "r");
+    FILE* file = fdopen(fd, "r");
     if (file == 0) {
         Log(ERROR) << "FLAC fdopen failed.";
         close(fd);
@@ -94,9 +95,9 @@ int FlacDecoder::process_metadata(Encoder* encoder) {
         return -1;
     }
 
-    if(encoder->set_stream_params(info.get_total_samples(),
-                                  info.get_sample_rate(),
-                                  info.get_channels()) == -1) {
+    if (encoder->set_stream_params(info.get_total_samples(),
+                                   info.get_sample_rate(),
+                                   info.get_channels()) == -1) {
         return -1;
     }
 
@@ -131,8 +132,7 @@ int FlacDecoder::process_single_fr(Encoder* encoder) {
  */
 void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
     switch (metadata->type) {
-        case FLAC__METADATA_TYPE_STREAMINFO:
-        {
+        case FLAC__METADATA_TYPE_STREAMINFO: {
             /* Set our copy of STREAMINFO data. */
             info = FLAC::Metadata::StreamInfo(metadata);
             has_streaminfo = true;
@@ -141,24 +141,26 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
 
             break;
         }
-        case FLAC__METADATA_TYPE_VORBIS_COMMENT:
-        {
+        case FLAC__METADATA_TYPE_VORBIS_COMMENT: {
             const FLAC::Metadata::VorbisComment vc(metadata);
             double gainref = Encoder::invalid_db,
-                album_gain = Encoder::invalid_db,
-                track_gain = Encoder::invalid_db;
+                   album_gain = Encoder::invalid_db,
+                   track_gain = Encoder::invalid_db;
 
             Log(DEBUG) << "FLAC processing VORBIS_COMMENT";
 
-            for (unsigned int i=0; i<vc.get_num_comments(); ++i) {
-                const FLAC::Metadata::VorbisComment::Entry comment = vc.get_comment(i);
+            for (unsigned int i = 0; i < vc.get_num_comments(); ++i) {
+                const FLAC::Metadata::VorbisComment::Entry comment =
+                    vc.get_comment(i);
                 std::string fname(comment.get_field_name());
                 /* Normalize tag name to uppercase. */
-                std::transform(fname.begin(), fname.end(), fname.begin(), ::toupper);
+                std::transform(fname.begin(), fname.end(), fname.begin(),
+                               ::toupper);
 
                 meta_map_t::const_iterator it = metatag_map.find(fname);
                 if (it != metatag_map.end()) {
-                    encoder_c->set_text_tag(it->second, comment.get_field_value());
+                    encoder_c->set_text_tag(it->second,
+                                            comment.get_field_value());
                 } else if (fname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
                     gainref = atof(comment.get_field_value());
                 } else if (fname == "REPLAYGAIN_ALBUM_GAIN") {
@@ -172,18 +174,16 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
 
             break;
         }
-        case FLAC__METADATA_TYPE_PICTURE:
-        {
+        case FLAC__METADATA_TYPE_PICTURE: {
             /* add a picture tag for each picture block */
             const FLAC::Metadata::Picture picture(metadata);
 
             Log(DEBUG) << "FLAC processing PICTURE";
 
-            encoder_c->set_picture_tag(picture.get_mime_type(),
-                                       picture.get_type(),
-                                       (char*)picture.get_description(),
-                                       picture.get_data(),
-                                       picture.get_data_length());
+            encoder_c->set_picture_tag(
+                picture.get_mime_type(), picture.get_type(),
+                (char*)picture.get_description(), picture.get_data(),
+                picture.get_data_length());
 
             break;
         }
@@ -197,11 +197,10 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
  * encode_pcm_data() methods in the stored pointer to the Encoder to encode
  * the data to the stored Buffer.
  */
-FLAC__StreamDecoderWriteStatus
-FlacDecoder::write_callback(const FLAC__Frame* frame,
-                            const FLAC__int32* const buffer[]) {
-    if(encoder_c->encode_pcm_data(buffer, frame->header.blocksize,
-                                  frame->header.bits_per_sample) == -1) {
+FLAC__StreamDecoderWriteStatus FlacDecoder::write_callback(
+    const FLAC__Frame* frame, const FLAC__int32* const buffer[]) {
+    if (encoder_c->encode_pcm_data(buffer, frame->header.blocksize,
+                                   frame->header.bits_per_sample) == -1) {
         return FLAC__STREAM_DECODER_WRITE_STATUS_ABORT;
     }
 
@@ -210,8 +209,8 @@ FlacDecoder::write_callback(const FLAC__Frame* frame,
 
 /* Error callback for FLAC */
 void FlacDecoder::error_callback(FLAC__StreamDecoderErrorStatus status) {
-    Log(ERROR) << "FLAC error: " <<
-            FLAC__StreamDecoderErrorStatusString[status];
+    Log(ERROR) << "FLAC error: "
+               << FLAC__StreamDecoderErrorStatusString[status];
 }
 
 /*

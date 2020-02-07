@@ -24,7 +24,7 @@
 
 /* Global program parameters */
 extern struct mp3fs_params {
-    const char *basepath;
+    const char* basepath;
     unsigned int bitrate;
     int debug;
     const char* desttype;

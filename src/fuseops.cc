@@ -52,7 +52,7 @@ void convert_extension(char* path) {
     }
 }
 
-int mp3fs_readlink(const char *p, char *buf, size_t size) {
+int mp3fs_readlink(const char* p, char* buf, size_t size) {
     Path path = Path::FromMp3fsRelative(p);
     Log(DEBUG) << "readlink " << path;
 
@@ -68,15 +68,15 @@ int mp3fs_readlink(const char *p, char *buf, size_t size) {
     return 0;
 }
 
-int mp3fs_readdir(const char *p, void *buf, fuse_fill_dir_t filler,
-                  off_t, struct fuse_file_info*) {
+int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler, off_t,
+                  struct fuse_file_info*) {
     Path path = Path::FromMp3fsRelative(p);
     Log(DEBUG) << "readdir " << path;
 
     // Using a unique_ptr with a custom deleter ensures closedir gets called
     // before function exit.
-    std::unique_ptr<DIR, int(*)(DIR*)> dp(opendir(path.NormalSource().c_str()),
-                                          closedir);
+    std::unique_ptr<DIR, int (*)(DIR*)> dp(opendir(path.NormalSource().c_str()),
+                                           closedir);
     if (!dp) {
         return -errno;
     }
@@ -100,7 +100,7 @@ int mp3fs_readdir(const char *p, void *buf, fuse_fill_dir_t filler,
     return 0;
 }
 
-int mp3fs_getattr(const char *p, struct stat *stbuf) {
+int mp3fs_getattr(const char* p, struct stat* stbuf) {
     Path path = Path::FromMp3fsRelative(p);
     Log(DEBUG) << "getattr " << path;
 
@@ -129,7 +129,7 @@ int mp3fs_getattr(const char *p, struct stat *stbuf) {
     return 0;
 }
 
-int mp3fs_open(const char *p, struct fuse_file_info *fi) {
+int mp3fs_open(const char* p, struct fuse_file_info* fi) {
     Path path = Path::FromMp3fsRelative(p);
     Log(DEBUG) << "open " << path;
 
@@ -154,8 +154,8 @@ int mp3fs_open(const char *p, struct fuse_file_info *fi) {
     return 0;
 }
 
-int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
-               struct fuse_file_info *fi) {
+int mp3fs_read(const char* path, char* buf, size_t size, off_t offset,
+               struct fuse_file_info* fi) {
     Log(DEBUG) << "read " << path << ": " << size << " bytes from " << offset;
 
     Reader* reader = reinterpret_cast<Reader*>(fi->fh);
@@ -174,7 +174,7 @@ int mp3fs_read(const char *path, char *buf, size_t size, off_t offset,
     }
 }
 
-int mp3fs_statfs(const char *p, struct statvfs *stbuf) {
+int mp3fs_statfs(const char* p, struct statvfs* stbuf) {
     Path path = Path::FromMp3fsRelative(p);
     Log(DEBUG) << "statfs " << path;
 
@@ -190,7 +190,7 @@ int mp3fs_statfs(const char *p, struct statvfs *stbuf) {
     return -errno;
 }
 
-int mp3fs_release(const char *path, struct fuse_file_info *fi) {
+int mp3fs_release(const char* path, struct fuse_file_info* fi) {
     Log(DEBUG) << "release " << path;
 
     Reader* reader = reinterpret_cast<Reader*>(fi->fh);
@@ -204,17 +204,17 @@ int mp3fs_release(const char *path, struct fuse_file_info *fi) {
 fuse_operations init_mp3fs_ops() {
     fuse_operations ops;
 
-    ops.getattr  = mp3fs_getattr;
+    ops.getattr = mp3fs_getattr;
     ops.readlink = mp3fs_readlink;
-    ops.open     = mp3fs_open;
-    ops.read     = mp3fs_read;
-    ops.statfs   = mp3fs_statfs;
-    ops.release  = mp3fs_release;
-    ops.readdir  = mp3fs_readdir;
+    ops.open = mp3fs_open;
+    ops.read = mp3fs_read;
+    ops.statfs = mp3fs_statfs;
+    ops.release = mp3fs_release;
+    ops.readdir = mp3fs_readdir;
 
     return ops;
 }
 
-}
+}  // namespace
 
 struct fuse_operations mp3fs_ops = init_mp3fs_ops();

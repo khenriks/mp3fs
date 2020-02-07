@@ -1,14 +1,13 @@
+#include <chromaprint.h>
+#include <sox.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <chromaprint.h>
-#include <sox.h>
-
 #define NUM_SAMPLES 2048
 
-int decode_audio_file(ChromaprintContext *ctx, const char *file_name) {
+int decode_audio_file(ChromaprintContext* ctx, const char* file_name) {
     sox_format_t* in_fmt = sox_open_read(file_name, NULL, NULL, NULL);
     if (!in_fmt) {
         fprintf(stderr, "ERROR: couldn't open file for read\n");
@@ -46,38 +45,40 @@ error:
     return 0;
 }
 
-int main(int argc, char **argv)
-{
+int main(int argc, char** argv) {
     int num_file_names = 0;
     int raw_fingerprint_size[2];
-    uint32_t *raw_fingerprints[2] = {0};
+    uint32_t* raw_fingerprints[2] = {0};
     char* file_names[2];
-    ChromaprintContext *chromaprint_ctx;
+    ChromaprintContext* chromaprint_ctx;
     int algo = CHROMAPRINT_ALGORITHM_DEFAULT, num_failed = 0;
 
     for (int i = 1; i < argc; i++) {
-        char *arg = argv[i];
+        char* arg = argv[i];
         if (!strcmp(arg, "-algo") && i + 1 < argc) {
-            const char *v = argv[++i];
-            if (!strcmp(v, "test1")) { algo = CHROMAPRINT_ALGORITHM_TEST1; }
-            else if (!strcmp(v, "test2")) { algo = CHROMAPRINT_ALGORITHM_TEST2; }
-            else if (!strcmp(v, "test3")) { algo = CHROMAPRINT_ALGORITHM_TEST3; }
-            else if (!strcmp(v, "test4")) { algo = CHROMAPRINT_ALGORITHM_TEST4; }
-            else {
-                fprintf(stderr, "WARNING: unknown algorithm, using the default\n");
+            const char* v = argv[++i];
+            if (!strcmp(v, "test1")) {
+                algo = CHROMAPRINT_ALGORITHM_TEST1;
+            } else if (!strcmp(v, "test2")) {
+                algo = CHROMAPRINT_ALGORITHM_TEST2;
+            } else if (!strcmp(v, "test3")) {
+                algo = CHROMAPRINT_ALGORITHM_TEST3;
+            } else if (!strcmp(v, "test4")) {
+                algo = CHROMAPRINT_ALGORITHM_TEST4;
+            } else {
+                fprintf(stderr,
+                        "WARNING: unknown algorithm, using the default\n");
             }
-        }
-        else if (!strcmp(arg, "-set") && i + 1 < argc) {
+        } else if (!strcmp(arg, "-set") && i + 1 < argc) {
             i += 1;
-        }
-        else if (num_file_names < 2) {
+        } else if (num_file_names < 2) {
             file_names[num_file_names++] = argv[i];
         }
     }
 
     if (num_file_names != 2) {
-            printf("usage: %s [OPTIONS] FILE1 FILE2\n\n", argv[0]);
-            return 2;
+        printf("usage: %s [OPTIONS] FILE1 FILE2\n\n", argv[0]);
+        return 2;
     }
 
     sox_format_init();
@@ -85,10 +86,10 @@ int main(int argc, char **argv)
     chromaprint_ctx = chromaprint_new(algo);
 
     for (int i = 1; i < argc; i++) {
-        char *arg = argv[i];
+        char* arg = argv[i];
         if (!strcmp(arg, "-set") && i + 1 < argc) {
-            char *name = argv[++i];
-            char *value = strchr(name, '=');
+            char* name = argv[++i];
+            char* value = strchr(name, '=');
             if (value) {
                 *value++ = '\0';
                 chromaprint_set_option(chromaprint_ctx, name, atoi(value));
@@ -99,12 +100,20 @@ int main(int argc, char **argv)
     for (int i = 0; i < num_file_names; i++) {
         char* file_name = file_names[i];
         if (!decode_audio_file(chromaprint_ctx, file_name)) {
-            fprintf(stderr, "ERROR: unable to calculate fingerprint for file %s, skipping\n", file_name);
+            fprintf(stderr,
+                    "ERROR: unable to calculate fingerprint for file %s, "
+                    "skipping\n",
+                    file_name);
             num_failed++;
             continue;
         }
-        if (!chromaprint_get_raw_fingerprint(chromaprint_ctx, &raw_fingerprints[i], &raw_fingerprint_size[i])) {
-            fprintf(stderr, "ERROR: unable to calculate fingerprint for file %s, skipping\n", file_name);
+        if (!chromaprint_get_raw_fingerprint(chromaprint_ctx,
+                                             &raw_fingerprints[i],
+                                             &raw_fingerprint_size[i])) {
+            fprintf(stderr,
+                    "ERROR: unable to calculate fingerprint for file %s, "
+                    "skipping\n",
+                    file_name);
             num_failed++;
             continue;
         }
@@ -115,16 +124,17 @@ int main(int argc, char **argv)
         int setbits = 0;
 
         int i;
-        for (i = 0;
-             i < raw_fingerprint_size[0] && i < raw_fingerprint_size[1];
+        for (i = 0; i < raw_fingerprint_size[0] && i < raw_fingerprint_size[1];
              i++) {
             int32_t thisdiff = raw_fingerprints[0][i] ^ raw_fingerprints[1][i];
             setbits += __builtin_popcount(thisdiff);
         }
         setbits += (size_sum - 2 * i) * 32;
-        printf("%f\n", setbits/((size_sum - i) * 32.0));
+        printf("%f\n", setbits / ((size_sum - i) * 32.0));
     } else {
-        fprintf(stderr, "ERROR: Couldn't calculate both fingerprints; can't compare.\n");
+        fprintf(
+            stderr,
+            "ERROR: Couldn't calculate both fingerprints; can't compare.\n");
         printf("1.0\n");
     }
 

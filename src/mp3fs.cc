@@ -44,52 +44,48 @@ extern struct fuse_operations mp3fs_ops;
 
 namespace {
 
-enum {
-    KEY_HELP,
-    KEY_VERSION,
-    KEY_KEEP_OPT
-};
+enum { KEY_HELP, KEY_VERSION, KEY_KEEP_OPT };
 
-#define MP3FS_OPT(t, p, v) { t, offsetof(struct mp3fs_params, p), v }
+#define MP3FS_OPT(t, p, v) \
+    { t, offsetof(struct mp3fs_params, p), v }
 
 struct fuse_opt mp3fs_opts[] = {
-    MP3FS_OPT("-b %u",                bitrate, 0),
-    MP3FS_OPT("bitrate=%u",           bitrate, 0),
-    MP3FS_OPT("-d",                   debug, 1),
-    MP3FS_OPT("debug",                debug, 1),
-    MP3FS_OPT("--desttype=%s",        desttype, 0),
-    MP3FS_OPT("desttype=%s",          desttype, 0),
-    MP3FS_OPT("--gainmode=%d",        gainmode, 0),
-    MP3FS_OPT("gainmode=%d",          gainmode, 0),
-    MP3FS_OPT("--gainref=%f",         gainref, 0),
-    MP3FS_OPT("gainref=%f",           gainref, 0),
-    MP3FS_OPT("--log_maxlevel=%s",    log_maxlevel, 0),
-    MP3FS_OPT("log_maxlevel=%s",      log_maxlevel, 0),
-    MP3FS_OPT("--log_stderr",         log_stderr, 1),
-    MP3FS_OPT("log_stderr",           log_stderr, 1),
-    MP3FS_OPT("--log_syslog",         log_syslog, 1),
-    MP3FS_OPT("log_syslog",           log_syslog, 1),
-    MP3FS_OPT("--logfile=%s",         logfile, 0),
-    MP3FS_OPT("logfile=%s",           logfile, 0),
-    MP3FS_OPT("--quality=%u",         quality, 0),
-    MP3FS_OPT("quality=%u",           quality, 0),
-    MP3FS_OPT("--statcachesize=%u",   statcachesize, 0),
-    MP3FS_OPT("statcachesize=%u",     statcachesize, 0),
-    MP3FS_OPT("--vbr",                vbr, 1),
-    MP3FS_OPT("vbr",                  vbr, 1),
+    MP3FS_OPT("-b %u", bitrate, 0),
+    MP3FS_OPT("bitrate=%u", bitrate, 0),
+    MP3FS_OPT("-d", debug, 1),
+    MP3FS_OPT("debug", debug, 1),
+    MP3FS_OPT("--desttype=%s", desttype, 0),
+    MP3FS_OPT("desttype=%s", desttype, 0),
+    MP3FS_OPT("--gainmode=%d", gainmode, 0),
+    MP3FS_OPT("gainmode=%d", gainmode, 0),
+    MP3FS_OPT("--gainref=%f", gainref, 0),
+    MP3FS_OPT("gainref=%f", gainref, 0),
+    MP3FS_OPT("--log_maxlevel=%s", log_maxlevel, 0),
+    MP3FS_OPT("log_maxlevel=%s", log_maxlevel, 0),
+    MP3FS_OPT("--log_stderr", log_stderr, 1),
+    MP3FS_OPT("log_stderr", log_stderr, 1),
+    MP3FS_OPT("--log_syslog", log_syslog, 1),
+    MP3FS_OPT("log_syslog", log_syslog, 1),
+    MP3FS_OPT("--logfile=%s", logfile, 0),
+    MP3FS_OPT("logfile=%s", logfile, 0),
+    MP3FS_OPT("--quality=%u", quality, 0),
+    MP3FS_OPT("quality=%u", quality, 0),
+    MP3FS_OPT("--statcachesize=%u", statcachesize, 0),
+    MP3FS_OPT("statcachesize=%u", statcachesize, 0),
+    MP3FS_OPT("--vbr", vbr, 1),
+    MP3FS_OPT("vbr", vbr, 1),
 
-    FUSE_OPT_KEY("-h",                KEY_HELP),
-    FUSE_OPT_KEY("--help",            KEY_HELP),
-    FUSE_OPT_KEY("-V",                KEY_VERSION),
-    FUSE_OPT_KEY("--version",         KEY_VERSION),
-    FUSE_OPT_KEY("-d",                KEY_KEEP_OPT),
-    FUSE_OPT_KEY("debug",             KEY_KEEP_OPT),
-    FUSE_OPT_END
-};
+    FUSE_OPT_KEY("-h", KEY_HELP),
+    FUSE_OPT_KEY("--help", KEY_HELP),
+    FUSE_OPT_KEY("-V", KEY_VERSION),
+    FUSE_OPT_KEY("--version", KEY_VERSION),
+    FUSE_OPT_KEY("-d", KEY_KEEP_OPT),
+    FUSE_OPT_KEY("debug", KEY_KEEP_OPT),
+    FUSE_OPT_END};
 
 void usage(const std::string& name) {
-    std::cout << "Usage: " << name << " [OPTION]... IN_DIR OUT_DIR" <<
-        std::endl;
+    std::cout << "Usage: " << name << " [OPTION]... IN_DIR OUT_DIR"
+              << std::endl;
     std::cout << R"(
 Mount IN_DIR on OUT_DIR, converting FLAC/Ogg Vorbis files to MP3 upon access.
 
@@ -143,15 +139,15 @@ void print_versions(std::ostream&& out) {
     out << "mp3fs version: " << PACKAGE_VERSION << std::endl;
 #endif
     print_codec_versions(out);
-    out << "FUSE library version: " << FUSE_MAJOR_VERSION << "." <<
-        FUSE_MINOR_VERSION << std::endl;
+    out << "FUSE library version: " << FUSE_MAJOR_VERSION << "."
+        << FUSE_MINOR_VERSION << std::endl;
 #ifdef __APPLE__
     out << "OS X FUSE version: " << osxfuse_version() << std::endl;
 #endif
 }
 
-int mp3fs_opt_proc(void*, const char* arg, int key, struct fuse_args *outargs) {
-    switch(key) {
+int mp3fs_opt_proc(void*, const char* arg, int key, struct fuse_args* outargs) {
+    switch (key) {
         case FUSE_OPT_KEY_NONOPT:
             // check for flacdir and bitrate parameters
             if (!params.basepath) {
@@ -177,28 +173,28 @@ int mp3fs_opt_proc(void*, const char* arg, int key, struct fuse_args *outargs) {
 }  // namespace
 
 struct mp3fs_params params = {
-    .basepath        = NULL,
-    .bitrate         = 128,
-    .debug           = 0,
+    .basepath = NULL,
+    .bitrate = 128,
+    .debug = 0,
 #ifdef HAVE_MP3
-    .desttype        = "mp3",
+    .desttype = "mp3",
 #endif
-    .gainmode        = 1,
-    .gainref         = 89.0,
-    .log_maxlevel    = "INFO",
-    .log_stderr      = 0,
-    .log_syslog      = 0,
-    .logfile         = "",
-    .quality         = 5,
-    .statcachesize   = 0,
-    .vbr             = 0,
+    .gainmode = 1,
+    .gainref = 89.0,
+    .log_maxlevel = "INFO",
+    .log_stderr = 0,
+    .log_syslog = 0,
+    .logfile = "",
+    .quality = 5,
+    .statcachesize = 0,
+    .vbr = 0,
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-    std::unique_ptr<fuse_args, void(*)(fuse_args*)>
-    args_ptr(&args, fuse_opt_free_args);
+    std::unique_ptr<fuse_args, void (*)(fuse_args*)> args_ptr(
+        &args, fuse_opt_free_args);
 
     if (fuse_opt_parse(args_ptr.get(), &params, mp3fs_opts, mp3fs_opt_proc)) {
         std::cerr << "Error parsing options.\n" << std::endl;
@@ -215,8 +211,8 @@ int main(int argc, char *argv[]) {
     if (!InitLogging(params.logfile, StringToLevel(params.log_maxlevel),
                      params.log_stderr, params.log_syslog)) {
         std::cerr << "Failed to initialize logging module." << std::endl;
-        std::cerr << "Maybe log file couldn't be opened for writing?" <<
-            std::endl;
+        std::cerr << "Maybe log file couldn't be opened for writing?"
+                  << std::endl;
         return 1;
     }
 
@@ -234,25 +230,28 @@ int main(int argc, char *argv[]) {
 
     struct stat st;
     if (stat(params.basepath, &st) != 0 || !S_ISDIR(st.st_mode)) {
-        std::cerr << "flacdir is not a valid directory: " << params.basepath <<
-            std::endl;
+        std::cerr << "flacdir is not a valid directory: " << params.basepath
+                  << std::endl;
         std::cerr << "Hint: Did you specify bitrate using the old "
-            "syntax instead of the new -b?\n" << std::endl;
+                     "syntax instead of the new -b?\n"
+                  << std::endl;
         usage(argv[0]);
         return 1;
     }
 
     if (params.quality > 9) {
-        std::cerr << "Invalid encoding quality value: " << params.quality <<
-            std::endl << std::endl;
+        std::cerr << "Invalid encoding quality value: " << params.quality
+                  << std::endl
+                  << std::endl;
         usage(argv[0]);
         return 1;
     }
 
     /* Check for valid destination type. */
     if (!check_encoder(params.desttype)) {
-        std::cerr << "No encoder available for desttype: " << params.desttype <<
-            std::endl << std::endl;
+        std::cerr << "No encoder available for desttype: " << params.desttype
+                  << std::endl
+                  << std::endl;
         usage(argv[0]);
         return 1;
     }

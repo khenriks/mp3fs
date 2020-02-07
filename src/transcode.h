@@ -32,9 +32,9 @@
 
 /* Transcoder for open file */
 class Transcoder : public Reader {
-public:
-    Transcoder(const std::string& filename) :
-    filename_(filename), encoded_filesize_(0) {
+ public:
+    Transcoder(const std::string& filename)
+        : filename_(filename), encoded_filesize_(0) {
         Log(DEBUG) << "Creating transcoder object for " << filename;
     }
 
@@ -48,7 +48,8 @@ public:
 
     /** Return size of output file, as computed by Encoder. */
     size_t get_size() const;
-private:
+
+ private:
     /**
      * Transcode into the buffer until the buffer has at least end bytes or
      * until an error occurs.

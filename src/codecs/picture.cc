@@ -28,10 +28,8 @@
 bool Picture::decode() {
     std::string picture_data_str;
 
-    if (!consume_decode_uint32(type) ||
-        !consume_decode_string(mime_type) ||
-        !consume_decode_string(description) ||
-        !consume_no_decode(16) ||
+    if (!consume_decode_uint32(type) || !consume_decode_string(mime_type) ||
+        !consume_decode_string(description) || !consume_no_decode(16) ||
         !consume_decode_string(picture_data_str)) {
         Log(ERROR) << "Couldn't decode picture data as valid data.";
         return false;

@@ -59,8 +59,8 @@ enum {
 
 /* Encoder class interface */
 class Encoder {
-public:
-    virtual ~Encoder() { };
+ public:
+    virtual ~Encoder() {};
 
     virtual int set_stream_params(uint64_t num_samples, int sample_rate,
                                   int channels) = 0;
@@ -80,15 +80,15 @@ public:
     virtual bool no_partial_encode() { return true; }
 
     static Encoder* CreateEncoder(const std::string file_type, Buffer& buffer,
-            size_t actual_size = 0);
+                                  size_t actual_size = 0);
 
     constexpr static double invalid_db = 1000.0;
 };
 
 /* Decoder class interface */
 class Decoder {
-public:
-    virtual ~Decoder() { };
+ public:
+    virtual ~Decoder() {};
 
     virtual int open_file(const char* filename) = 0;
     /* The modified time of the decoder file */

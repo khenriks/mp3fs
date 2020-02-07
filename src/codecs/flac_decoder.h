@@ -34,25 +34,26 @@
 #include "codecs/coders.h"
 
 class FlacDecoder : public Decoder, private FLAC::Decoder::File {
-public:
+ public:
     FlacDecoder() : has_streaminfo(false) {};
     int open_file(const char* filename);
     time_t mtime();
     int process_metadata(Encoder* encoder);
     int process_single_fr(Encoder* encoder);
-protected:
-    FLAC__StreamDecoderWriteStatus write_callback(const FLAC__Frame* frame,
-                                                  const FLAC__int32* const buffer[]);
+
+ protected:
+    FLAC__StreamDecoderWriteStatus write_callback(
+        const FLAC__Frame* frame, const FLAC__int32* const buffer[]);
     void metadata_callback(const FLAC__StreamMetadata* metadata);
     void error_callback(FLAC__StreamDecoderErrorStatus status);
-private:
+
+ private:
     Encoder* encoder_c;
     time_t mtime_;
     FLAC::Metadata::StreamInfo info;
     bool has_streaminfo;
-    typedef std::map<std::string,int> meta_map_t;
+    typedef std::map<std::string, int> meta_map_t;
     static const meta_map_t metatag_map;
 };
-
 
 #endif

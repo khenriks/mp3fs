@@ -20,19 +20,19 @@
 
 #include "logging.h"
 
+#include <syslog.h>
+
 #include <cstdarg>
 #include <ctime>
 #include <iostream>
 
-#include <syslog.h>
-
 namespace {
-    Logging* logging;
+Logging* logging;
 }
 
 Logging::Logging(std::string logfile, level max_level, bool to_stderr,
-                 bool to_syslog) :
-    max_level_(max_level), to_stderr_(to_stderr), to_syslog_(to_syslog) {
+                 bool to_syslog)
+    : max_level_(max_level), to_stderr_(to_stderr), to_syslog_(to_syslog) {
     if (!logfile.empty()) {
         logfile_.open(logfile);
     }
@@ -50,8 +50,8 @@ Logging::Logger::~Logger() {
     time_string.resize(std::strftime(&time_string[0], time_string.size(),
                                      "%F %T", std::localtime(&now)));
 
-    std::string msg = "[" + time_string + "] " +
-        level_name_map_.at(loglevel_) + ": " + str();
+    std::string msg =
+        "[" + time_string + "] " + level_name_map_.at(loglevel_) + ": " + str();
 
     if (logging_->to_syslog_) {
         syslog(syslog_level_map_.at(loglevel_), "%s", msg.c_str());
@@ -60,13 +60,13 @@ Logging::Logger::~Logger() {
     if (logging_->to_stderr_) std::clog << msg << std::endl;
 }
 
-const std::map<Logging::level,int> Logging::Logger::syslog_level_map_ = {
+const std::map<Logging::level, int> Logging::Logger::syslog_level_map_ = {
     {ERROR, LOG_ERR},
     {INFO, LOG_INFO},
     {DEBUG, LOG_DEBUG},
 };
 
-const std::map<Logging::level,std::string> Logging::Logger::level_name_map_ = {
+const std::map<Logging::level, std::string> Logging::Logger::level_name_map_ = {
     {ERROR, "ERROR"},
     {INFO, "INFO"},
     {DEBUG, "DEBUG"},

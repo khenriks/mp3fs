@@ -21,28 +21,28 @@
 #ifndef VORBIS_DECODER_H
 #define VORBIS_DECODER_H
 
+#include <vorbis/vorbisfile.h>
+
 #include <map>
 #include <string>
-
-#include <vorbis/vorbisfile.h>
 
 #include "codecs/coders.h"
 
 class VorbisDecoder : public Decoder {
-public:
+ public:
     ~VorbisDecoder();
     int open_file(const char* filename);
     time_t mtime();
     int process_metadata(Encoder* encoder);
     int process_single_fr(Encoder* encoder);
-private:
+
+ private:
     time_t mtime_;
     OggVorbis_File vf;
-    vorbis_info *vi;
+    vorbis_info* vi;
     int current_section;
-    typedef std::map<std::string,int> meta_map_t;
+    typedef std::map<std::string, int> meta_map_t;
     static const meta_map_t metatag_map;
 };
-
 
 #endif

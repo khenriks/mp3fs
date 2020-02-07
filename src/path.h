@@ -25,7 +25,7 @@
 #include <string>
 
 class Path {
-public:
+ public:
     /** Construct a Path from a relative path inside the mp3fs mount. */
     static Path FromMp3fsRelative(const char* path) { return Path(path); }
 
@@ -49,7 +49,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream&, const Path&);
 
-private:
+ private:
     Path(const std::string& relative_path) : relative_path_(relative_path) {}
 
     std::string relative_path_;

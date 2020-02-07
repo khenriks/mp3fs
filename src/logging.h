@@ -28,7 +28,7 @@
 #include <sstream>
 
 class Logging {
-public:
+ public:
     enum class level { INVALID = 0, ERROR = 1, INFO = 2, DEBUG = 3 };
 
     /*
@@ -44,21 +44,21 @@ public:
 
     bool GetFail() const { return logfile_.fail(); }
 
-private:
+ private:
     class Logger : public std::ostringstream {
-    public:
-        Logger(level loglevel, Logging* logging) :
-            loglevel_(loglevel), logging_(logging) {}
+     public:
+        Logger(level loglevel, Logging* logging)
+            : loglevel_(loglevel), logging_(logging) {}
         Logger() : loglevel_(level::DEBUG) {}
         ~Logger();
 
-    private:
+     private:
         const level loglevel_;
 
         Logging* logging_;
 
-        static const std::map<level,int> syslog_level_map_;
-        static const std::map<level,std::string> level_name_map_;
+        static const std::map<level, int> syslog_level_map_;
+        static const std::map<level, std::string> level_name_map_;
     };
 
     friend Logger Log(level lev);

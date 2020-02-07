@@ -25,8 +25,8 @@
 #include <vector>
 
 class Picture {
-public:
-    Picture(std::vector<char> data): data_(data), data_off_(0) {}
+ public:
+    Picture(std::vector<char> data) : data_(data), data_off_(0) {}
 
     bool decode();
 
@@ -36,7 +36,7 @@ public:
     int get_data_length() const { return (int)picture_data.size(); }
     const uint8_t* get_data() const { return picture_data.data(); }
 
-private:
+ private:
     bool consume_decode_uint32(uint32_t& out);
     bool consume_decode_string(std::string& out);
 

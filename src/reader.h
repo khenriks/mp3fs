@@ -24,7 +24,7 @@
 #include <unistd.h>
 
 class Reader {
-public:
+ public:
     /** Read bytes into the internal buffer and into the given buffer. */
     virtual ssize_t read(char* buff, off_t offset, size_t len) = 0;
 
@@ -32,7 +32,7 @@ public:
 };
 
 class FileReader : public Reader {
-public:
+ public:
     FileReader(int fd) : fd_(fd) {}
 
     ~FileReader() override { close(fd_); }
@@ -41,7 +41,7 @@ public:
         return pread(fd_, buff, len, offset);
     }
 
-private:
+ private:
     int fd_;
 };
 

@@ -1,0 +1,10 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+IndentWidth: 4
+SpaceBeforeCpp11BracedList: true
+AccessModifierOffset: -3
+AllowShortFunctionsOnASingleLine: Inline
+DerivePointerAlignment: false
+AlignConsecutiveAssignments: false
+...

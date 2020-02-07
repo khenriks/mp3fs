@@ -20,11 +20,12 @@
 
 #include "vorbis_decoder.h"
 
-#include <algorithm>
-#include <cstdlib>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <algorithm>
+#include <cstdlib>
 
 #include "codecs/picture.h"
 #include "lib/base64.h"
@@ -43,7 +44,6 @@ VorbisDecoder::~VorbisDecoder() {
  * the other methods can be used to process the file.
  */
 int VorbisDecoder::open_file(const char* filename) {
-
     Log(DEBUG) << "Ogg Vorbis decoder: Initializing.";
 
     int fd = open(filename, 0);
@@ -60,7 +60,7 @@ int VorbisDecoder::open_file(const char* filename) {
     }
     mtime_ = s.st_mtime;
 
-    FILE *file = fdopen(fd, "r");
+    FILE* file = fdopen(fd, "r");
     if (file == 0) {
         Log(ERROR) << "Ogg Vorbis decoder: fdopen failed.";
         close(fd);
@@ -77,11 +77,9 @@ int VorbisDecoder::open_file(const char* filename) {
     return 0;
 }
 
-
 time_t VorbisDecoder::mtime() {
     return mtime_;
 }
-
 
 /*
  * Process the metadata in the Ogg Vorbis file. This should be called at the
@@ -91,7 +89,7 @@ time_t VorbisDecoder::mtime() {
  * read the actual PCM stream parameters.
  */
 int VorbisDecoder::process_metadata(Encoder* encoder) {
-    vorbis_comment *vc = NULL;
+    vorbis_comment* vc = NULL;
 
     if ((vi = ov_info(&vf, -1)) == NULL) {
         Log(ERROR) << "Ogg Vorbis decoder: Failed to retrieve the file info.";
@@ -99,29 +97,28 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
     }
 
     if (vi->channels > 2) {
-        Log(ERROR) << "Ogg Vorbis decoder: Only mono/stereo audio currently supported.";
+        Log(ERROR) << "Ogg Vorbis decoder: Only mono/stereo audio currently "
+                      "supported.";
         return -1;
     }
 
-    if (encoder->set_stream_params(
-            ov_pcm_total(&vf, -1),
-            (int)vi->rate,
-            vi->channels) == -1) {
-        Log(ERROR) << "Ogg Vorbis decoder: Failed to set encoder stream parameters.";
+    if (encoder->set_stream_params(ov_pcm_total(&vf, -1), (int)vi->rate,
+                                   vi->channels) == -1) {
+        Log(ERROR)
+            << "Ogg Vorbis decoder: Failed to set encoder stream parameters.";
         return -1;
     }
 
     if ((vc = ov_comment(&vf, -1)) == NULL) {
-        Log(ERROR) << "Ogg Vorbis decoder: Failed to retrieve the Ogg Vorbis comment.";
+        Log(ERROR)
+            << "Ogg Vorbis decoder: Failed to retrieve the Ogg Vorbis comment.";
         return -1;
     }
 
-    double gainref = Encoder::invalid_db,
-        album_gain = Encoder::invalid_db,
-        track_gain = Encoder::invalid_db;
+    double gainref = Encoder::invalid_db, album_gain = Encoder::invalid_db,
+           track_gain = Encoder::invalid_db;
 
     for (int i = 0; i < vc->comments; ++i) {
-
         /*
          * Get the tagname - tagvalue pairs
          */
@@ -138,8 +135,8 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         /*
          * Normalize tag name to uppercase.
          */
-        std::transform(tagname.begin(), tagname.end(),
-                       tagname.begin(), ::toupper);
+        std::transform(tagname.begin(), tagname.end(), tagname.begin(),
+                       ::toupper);
 
         /*
          * Set the encoder's text tag if it's in the metatag_map, or else,
@@ -149,16 +146,15 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
 
         if (it != metatag_map.end()) {
             encoder->set_text_tag(it->second, tagvalue.c_str());
-        }
-        else if (tagname == "METADATA_BLOCK_PICTURE") {
+        } else if (tagname == "METADATA_BLOCK_PICTURE") {
             char* data;
             size_t data_len;
-            base64_decode_alloc(tagvalue.c_str(), tagvalue.size(),
-                                &data, &data_len);
+            base64_decode_alloc(tagvalue.c_str(), tagvalue.size(), &data,
+                                &data_len);
             if (data == nullptr) {
-                Log(ERROR) <<
-                        "Failed to decode METADATA_BLOCK_PICTURE; invalid "
-                        "base64 or could not allocate memory.";
+                Log(ERROR)
+                    << "Failed to decode METADATA_BLOCK_PICTURE; invalid "
+                       "base64 or could not allocate memory.";
                 return -1;
             }
 
@@ -166,20 +162,16 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
             free(data);
 
             if (picture.decode()) {
-                encoder->set_picture_tag(picture.get_mime_type(),
-                    picture.get_type(),
-                    picture.get_description(),
-                    picture.get_data(),
+                encoder->set_picture_tag(
+                    picture.get_mime_type(), picture.get_type(),
+                    picture.get_description(), picture.get_data(),
                     picture.get_data_length());
             }
-        }
-        else if (tagname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
+        } else if (tagname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
             gainref = atof(tagvalue.c_str());
-        }
-        else if (tagname == "REPLAYGAIN_ALBUM_GAIN") {
+        } else if (tagname == "REPLAYGAIN_ALBUM_GAIN") {
             album_gain = atof(tagvalue.c_str());
-        }
-        else if (tagname == "REPLAYGAIN_TRACK_GAIN") {
+        } else if (tagname == "REPLAYGAIN_TRACK_GAIN") {
             track_gain = atof(tagvalue.c_str());
         }
     }
@@ -197,9 +189,9 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
 int VorbisDecoder::process_single_fr(Encoder* encoder) {
     std::vector<int16_t> decode_buffer(2048);
 
-    long read_bytes = ov_read(&vf, (char*)decode_buffer.data(),
-                              (int)(2 * decode_buffer.size()),
-                              0, 2, 1, &current_section);
+    long read_bytes =
+        ov_read(&vf, (char*)decode_buffer.data(),
+                (int)(2 * decode_buffer.size()), 0, 2, 1, &current_section);
 
     long total_samples = read_bytes / 2;
 
@@ -211,32 +203,32 @@ int VorbisDecoder::process_single_fr(Encoder* encoder) {
             return -1;
         }
 
-        std::vector<std::vector<int32_t>>
-            encode_buffer(vi->channels, std::vector<int32_t>(samples_per_channel));
+        std::vector<std::vector<int32_t>> encode_buffer(
+            vi->channels, std::vector<int32_t>(samples_per_channel));
         int32_t* encode_buffer_ptr[vi->channels];
 
         for (int channel = 0; channel < vi->channels; ++channel) {
             encode_buffer_ptr[channel] = encode_buffer[channel].data();
             for (long i = 0; i < samples_per_channel; ++i) {
-                encode_buffer[channel][i] = decode_buffer[i * vi->channels + channel];
+                encode_buffer[channel][i] =
+                    decode_buffer[i * vi->channels + channel];
             }
         }
 
         /* Send integer buffer to encoder */
         if (encoder->encode_pcm_data(encode_buffer_ptr,
                                      (int)samples_per_channel, 16) < 0) {
-            Log(ERROR) << "Ogg Vorbis decoder: Failed to encode integer buffer.";
+            Log(ERROR)
+                << "Ogg Vorbis decoder: Failed to encode integer buffer.";
 
             return -1;
         }
 
         return 0;
-    }
-    else if (total_samples == 0) {
+    } else if (total_samples == 0) {
         Log(DEBUG) << "Ogg Vorbis decoder: Reached end of file.";
         return 1;
-    }
-    else {
+    } else {
         Log(ERROR) << "Ogg Vorbis decoder: Failed to read file.";
         return -1;
     }

@@ -33,3 +33,7 @@ dist-hook:
 		-e 's|^ \(.*\)||' ) > ChangeLog.tmp \
 		&& mv -f ChangeLog.tmp $(top_distdir)/ChangeLog \
 		|| ( rm -f ChangeLog.tmp ; exit 1 )
+
+.PHONY: staticcheck
+staticcheck:
+	@statictest/checkall

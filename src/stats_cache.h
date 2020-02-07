@@ -21,9 +21,10 @@
 #ifndef STATS_CACHE_H
 #define STATS_CACHE_H
 
+#include <pthread.h>
+
 #include <ctime>
 #include <map>
-#include <pthread.h>
 #include <string>
 
 /*
@@ -31,15 +32,16 @@
  * cache.
  */
 class FileStat {
-public:
+ public:
     FileStat(size_t _size, time_t _mtime);
 
     void update_atime();
-    size_t get_size() const  { return size; }
+    size_t get_size() const { return size; }
     time_t get_atime() const { return atime; }
     time_t get_mtime() const { return mtime; }
     bool operator==(const FileStat& other) const;
-private:
+
+ private:
     size_t size;
     // The last time this object was accessed. Used to implement the most
     // recently used cache policy.
@@ -49,20 +51,21 @@ private:
 };
 
 class StatsCache {
-public:
+ public:
     typedef std::map<std::string, FileStat> cache_t;
     typedef std::pair<std::string, FileStat> cache_entry_t;
 
     StatsCache() : mutex(PTHREAD_MUTEX_INITIALIZER) {}
-    ~StatsCache()                            { pthread_mutex_destroy(&mutex); }
-    StatsCache(const StatsCache&)            = delete;
+    ~StatsCache() { pthread_mutex_destroy(&mutex); }
+    StatsCache(const StatsCache&) = delete;
     StatsCache& operator=(const StatsCache&) = delete;
 
     bool get_filesize(const std::string& filename, time_t mtime,
-            size_t& filesize);
+                      size_t& filesize);
     void put_filesize(const std::string& filename, size_t filesize,
-            time_t mtime);
-private:
+                      time_t mtime);
+
+ private:
     void prune();
     void remove_entry(const std::string& file, const FileStat& file_stat);
     cache_t cache;

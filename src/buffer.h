@@ -27,7 +27,7 @@
 #include <vector>
 
 class Buffer {
-public:
+ public:
     Buffer() {};
     ~Buffer() {};
 
@@ -61,7 +61,8 @@ public:
      * (have been already filled).
      */
     bool valid_bytes(size_t offset, size_t size) const;
-private:
+
+ private:
     /**
      * Ensure the Buffer has at least the size given.
      */
