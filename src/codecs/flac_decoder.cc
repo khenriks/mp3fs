@@ -20,12 +20,23 @@
 
 #include "codecs/flac_decoder.h"
 
+#include <FLAC++/decoder.h>
+#include <FLAC++/metadata.h>
+#include <FLAC/format.h>
+#include <FLAC/ordinals.h>
+#include <FLAC/stream_decoder.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
 #include <algorithm>
+#include <cctype>
+#include <cstdio>
+#include <cstdlib>
+#include <ostream>
+#include <utility>
 
+#include "codecs/coders.h"
 #include "logging.h"
 
 /*

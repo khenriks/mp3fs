@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <ostream>
 #include <vector>
 
 #include "logging.h"

@@ -3,5 +3,8 @@
 cd "${BASH_SOURCE%/*}"
 
 . ./check_format
+. ./check_iwyu
 
-multidriver format,check_format_single
+multidriver \
+    format,check_format_single \
+    iwyu,check_iwyu_single

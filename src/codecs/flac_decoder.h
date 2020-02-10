@@ -21,6 +21,7 @@
 #ifndef FLAC_DECODER_H
 #define FLAC_DECODER_H
 
+#include <ctime>
 #include <map>
 #include <string>
 
@@ -30,6 +31,9 @@
 #include <FLAC++/decoder.h>
 #include <FLAC++/metadata.h>
 #pragma GCC diagnostic pop
+#include <FLAC/format.h>
+#include <FLAC/ordinals.h>
+#include <FLAC/stream_decoder.h>
 
 #include "codecs/coders.h"
 

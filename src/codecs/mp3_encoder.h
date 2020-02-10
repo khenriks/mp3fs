@@ -21,13 +21,16 @@
 #ifndef MP3_ENCODER_H
 #define MP3_ENCODER_H
 
-#include <id3tag.h>
 #include <lame/lame.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <map>
 
 #include "codecs/coders.h"
 #include "mp3fs.h"
+
+class Buffer;
 
 class Mp3Encoder : public Encoder {
  public:

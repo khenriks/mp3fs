@@ -34,6 +34,9 @@
 #include "codecs/vorbis_decoder.h"
 #endif
 
+#include "buffer.h"
+#include "mp3fs.h"
+
 void Encoder::set_gain(double gainref, double album_gain, double track_gain) {
     if (gainref == invalid_db) {
         gainref = 89.0;

@@ -22,8 +22,13 @@
 #ifndef MP3FS_TRANSCODE_H
 #define MP3FS_TRANSCODE_H
 
+#include <sys/types.h>
+
+#include <cstddef>
 #include <memory>
 #include <mutex>
+#include <ostream>
+#include <string>
 
 #include "buffer.h"
 #include "codecs/coders.h"

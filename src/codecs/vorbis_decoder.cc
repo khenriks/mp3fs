@@ -23,9 +23,17 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <vorbis/codec.h>
+#include <vorbis/vorbisfile.h>
 
 #include <algorithm>
+#include <cctype>
+#include <cstdint>
+#include <cstdio>
 #include <cstdlib>
+#include <ostream>
+#include <utility>
+#include <vector>
 
 #include "codecs/picture.h"
 #include "lib/base64.h"

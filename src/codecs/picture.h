@@ -21,6 +21,8 @@
 #ifndef PICTURE_H
 #define PICTURE_H
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
 #include <vector>
 

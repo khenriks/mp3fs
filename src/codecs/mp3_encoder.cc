@@ -20,12 +20,20 @@
 
 #include "codecs/mp3_encoder.h"
 
+#include <id3tag.h>
+#include <lame/lame.h>
+
 #include <cmath>
+#include <cstdarg>
 #include <cstdlib>
 #include <sstream>
+#include <string>
+#include <utility>
 #include <vector>
 
+#include "buffer.h"
 #include "logging.h"
+#include "mp3fs.h"
 
 /* Copied from lame */
 #define MAX_VBR_FRAME_SIZE 2880

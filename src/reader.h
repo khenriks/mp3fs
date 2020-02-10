@@ -23,6 +23,8 @@
 
 #include <unistd.h>
 
+#include <cstddef>
+
 class Reader {
  public:
     /** Read bytes into the internal buffer and into the given buffer. */

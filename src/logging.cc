@@ -23,8 +23,10 @@
 #include <syslog.h>
 
 #include <cstdarg>
+#include <cstdio>
 #include <ctime>
 #include <iostream>
+#include <utility>
 
 namespace {
 Logging* logging;

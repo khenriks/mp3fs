@@ -22,7 +22,10 @@
 
 #include <unistd.h>
 
+#include <cerrno>
+#include <cstddef>
 #include <string>
+// IWYU pragma: no_include <vector>
 
 #include "codecs/coders.h"
 #include "mp3fs.h"

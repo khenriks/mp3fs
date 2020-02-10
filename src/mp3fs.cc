@@ -21,19 +21,23 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include <iostream>
-#include <memory>
+#include <sys/stat.h>
 
 #define FUSE_USE_VERSION 26
 
 #include <fuse.h>
+#include <fuse_common.h>
+#include <fuse_opt.h>
 #ifdef __APPLE__
 #include <fuse_darwin.h>
 #endif
 
-#define FUSE_USE_VERSION 26
-
-#include <fuse.h>
+#include <cstddef>
+#include <cstdlib>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <utility>
 
 #include "codecs/coders.h"
 #include "logging.h"

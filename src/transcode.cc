@@ -21,12 +21,13 @@
 
 #include "transcode.h"
 
+#include <algorithm>
 #include <cerrno>
-#include <cstdarg>
+#include <cstdint>
 #include <cstring>
+#include <ctime>  // IWYU pragma: keep (time_t)
 #include <limits>
 #include <mutex>
-#include <vector>
 
 #include "codecs/coders.h"
 #include "logging.h"

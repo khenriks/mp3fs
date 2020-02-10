@@ -7,6 +7,8 @@ ROOT="$(cd "${BASH_SOURCE%/*}/.." && pwd)"
 SOURCES=($(find "$ROOT" -path '*/src/lib' -prune -o \( -name '*.cc' -o \
            -name '*.h' -o -name '*.c' \) -printf '%P\n' | sort))
 
+COMMONDIR="${BASH_SOURCE%/*}"
+
 in_main () {
     [ "${BASH_SOURCE[1]}" = "$0" ]
 }

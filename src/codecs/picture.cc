@@ -22,6 +22,8 @@
 
 #include <arpa/inet.h>
 
+#include <ostream>
+
 #include "logging.h"
 
 /* Decode binary picture data. */

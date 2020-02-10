@@ -21,8 +21,10 @@
 #ifndef VORBIS_DECODER_H
 #define VORBIS_DECODER_H
 
+#include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 
+#include <ctime>
 #include <map>
 #include <string>
 

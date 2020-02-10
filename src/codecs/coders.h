@@ -22,11 +22,12 @@
 #define CODERS_H
 
 #include <cstdint>
+#include <ctime>
 #include <ostream>
 #include <string>
 #include <vector>
 
-#include "buffer.h"
+class Buffer;
 
 /*
  * Metadata tag enum constants. These values are needed to coordinate

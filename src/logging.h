@@ -21,11 +21,11 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
-#include <array>
+#include <cstdarg>
 #include <fstream>
 #include <map>
-#include <ostream>
 #include <sstream>
+#include <string>
 
 class Logging {
  public:

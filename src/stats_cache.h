@@ -26,6 +26,7 @@
 #include <ctime>
 #include <map>
 #include <string>
+#include <utility>
 
 /*
  * Holds the size and modified time for a file, and is used in the file stats

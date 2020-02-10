@@ -20,8 +20,8 @@
 
 #include "buffer.h"
 
-#include <cstdlib>
-#include <cstring>
+#include <algorithm>
+#include <ostream>
 
 #include "logging.h"
 
