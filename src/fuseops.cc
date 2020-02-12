@@ -81,8 +81,8 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler, off_t,
 
     // Using a unique_ptr with a custom deleter ensures closedir gets called
     // before function exit.
-    std::unique_ptr<DIR, int (*)(DIR*)> dp(opendir(path.NormalSource().c_str()),
-                                           closedir);
+    std::unique_ptr<DIR, decltype(&closedir)> dp(
+        opendir(path.NormalSource().c_str()), closedir);
     if (!dp) {
         return -errno;
     }

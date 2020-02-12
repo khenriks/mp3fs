@@ -197,7 +197,7 @@ struct mp3fs_params params = {
 int main(int argc, char* argv[]) {
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-    std::unique_ptr<fuse_args, void (*)(fuse_args*)> args_ptr(
+    std::unique_ptr<fuse_args, decltype(&fuse_opt_free_args)> args_ptr(
         &args, fuse_opt_free_args);
 
     if (fuse_opt_parse(args_ptr.get(), &params, mp3fs_opts, mp3fs_opt_proc)) {
