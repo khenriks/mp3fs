@@ -53,6 +53,8 @@ enum { KEY_HELP, KEY_VERSION, KEY_KEEP_OPT };
 #define MP3FS_OPT(t, p, v) \
     { t, offsetof(struct mp3fs_params, p), v }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-int-conversion"
 struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("-b %u", bitrate, 0),
     MP3FS_OPT("bitrate=%u", bitrate, 0),
@@ -86,6 +88,7 @@ struct fuse_opt mp3fs_opts[] = {
     FUSE_OPT_KEY("-d", KEY_KEEP_OPT),
     FUSE_OPT_KEY("debug", KEY_KEEP_OPT),
     FUSE_OPT_END};
+#pragma GCC diagnostic pop
 
 void usage(const std::string& name) {
     std::cout << "Usage: " << name << " [OPTION]... IN_DIR OUT_DIR"
