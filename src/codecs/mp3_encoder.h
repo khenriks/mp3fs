@@ -36,15 +36,15 @@ class Mp3Encoder : public Encoder {
  public:
     static const size_t id3v1_tag_length = 128;
 
-    Mp3Encoder(Buffer& buffer, size_t actual_size);
+    Mp3Encoder(Buffer* buffer, size_t actual_size);
     ~Mp3Encoder();
 
     int set_stream_params(uint64_t num_samples, int sample_rate, int channels);
-    void set_text_tag(const int key, const char* value);
+    void set_text_tag(int key, const char* value);
     void set_picture_tag(const char* mime_type, int type,
                          const char* description, const uint8_t* data,
                          int data_length);
-    void set_gain_db(const double dbgain);
+    void set_gain_db(double dbgain);
     int render_tag();
     size_t get_actual_size() const;
     size_t calculate_size() const;
@@ -57,14 +57,14 @@ class Mp3Encoder : public Encoder {
      * file) cannot be determined until the entire file is encoded, so
      * transcode the entire file for any read.
      */
-    bool no_partial_encode() { return params.vbr; }
+    bool no_partial_encode() { return params.vbr != 0; }
 
  private:
     lame_t lame_encoder;
     size_t actual_size;  // Use this as the size instead of computing it.
     struct id3_tag* id3tag;
     size_t id3size;
-    Buffer& buffer_;
+    Buffer* buffer_;
     typedef std::map<int, const char*> meta_map_t;
     static const meta_map_t metatag_map;
 };

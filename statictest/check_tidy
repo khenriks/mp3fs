@@ -1,0 +1,25 @@
+#!/bin/bash -e
+# check_tidy verifies that files follow various style guidelines and best
+# practices, by using clang-tidy.
+
+. "${BASH_SOURCE%/*}/common.sh"
+
+# Add LLVM location for clang-tidy to PATH on Mac.
+if [[ "$(uname -s)" = Darwin* ]] ; then
+    PATH="/usr/local/opt/llvm/bin:$PATH"
+fi
+
+check_tidy_single () {
+    file=$1
+    if [[ "$file" = *.c ]] ; then
+        lang_flags=(--language=c -std=c11)
+    else
+        lang_flags=(--language=c++ -std=c++11)
+    fi
+    clang-tidy --quiet "$file" -- "${CXXFLAGS[@]}" "${lang_flags[@]}" \
+        -Wno-unknown-warning-option
+}
+
+if in_main ; then
+    driver check_tidy_single :
+fi

@@ -35,7 +35,7 @@ class Reader {
 
 class FileReader : public Reader {
  public:
-    FileReader(int fd) : fd_(fd) {}
+    explicit FileReader(int fd) : fd_(fd) {}
 
     ~FileReader() override { close(fd_); }
 

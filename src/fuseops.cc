@@ -47,14 +47,16 @@
 
 namespace {
 
+constexpr int kBytesPerBlock = 512;
+
 /**
  * Convert file extension from source to destination name.
  */
 void convert_extension(char* path) {
     char* ext = strrchr(path, '.');
 
-    if (ext && check_decoder(ext + 1)) {
-        strcpy(ext + 1, params.desttype);
+    if (ext != nullptr && check_decoder(ext + 1)) {
+        strcpy(ext + 1, params.desttype);  // NOLINT
     }
 }
 
@@ -74,8 +76,8 @@ int mp3fs_readlink(const char* p, char* buf, size_t size) {
     return 0;
 }
 
-int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler, off_t,
-                  struct fuse_file_info*) {
+int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
+                  off_t /*unused*/, struct fuse_file_info* /*unused*/) {
     Path path = Path::FromMp3fsRelative(p);
     Log(DEBUG) << "readdir " << path;
 
@@ -93,14 +95,16 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler, off_t,
         struct stat st;
         if (lstat(origfile.c_str(), &st) == -1) {
             return -errno;
-        } else {
-            if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
-                // TODO: Make this safe if converting from short to long ext.
-                convert_extension(de->d_name);
-            }
         }
 
-        if (filler(buf, de->d_name, &st, 0)) break;
+        if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
+            // TODO: Make this safe if converting from short to long ext.
+            convert_extension(de->d_name);
+        }
+
+        if (filler(buf, de->d_name, &st, 0) != 0) {
+            break;
+        }
     }
 
     return 0;
@@ -129,7 +133,8 @@ int mp3fs_getattr(const char* p, struct stat* stbuf) {
         }
 
         stbuf->st_size = trans.get_size();
-        stbuf->st_blocks = (stbuf->st_size + 512 - 1) / 512;
+        stbuf->st_blocks =
+            (stbuf->st_size + kBytesPerBlock - 1) / kBytesPerBlock;
     }
 
     return 0;
@@ -144,7 +149,8 @@ int mp3fs_open(const char* p, struct fuse_file_info* fi) {
     if (fd != -1) {  // File exists and was successfully opened.
         fi->fh = reinterpret_cast<uint64_t>(new FileReader(fd));
         return 0;
-    } else if (errno != ENOENT) {  // File exists but can't be opened.
+    }
+    if (errno != ENOENT) {  // File exists but can't be opened.
         return -errno;
     }
 
@@ -166,7 +172,7 @@ int mp3fs_read(const char* path, char* buf, size_t size, off_t offset,
 
     Reader* reader = reinterpret_cast<Reader*>(fi->fh);
 
-    if (!reader) {
+    if (reader == nullptr) {
         Log(ERROR) << "Tried to read from unopen file: " << path;
         return -EBADF;
     }
@@ -174,10 +180,10 @@ int mp3fs_read(const char* path, char* buf, size_t size, off_t offset,
     ssize_t read = reader->read(buf, offset, size);
 
     if (read >= 0) {
-        return (int)read;
-    } else {
-        return -errno;
+        return static_cast<int>(read);
     }
+
+    return -errno;
 }
 
 int mp3fs_statfs(const char* p, struct statvfs* stbuf) {
@@ -200,9 +206,7 @@ int mp3fs_release(const char* path, struct fuse_file_info* fi) {
     Log(DEBUG) << "release " << path;
 
     Reader* reader = reinterpret_cast<Reader*>(fi->fh);
-    if (reader) {
-        delete reader;
-    }
+    delete reader;
 
     return 0;
 }

@@ -26,13 +26,18 @@
 
 #include "logging.h"
 
+namespace {
+constexpr int kUnusedMetadataBytes = 16;
+}
+
 /* Decode binary picture data. */
 bool Picture::decode() {
     std::string picture_data_str;
 
-    if (!consume_decode_uint32(type) || !consume_decode_string(mime_type) ||
-        !consume_decode_string(description) || !consume_no_decode(16) ||
-        !consume_decode_string(picture_data_str)) {
+    if (!consume_decode_uint32(&type) || !consume_decode_string(&mime_type) ||
+        !consume_decode_string(&description) ||
+        !consume_no_decode(kUnusedMetadataBytes) ||
+        !consume_decode_string(&picture_data_str)) {
         Log(ERROR) << "Couldn't decode picture data as valid data.";
         return false;
     }
@@ -44,10 +49,12 @@ bool Picture::decode() {
 }
 
 /* Decode a 32-bit integer from the picture data and advance pointer. */
-bool Picture::consume_decode_uint32(uint32_t& out) {
-    if (data_off_ + 4 > data_.size()) return false;
+bool Picture::consume_decode_uint32(uint32_t* out) {
+    if (data_off_ + 4 > data_.size()) {
+        return false;
+    }
 
-    out = ntohl(*(uint32_t*)(data_.data() + data_off_));
+    *out = ntohl(*(uint32_t*)(data_.data() + data_off_));
 
     data_off_ += 4;
 
@@ -55,13 +62,17 @@ bool Picture::consume_decode_uint32(uint32_t& out) {
 }
 
 /* Decode a string from the picture data and advance pointer. */
-bool Picture::consume_decode_string(std::string& out) {
+bool Picture::consume_decode_string(std::string* out) {
     uint32_t len;
-    if (!consume_decode_uint32(len)) return false;
+    if (!consume_decode_uint32(&len)) {
+        return false;
+    }
 
-    if (data_off_ + len > data_.size()) return false;
+    if (data_off_ + len > data_.size()) {
+        return false;
+    }
 
-    out.assign(data_.data() + data_off_, len);
+    out->assign(data_.data() + data_off_, len);
 
     data_off_ += len;
 

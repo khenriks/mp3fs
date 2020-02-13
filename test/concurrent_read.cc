@@ -7,7 +7,8 @@
 int fd;
 
 void read_from_offset(int off) {
-    char buffer[10000];
+    const int buffer_size = 10000;
+    char buffer[buffer_size];
     pread(fd, buffer, sizeof(buffer), off);
 }
 
@@ -21,7 +22,7 @@ int main(int argc, char* argv[]) {
     }
     std::vector<std::thread> threads;
     int count = 4;
-    int interval = 30000;
+    const int interval = 30000;
     for (int off = 0; off < count * interval; off += interval) {
         threads.emplace_back(read_from_offset, off);
     }

@@ -30,7 +30,8 @@
 
 namespace {
 Logging* logging;
-}
+constexpr size_t kTimeBufferSize = 30;
+}  // namespace
 
 Logging::Logging(std::string logfile, level max_level, bool to_stderr,
                  bool to_syslog)
@@ -44,11 +45,13 @@ Logging::Logging(std::string logfile, level max_level, bool to_stderr,
 }
 
 Logging::Logger::~Logger() {
-    if (!logging_ || loglevel_ > logging_->max_level_) return;
+    if (logging_ == nullptr || loglevel_ > logging_->max_level_) {
+        return;
+    }
 
     // Construct string containing time
     std::time_t now = std::time(nullptr);
-    std::string time_string(30, '\0');
+    std::string time_string(kTimeBufferSize, '\0');
     time_string.resize(std::strftime(&time_string[0], time_string.size(),
                                      "%F %T", std::localtime(&now)));
 
@@ -58,8 +61,12 @@ Logging::Logger::~Logger() {
     if (logging_->to_syslog_) {
         syslog(syslog_level_map_.at(loglevel_), "%s", msg.c_str());
     }
-    if (logging_->logfile_.is_open()) logging_->logfile_ << msg << std::endl;
-    if (logging_->to_stderr_) std::clog << msg << std::endl;
+    if (logging_->logfile_.is_open()) {
+        logging_->logfile_ << msg << std::endl;
+    }
+    if (logging_->to_stderr_) {
+        std::clog << msg << std::endl;
+    }
 }
 
 const std::map<Logging::level, int> Logging::Logger::syslog_level_map_ = {

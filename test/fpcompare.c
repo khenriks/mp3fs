@@ -14,7 +14,8 @@ int decode_audio_file(ChromaprintContext* ctx, const char* file_name) {
         return 0;
     }
 
-    chromaprint_start(ctx, (int)in_fmt->signal.rate, in_fmt->signal.channels);
+    chromaprint_start(ctx, (int)in_fmt->signal.rate,
+                      (int)in_fmt->signal.channels);
 
     sox_sample_t samples[NUM_SAMPLES];
     int16_t conv_samples[NUM_SAMPLES];
@@ -92,7 +93,8 @@ int main(int argc, char** argv) {
             char* value = strchr(name, '=');
             if (value) {
                 *value++ = '\0';
-                chromaprint_set_option(chromaprint_ctx, name, atoi(value));
+                chromaprint_set_option(chromaprint_ctx, name,
+                                       (int)strtol(value, NULL, 0));
             }
         }
     }
@@ -129,8 +131,9 @@ int main(int argc, char** argv) {
             int32_t thisdiff = raw_fingerprints[0][i] ^ raw_fingerprints[1][i];
             setbits += __builtin_popcount(thisdiff);
         }
-        setbits += (size_sum - 2 * i) * 32;
-        printf("%f\n", setbits / ((size_sum - i) * 32.0));
+        const int int32_bits = 32;
+        setbits += (size_sum - 2 * i) * int32_bits;
+        printf("%f\n", setbits / ((size_sum - i) * int32_bits * 1.0));
     } else {
         fprintf(
             stderr,
@@ -138,8 +141,12 @@ int main(int argc, char** argv) {
         printf("1.0\n");
     }
 
-    if (raw_fingerprints[0]) chromaprint_dealloc(raw_fingerprints[0]);
-    if (raw_fingerprints[1]) chromaprint_dealloc(raw_fingerprints[1]);
+    if (raw_fingerprints[0]) {
+        chromaprint_dealloc(raw_fingerprints[0]);
+    }
+    if (raw_fingerprints[1]) {
+        chromaprint_dealloc(raw_fingerprints[1]);
+    }
 
     chromaprint_free(chromaprint_ctx);
     sox_format_quit();

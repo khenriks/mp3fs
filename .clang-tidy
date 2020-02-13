@@ -1,0 +1,8 @@
+---
+Checks: >-
+  bugprone-*,misc-*,portability-*,
+  cert-*,-cert-err58-cpp,
+  google-*,-google-readability-todo,
+  readability-*,-readability-isolate-declaration
+WarningsAsErrors: '*'
+...

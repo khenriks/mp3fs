@@ -62,7 +62,7 @@ class StatsCache {
     StatsCache& operator=(const StatsCache&) = delete;
 
     bool get_filesize(const std::string& filename, time_t mtime,
-                      size_t& filesize);
+                      size_t* filesize);
     void put_filesize(const std::string& filename, size_t filesize,
                       time_t mtime);
 

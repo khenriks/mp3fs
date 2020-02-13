@@ -20,26 +20,38 @@
 
 #include "codecs/coders.h"
 
+#include <memory>
+
 /*
  * Conditionally include specific encoders and decoders based on
  * configuration.
  */
 #ifdef HAVE_MP3
+#include <lame/lame.h>
+
 #include "codecs/mp3_encoder.h"
 #endif
 #ifdef HAVE_FLAC
+#include <FLAC/format.h>
+
 #include "codecs/flac_decoder.h"
 #endif
 #ifdef HAVE_VORBIS
+#include <vorbis/codec.h>
+
 #include "codecs/vorbis_decoder.h"
 #endif
 
 #include "buffer.h"
 #include "mp3fs.h"
 
+namespace {
+constexpr double kDefaultGain = 89.0;
+}
+
 void Encoder::set_gain(double gainref, double album_gain, double track_gain) {
     if (gainref == invalid_db) {
-        gainref = 89.0;
+        gainref = kDefaultGain;
     }
 
     double dbgain = invalid_db;
@@ -61,21 +73,27 @@ void Encoder::set_gain(double gainref, double album_gain, double track_gain) {
 }
 
 /* Create instance of class derived from Encoder. */
-Encoder* Encoder::CreateEncoder(std::string file_type, Buffer& buffer,
+Encoder* Encoder::CreateEncoder(const std::string& file_type, Buffer* buffer,
                                 size_t actual_size) {
 #ifdef HAVE_MP3
-    if (file_type == "mp3") return new Mp3Encoder(buffer, actual_size);
+    if (file_type == "mp3") {
+        return new Mp3Encoder(buffer, actual_size);
+    }
 #endif
     return NULL;
 }
 
 /* Create instance of class derived from Decoder. */
-Decoder* Decoder::CreateDecoder(std::string file_type) {
+Decoder* Decoder::CreateDecoder(const std::string& file_type) {
 #ifdef HAVE_FLAC
-    if (file_type == "flac") return new FlacDecoder();
+    if (file_type == "flac") {
+        return new FlacDecoder();
+    }
 #endif
 #ifdef HAVE_VORBIS
-    if (file_type == "ogg" || file_type == "oga") return new VorbisDecoder();
+    if (file_type == "ogg" || file_type == "oga") {
+        return new VorbisDecoder();
+    }
 #endif
     return NULL;
 }
@@ -99,26 +117,16 @@ const std::vector<std::string> decoder_list = {
 };
 
 /* Check if an encoder is available to encode to the specified type. */
-int check_encoder(const char* type) {
+bool check_encoder(const char* type) {
     Buffer b;
-    Encoder* enc = Encoder::CreateEncoder(type, b);
-    if (enc) {
-        delete enc;
-        return 1;
-    } else {
-        return 0;
-    }
+    std::unique_ptr<Encoder> enc(Encoder::CreateEncoder(type, &b));
+    return enc != nullptr;
 }
 
 /* Check if a decoder is available to decode from the specified type. */
-int check_decoder(const char* type) {
-    Decoder* dec = Decoder::CreateDecoder(type);
-    if (dec) {
-        delete dec;
-        return 1;
-    } else {
-        return 0;
-    }
+bool check_decoder(const char* type) {
+    std::unique_ptr<Decoder> dec(Decoder::CreateDecoder(type));
+    return dec != nullptr;
 }
 
 void print_codec_versions(std::ostream& out) {

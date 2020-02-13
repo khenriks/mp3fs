@@ -4,7 +4,9 @@ cd "${BASH_SOURCE%/*}"
 
 . ./check_format
 . ./check_iwyu
+. ./check_tidy
 
 multidriver \
     format,check_format_single \
-    iwyu,check_iwyu_single
+    iwyu,check_iwyu_single \
+    tidy,check_tidy_single

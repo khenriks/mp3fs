@@ -40,7 +40,7 @@ void Buffer::write(const std::vector<uint8_t>& data, size_t offset) {
 
 void Buffer::ensure_size(size_t size) {
     if (data_.size() < size) {
-        if ((size_t)end_bound_ == data_.size()) {
+        if (static_cast<size_t>(end_bound_) == data_.size()) {
             end_bound_ = size;
         }
         data_.resize(size, 0);
@@ -63,8 +63,9 @@ bool Buffer::valid_bytes(size_t offset, size_t size) const {
      *   b) offset >= end_bound_, or
      *   c) start_bound_ == end_bound_.
      */
-    return end <= (std::streamoff)data_.size() &&
-           (end <= start_bound_ || (std::streamoff)offset >= end_bound_ ||
+    return end <= static_cast<std::streamoff>(data_.size()) &&
+           (end <= start_bound_ ||
+            static_cast<std::streamoff>(offset) >= end_bound_ ||
             start_bound_ == end_bound_);
 }
 

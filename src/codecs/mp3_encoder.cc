@@ -41,14 +41,21 @@
 /* Keep these items in static scope. */
 namespace {
 
+constexpr int kMillisPerSec = 1000;
+
+// Extra padding for buffers holding LAME output.
+constexpr int kBufferSlop = 7200;
+
+constexpr int kBitsPerByte = 8;
+
 /* Callback functions for each type of lame message callback */
-static void lame_error(const char* fmt, va_list list) {
+void lame_error(const char* fmt, va_list list) {
     log_with_level(ERROR, "LAME: ", fmt, list);
 }
-static void lame_msg(const char* fmt, va_list list) {
+void lame_msg(const char* fmt, va_list list) {
     log_with_level(ERROR, "LAME: ", fmt, list);
 }
-static void lame_debug(const char* fmt, va_list list) {
+void lame_debug(const char* fmt, va_list list) {
     log_with_level(DEBUG, "LAME: ", fmt, list);
 }
 
@@ -59,7 +66,7 @@ static void lame_debug(const char* fmt, va_list list) {
  * particular file. Currently error handling is poor. If we run out
  * of memory, these routines will fail silently.
  */
-Mp3Encoder::Mp3Encoder(Buffer& buffer, size_t _actual_size)
+Mp3Encoder::Mp3Encoder(Buffer* buffer, size_t _actual_size)
     : actual_size(_actual_size), buffer_(buffer) {
     id3tag = id3_tag_new();
 
@@ -67,10 +74,10 @@ Mp3Encoder::Mp3Encoder(Buffer& buffer, size_t _actual_size)
 
     lame_encoder = lame_init();
 
-    set_text_tag(METATAG_ENCODER, PACKAGE_NAME);
+    Mp3Encoder::set_text_tag(METATAG_ENCODER, PACKAGE_NAME);
 
     /* Set lame parameters. */
-    if (params.vbr) {
+    if (params.vbr != 0) {
         lame_set_VBR(lame_encoder, vbr_mt);
         lame_set_VBR_q(lame_encoder, params.quality);
         lame_set_VBR_max_bitrate_kbps(lame_encoder, params.bitrate);
@@ -90,7 +97,7 @@ Mp3Encoder::Mp3Encoder(Buffer& buffer, size_t _actual_size)
  * so we have to check ourselves to avoid this case.
  */
 Mp3Encoder::~Mp3Encoder() {
-    if (id3tag) {
+    if (id3tag != nullptr) {
         id3_tag_delete(id3tag);
     }
     lame_close(lame_encoder);
@@ -122,7 +129,7 @@ int Mp3Encoder::set_stream_params(uint64_t num_samples, int sample_rate,
      * to do it.
      */
     std::ostringstream tempstr;
-    tempstr << num_samples * 1000 / sample_rate;
+    tempstr << num_samples * kMillisPerSec / sample_rate;
     set_text_tag(METATAG_TRACKLENGTH, tempstr.str().c_str());
 
     return 0;
@@ -135,7 +142,7 @@ int Mp3Encoder::set_stream_params(uint64_t num_samples, int sample_rate,
  * standard. The tag is assumed to be encoded in UTF-8.
  */
 void Mp3Encoder::set_text_tag(const int key, const char* value) {
-    if (!value) {
+    if (value == nullptr) {
         return;
     }
 
@@ -143,7 +150,7 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
 
     if (it != metatag_map.end()) {
         struct id3_frame* frame = id3_tag_findframe(id3tag, it->second, 0);
-        if (!frame) {
+        if (frame == nullptr) {
             frame = id3_frame_new(it->second);
             id3_tag_attachframe(id3tag, frame);
 
@@ -151,8 +158,9 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
                                       ID3_FIELD_TEXTENCODING_UTF_8);
         }
 
-        id3_ucs4_t* ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t*)value);
-        if (ucs4) {
+        id3_ucs4_t* ucs4 =
+            id3_utf8_ucs4duplicate(reinterpret_cast<const id3_utf8_t*>(value));
+        if (ucs4 != nullptr) {
             id3_field_addstring(id3_frame_field(frame, 1), ucs4);
             free(ucs4);
         }
@@ -168,7 +176,7 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
         struct id3_frame* frame = id3_tag_findframe(id3tag, tagname, 0);
         const id3_latin1_t* lat;
         id3_latin1_t* tofree = 0;
-        if (frame) {
+        if (frame != nullptr) {
             const id3_ucs4_t* pre =
                 id3_field_getstrings(id3_frame_field(frame, 1), 0);
             tofree = id3_ucs4_latin1duplicate(pre);
@@ -178,7 +186,7 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
             id3_tag_attachframe(id3tag, frame);
             id3_field_settextencoding(id3_frame_field(frame, 0),
                                       ID3_FIELD_TEXTENCODING_UTF_8);
-            lat = (const id3_latin1_t*)"";
+            lat = reinterpret_cast<const id3_latin1_t*>("");
         }
         std::ostringstream tempstr;
         if (key == METATAG_TRACKNUMBER || key == METATAG_DISCNUMBER) {
@@ -186,13 +194,13 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
         } else {
             tempstr << lat << "/" << value;
         }
-        id3_ucs4_t* ucs4 =
-            id3_latin1_ucs4duplicate((id3_latin1_t*)tempstr.str().c_str());
-        if (ucs4) {
+        id3_ucs4_t* ucs4 = id3_latin1_ucs4duplicate(
+            reinterpret_cast<const id3_latin1_t*>(tempstr.str().c_str()));
+        if (ucs4 != nullptr) {
             id3_field_setstrings(id3_frame_field(frame, 1), 1, &ucs4);
             free(ucs4);
         }
-        if (tofree) {
+        if (tofree != nullptr) {
             free(tofree);
         }
     }
@@ -207,12 +215,14 @@ void Mp3Encoder::set_picture_tag(const char* mime_type, int type,
 
     id3_field_settextencoding(id3_frame_field(frame, 0),
                               ID3_FIELD_TEXTENCODING_UTF_8);
-    id3_field_setlatin1(id3_frame_field(frame, 1), (id3_latin1_t*)mime_type);
+    id3_field_setlatin1(id3_frame_field(frame, 1),
+                        reinterpret_cast<const id3_latin1_t*>(mime_type));
     id3_field_setint(id3_frame_field(frame, 2), type);
     id3_field_setbinarydata(id3_frame_field(frame, 4), data, data_length);
 
-    id3_ucs4_t* ucs4 = id3_utf8_ucs4duplicate((id3_utf8_t*)description);
-    if (ucs4) {
+    id3_ucs4_t* ucs4 = id3_utf8_ucs4duplicate(
+        reinterpret_cast<const id3_utf8_t*>(description));
+    if (ucs4 != nullptr) {
         id3_field_setstring(id3_frame_field(frame, 3), ucs4);
         free(ucs4);
     }
@@ -222,11 +232,12 @@ void Mp3Encoder::set_picture_tag(const char* mime_type, int type,
  * Set MP3 gain value in decibels. For MP3, there is no standard tag that can
  * be used, so the value is set directly as a gain in the encoder. The pow
  * formula comes from
- * http://replaygain.hydrogenaudio.org/proposal/player_scale.html
+ * http://replaygain.hydrogenaud.io/proposal/player_scale.html
  */
 void Mp3Encoder::set_gain_db(const double dbgain) {
     Log(DEBUG) << "LAME setting gain to " << dbgain << ".";
-    lame_set_scale(lame_encoder, (float)pow(10.0, dbgain / 20));
+    // NOLINTNEXTLINE(readability-magic-numbers)
+    lame_set_scale(lame_encoder, static_cast<float>(pow(10.0, dbgain / 20)));
 }
 
 /*
@@ -243,19 +254,20 @@ int Mp3Encoder::render_tag() {
      * Some players = iTunes
      */
     id3_tag_options(id3tag, ID3_TAG_OPTION_COMPRESSION, 0);
-    id3_tag_setlength(id3tag, id3_tag_render(id3tag, nullptr) + 12);
+    const int extra_padding = 12;
+    id3_tag_setlength(id3tag, id3_tag_render(id3tag, nullptr) + extra_padding);
 
     // write v2 tag
     id3size = id3_tag_render(id3tag, nullptr);
     std::vector<uint8_t> tag24(id3size);
     id3_tag_render(id3tag, tag24.data());
-    buffer_.write(tag24);
+    buffer_->write(tag24);
 
     // Write v1 tag at end of buffer.
     id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
     std::vector<uint8_t> tag1(id3v1_tag_length);
     id3_tag_render(id3tag, tag1.data());
-    buffer_.write(tag1, calculate_size() - id3v1_tag_length);
+    buffer_->write(tag1, calculate_size() - id3v1_tag_length);
 
     return 0;
 }
@@ -273,21 +285,31 @@ size_t Mp3Encoder::get_actual_size() const {
  * ID3v2, ID3v1, and raw MP3 data. This is theoretically only approximate
  * but in practice gives excellent answers, usually exactly correct.
  * Cast to 64-bit int to avoid overflow.
+ *
+ * MP3 data is organized in frames, and each frame contains 1152 samples. So
+ *   samples = frames * 1152
+ *   length (sec) = samples / samplerate
+ *   bytes = bits / 8 = length (sec) * bitrate / 8
+ *         = frames * 1152 * bitrate / 8 / samplerate
+ *         = frames * 144 * bitrate / samplerate
+ * Note that the true bitrate is 1000 times the value stored in params.bitrate,
+ * so our conversion factor is actually 144000.
  */
 size_t Mp3Encoder::calculate_size() const {
     if (actual_size != 0) {
         return actual_size;
-    } else if (params.vbr) {
-        return id3size + id3v1_tag_length + MAX_VBR_FRAME_SIZE +
-               (uint64_t)lame_get_totalframes(lame_encoder) * 144 *
-                   params.bitrate * 10 /
-                   (lame_get_in_samplerate(lame_encoder) / 100);
-    } else {
-        return id3size + id3v1_tag_length +
-               (uint64_t)lame_get_totalframes(lame_encoder) * 144 *
-                   params.bitrate * 10 /
-                   (lame_get_out_samplerate(lame_encoder) / 100);
     }
+    const int conversion_factor = 144000;
+    if (params.vbr != 0) {
+        return id3size + id3v1_tag_length + MAX_VBR_FRAME_SIZE +
+               static_cast<uint64_t>(lame_get_totalframes(lame_encoder)) *
+                   conversion_factor * params.bitrate /
+                   lame_get_in_samplerate(lame_encoder);
+    }
+    return id3size + id3v1_tag_length +
+           static_cast<uint64_t>(lame_get_totalframes(lame_encoder)) *
+               conversion_factor * params.bitrate /
+               lame_get_out_samplerate(lame_encoder);
 }
 
 /*
@@ -313,24 +335,25 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
      */
     std::vector<int> lbuf(numsamples), rbuf(numsamples);
     for (int i = 0; i < numsamples; ++i) {
-        lbuf[i] = (int)data[0][i] << (sizeof(int) * 8 - sample_size);
+        lbuf[i] = data[0][i] << (sizeof(int) * kBitsPerByte - sample_size);
         /* ignore rbuf for mono data */
         if (lame_get_num_channels(lame_encoder) > 1) {
-            rbuf[i] = (int)data[1][i] << (sizeof(int) * 8 - sample_size);
+            rbuf[i] = data[1][i] << (sizeof(int) * kBitsPerByte - sample_size);
         }
     }
 
-    std::vector<uint8_t> vbuffer(5 * numsamples / 4 + 7200);
+    // Buffer size formula recommended by LAME docs: 1.25 * samples + 7200
+    std::vector<uint8_t> vbuffer(5 * numsamples / 4 + kBufferSlop);  // NOLINT
 
-    int len =
-        lame_encode_buffer_int(lame_encoder, &lbuf[0], &rbuf[0], numsamples,
-                               vbuffer.data(), (int)vbuffer.size());
+    int len = lame_encode_buffer_int(lame_encoder, &lbuf[0], &rbuf[0],
+                                     numsamples, vbuffer.data(),
+                                     static_cast<int>(vbuffer.size()));
     if (len < 0) {
         return -1;
     }
     vbuffer.resize(len);
 
-    buffer_.write(vbuffer);
+    buffer_->write(vbuffer);
 
     return 0;
 }
@@ -341,30 +364,30 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
  * passed to encode_pcm_data().
  */
 int Mp3Encoder::encode_finish() {
-    std::vector<uint8_t> vbuffer(7200);
+    std::vector<uint8_t> vbuffer(kBufferSlop);
 
-    int len =
-        lame_encode_flush(lame_encoder, vbuffer.data(), (int)vbuffer.size());
+    int len = lame_encode_flush(lame_encoder, vbuffer.data(),
+                                static_cast<int>(vbuffer.size()));
     if (len < 0) {
         return -1;
     }
     vbuffer.resize(len);
 
-    buffer_.write(vbuffer);
-    actual_size = buffer_.tell() + id3v1_tag_length;
+    buffer_->write(vbuffer);
+    actual_size = buffer_->tell() + id3v1_tag_length;
 
     /*
      * Write the VBR tag data at id3size bytes after the beginning. lame
      * already put dummy bytes here when lame_init_params() was called.
      */
-    if (params.vbr) {
+    if (params.vbr != 0) {
         std::vector<uint8_t> tail(MAX_VBR_FRAME_SIZE);
         size_t vbr_tag_size = lame_get_lametag_frame(lame_encoder, tail.data(),
                                                      MAX_VBR_FRAME_SIZE);
         if (vbr_tag_size > MAX_VBR_FRAME_SIZE) {
             return -1;
         }
-        buffer_.write(tail, id3size);
+        buffer_->write(tail, id3size);
     }
 
     return len;

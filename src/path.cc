@@ -44,10 +44,10 @@ std::string Path::TranscodeSource() const {
             if (access(candidate.c_str(), F_OK) == 0) {
                 /* File exists with this extension */
                 return candidate;
-            } else {
-                /* File does not exist; not an error */
-                errno = 0;
             }
+
+            /* File does not exist; not an error */
+            errno = 0;
         }
     }
 

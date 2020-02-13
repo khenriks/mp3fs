@@ -48,6 +48,11 @@ extern struct fuse_operations mp3fs_ops;
 
 namespace {
 
+constexpr int kDefaultBitrate = 128;
+constexpr float kDefaultGainRef = 89.0;
+constexpr int kDefaultQuality = 5;
+constexpr int kQualityMax = 9;
+
 enum { KEY_HELP, KEY_VERSION, KEY_KEEP_OPT };
 
 #define MP3FS_OPT(t, p, v) \
@@ -56,8 +61,8 @@ enum { KEY_HELP, KEY_VERSION, KEY_KEEP_OPT };
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-int-conversion"
 struct fuse_opt mp3fs_opts[] = {
-    MP3FS_OPT("-b %u", bitrate, 0),
-    MP3FS_OPT("bitrate=%u", bitrate, 0),
+    MP3FS_OPT("-b %d", bitrate, 0),
+    MP3FS_OPT("bitrate=%d", bitrate, 0),
     MP3FS_OPT("-d", debug, 1),
     MP3FS_OPT("debug", debug, 1),
     MP3FS_OPT("--desttype=%s", desttype, 0),
@@ -74,8 +79,8 @@ struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("log_syslog", log_syslog, 1),
     MP3FS_OPT("--logfile=%s", logfile, 0),
     MP3FS_OPT("logfile=%s", logfile, 0),
-    MP3FS_OPT("--quality=%u", quality, 0),
-    MP3FS_OPT("quality=%u", quality, 0),
+    MP3FS_OPT("--quality=%d", quality, 0),
+    MP3FS_OPT("quality=%d", quality, 0),
     MP3FS_OPT("--statcachesize=%u", statcachesize, 0),
     MP3FS_OPT("statcachesize=%u", statcachesize, 0),
     MP3FS_OPT("--vbr", vbr, 1),
@@ -153,11 +158,12 @@ void print_versions(std::ostream&& out) {
 #endif
 }
 
-int mp3fs_opt_proc(void*, const char* arg, int key, struct fuse_args* outargs) {
+int mp3fs_opt_proc(void* /*unused*/, const char* arg, int key,
+                   struct fuse_args* outargs) {
     switch (key) {
         case FUSE_OPT_KEY_NONOPT:
             // check for flacdir and bitrate parameters
-            if (!params.basepath) {
+            if (params.basepath == nullptr) {
                 params.basepath = arg;
                 return 0;
             }
@@ -181,18 +187,18 @@ int mp3fs_opt_proc(void*, const char* arg, int key, struct fuse_args* outargs) {
 
 struct mp3fs_params params = {
     .basepath = NULL,
-    .bitrate = 128,
+    .bitrate = kDefaultBitrate,
     .debug = 0,
 #ifdef HAVE_MP3
     .desttype = "mp3",
 #endif
     .gainmode = 1,
-    .gainref = 89.0,
+    .gainref = kDefaultGainRef,
     .log_maxlevel = "INFO",
     .log_stderr = 0,
     .log_syslog = 0,
     .logfile = "",
-    .quality = 5,
+    .quality = kDefaultQuality,
     .statcachesize = 0,
     .vbr = 0,
 };
@@ -203,27 +209,28 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<fuse_args, decltype(&fuse_opt_free_args)> args_ptr(
         &args, fuse_opt_free_args);
 
-    if (fuse_opt_parse(args_ptr.get(), &params, mp3fs_opts, mp3fs_opt_proc)) {
+    if (fuse_opt_parse(args_ptr.get(), &params, mp3fs_opts, mp3fs_opt_proc) !=
+        0) {
         std::cerr << "Error parsing options.\n" << std::endl;
         usage(argv[0]);
         return 1;
     }
 
     /* Log to the screen, and enable debug messages, if debug is enabled. */
-    if (params.debug) {
+    if (params.debug != 0) {
         params.log_stderr = 1;
         params.log_maxlevel = "DEBUG";
     }
 
     if (!InitLogging(params.logfile, StringToLevel(params.log_maxlevel),
-                     params.log_stderr, params.log_syslog)) {
+                     params.log_stderr != 0, params.log_syslog != 0)) {
         std::cerr << "Failed to initialize logging module." << std::endl;
         std::cerr << "Maybe log file couldn't be opened for writing?"
                   << std::endl;
         return 1;
     }
 
-    if (!params.basepath) {
+    if (params.basepath == nullptr) {
         std::cerr << "No valid flacdir specified.\n" << std::endl;
         usage(argv[0]);
         return 1;
@@ -246,7 +253,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    if (params.quality > 9) {
+    if (params.quality > kQualityMax || params.quality < 0) {
         std::cerr << "Invalid encoding quality value: " << params.quality
                   << std::endl
                   << std::endl;

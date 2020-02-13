@@ -173,11 +173,11 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
                     encoder_c->set_text_tag(it->second,
                                             comment.get_field_value());
                 } else if (fname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
-                    gainref = atof(comment.get_field_value());
+                    gainref = strtod(comment.get_field_value(), nullptr);
                 } else if (fname == "REPLAYGAIN_ALBUM_GAIN") {
-                    album_gain = atof(comment.get_field_value());
+                    album_gain = strtod(comment.get_field_value(), nullptr);
                 } else if (fname == "REPLAYGAIN_TRACK_GAIN") {
-                    track_gain = atof(comment.get_field_value());
+                    track_gain = strtod(comment.get_field_value(), nullptr);
                 }
             }
 
@@ -193,8 +193,8 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
 
             encoder_c->set_picture_tag(
                 picture.get_mime_type(), picture.get_type(),
-                (char*)picture.get_description(), picture.get_data(),
-                picture.get_data_length());
+                reinterpret_cast<const char*>(picture.get_description()),
+                picture.get_data(), picture.get_data_length());
 
             break;
         }

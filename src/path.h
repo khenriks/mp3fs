@@ -50,7 +50,8 @@ class Path {
     friend std::ostream& operator<<(std::ostream&, const Path&);
 
  private:
-    Path(const std::string& relative_path) : relative_path_(relative_path) {}
+    explicit Path(const std::string& relative_path)
+        : relative_path_(relative_path) {}
 
     std::string relative_path_;
 };

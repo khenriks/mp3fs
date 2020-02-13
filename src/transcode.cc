@@ -57,9 +57,9 @@ bool Transcoder::open() {
 
     Log(DEBUG) << "Decoder initialized successfully.";
 
-    stats_cache.get_filesize(filename_, decoder_->mtime(), encoded_filesize_);
+    stats_cache.get_filesize(filename_, decoder_->mtime(), &encoded_filesize_);
     encoder_.reset(
-        Encoder::CreateEncoder(params.desttype, buffer_, encoded_filesize_));
+        Encoder::CreateEncoder(params.desttype, &buffer_, encoded_filesize_));
     if (!encoder_) {
         errno = EIO;
         return false;
@@ -92,7 +92,7 @@ bool Transcoder::open() {
 ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
     std::lock_guard<std::mutex> l(mutex_);
     Log(DEBUG) << "Reading " << len << " bytes from offset " << offset << ".";
-    if ((size_t)offset > get_size()) {
+    if (static_cast<size_t>(offset) > get_size()) {
         return 0;
     }
     if (offset + len > get_size()) {
@@ -103,7 +103,7 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
     // If the requested data has already been filled into the buffer, simply
     // copy it out.
     if (buffer_.valid_bytes(offset, len)) {
-        buffer_.copy_into((uint8_t*)buff, offset, len);
+        buffer_.copy_into(reinterpret_cast<uint8_t*>(buff), offset, len);
         return len;
     }
 
@@ -126,7 +126,7 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
         len = std::max<off_t>(buffer_.tell() - offset, 0);
     }
 
-    buffer_.copy_into((uint8_t*)buff, offset, len);
+    buffer_.copy_into(reinterpret_cast<uint8_t*>(buff), offset, len);
 
     return len;
 }
@@ -134,11 +134,12 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
 size_t Transcoder::get_size() const {
     if (encoded_filesize_ != 0) {
         return encoded_filesize_;
-    } else if (encoder_) {
-        return encoder_->calculate_size();
-    } else {
-        return buffer_.tell();
     }
+    if (encoder_) {
+        return encoder_->calculate_size();
+    }
+
+    return buffer_.tell();
 }
 
 bool Transcoder::transcode_until(size_t end) {

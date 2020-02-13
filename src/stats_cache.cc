@@ -59,7 +59,7 @@ bool FileStat::operator==(const FileStat& other) const {
  * entry. Return true if the file size was found.
  */
 bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
-                              size_t& filesize) {
+                              size_t* filesize) {
     bool in_cache = false;
     pthread_mutex_lock(&mutex);
     cache_t::iterator p = cache.find(filename);
@@ -75,7 +75,7 @@ bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
             Log(DEBUG) << "Found file '" << p->first
                        << "' in stats cache with size " << file_stat.get_size();
             in_cache = true;
-            filesize = file_stat.get_size();
+            *filesize = file_stat.get_size();
             file_stat.update_atime();
         }
     }
@@ -111,7 +111,7 @@ void StatsCache::put_filesize(const std::string& filename, size_t filesize,
  */
 void StatsCache::prune() {
     Log(DEBUG) << "Pruning stats cache";
-    size_t target_size = 9 * params.statcachesize / 10;  // 90%
+    size_t target_size = 9 * params.statcachesize / 10;  // 90% NOLINT
     typedef std::vector<cache_entry_t> entry_vector;
     entry_vector sorted_entries;
 
@@ -120,7 +120,7 @@ void StatsCache::prune() {
     sorted_entries.reserve(cache.size());
     for (cache_t::iterator p = cache.begin(); p != cache.end(); ++p) {
         /* Force a true copy of the string to prevent multithreading issues. */
-        std::string file(p->first.c_str());
+        std::string file(p->first);
         sorted_entries.push_back(std::make_pair(file, p->second));
     }
     pthread_mutex_unlock(&mutex);

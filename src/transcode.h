@@ -38,7 +38,7 @@
 /* Transcoder for open file */
 class Transcoder : public Reader {
  public:
-    Transcoder(const std::string& filename)
+    explicit Transcoder(const std::string& filename)
         : filename_(filename), encoded_filesize_(0) {
         Log(DEBUG) << "Creating transcoder object for " << filename;
     }

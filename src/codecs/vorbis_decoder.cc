@@ -110,7 +110,8 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         return -1;
     }
 
-    if (encoder->set_stream_params(ov_pcm_total(&vf, -1), (int)vi->rate,
+    if (encoder->set_stream_params(ov_pcm_total(&vf, -1),
+                                   static_cast<int>(vi->rate),
                                    vi->channels) == -1) {
         Log(ERROR)
             << "Ogg Vorbis decoder: Failed to set encoder stream parameters.";
@@ -176,11 +177,11 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
                     picture.get_data_length());
             }
         } else if (tagname == "REPLAYGAIN_REFERENCE_LOUDNESS") {
-            gainref = atof(tagvalue.c_str());
+            gainref = strtod(tagvalue.c_str(), nullptr);
         } else if (tagname == "REPLAYGAIN_ALBUM_GAIN") {
-            album_gain = atof(tagvalue.c_str());
+            album_gain = strtod(tagvalue.c_str(), nullptr);
         } else if (tagname == "REPLAYGAIN_TRACK_GAIN") {
-            track_gain = atof(tagvalue.c_str());
+            track_gain = strtod(tagvalue.c_str(), nullptr);
         }
     }
 
@@ -195,16 +196,18 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
  * result going into the given Buffer.
  */
 int VorbisDecoder::process_single_fr(Encoder* encoder) {
-    std::vector<int16_t> decode_buffer(2048);
+    // Vorbis docs recomment a 4096-byte buffer, which is 2048 int16_t.
+    const size_t buffer_size = 2048;
+    std::vector<int16_t> decode_buffer(buffer_size);
 
-    long read_bytes =
-        ov_read(&vf, (char*)decode_buffer.data(),
-                (int)(2 * decode_buffer.size()), 0, 2, 1, &current_section);
+    int64_t read_bytes = ov_read(
+        &vf, reinterpret_cast<char*>(decode_buffer.data()),
+        static_cast<int>(2 * decode_buffer.size()), 0, 2, 1, &current_section);
 
-    long total_samples = read_bytes / 2;
+    int64_t total_samples = read_bytes / 2;
 
     if (total_samples > 0) {
-        long samples_per_channel = total_samples / vi->channels;
+        int64_t samples_per_channel = total_samples / vi->channels;
 
         if (samples_per_channel < 1) {
             Log(ERROR) << "Ogg Vorbis decoder: Not enough samples per channel.";
@@ -217,15 +220,18 @@ int VorbisDecoder::process_single_fr(Encoder* encoder) {
 
         for (int channel = 0; channel < vi->channels; ++channel) {
             encode_buffer_ptr[channel] = encode_buffer[channel].data();
-            for (long i = 0; i < samples_per_channel; ++i) {
+            for (int64_t i = 0; i < samples_per_channel; ++i) {
                 encode_buffer[channel][i] =
                     decode_buffer[i * vi->channels + channel];
             }
         }
 
+        // We explicitly asked for 16-bit samples with ov_read above.
+        const int sample_size = 16;
         /* Send integer buffer to encoder */
         if (encoder->encode_pcm_data(encode_buffer_ptr,
-                                     (int)samples_per_channel, 16) < 0) {
+                                     static_cast<int>(samples_per_channel),
+                                     sample_size) < 0) {
             Log(ERROR)
                 << "Ogg Vorbis decoder: Failed to encode integer buffer.";
 
@@ -233,13 +239,14 @@ int VorbisDecoder::process_single_fr(Encoder* encoder) {
         }
 
         return 0;
-    } else if (total_samples == 0) {
+    }
+    if (total_samples == 0) {
         Log(DEBUG) << "Ogg Vorbis decoder: Reached end of file.";
         return 1;
-    } else {
-        Log(ERROR) << "Ogg Vorbis decoder: Failed to read file.";
-        return -1;
     }
+
+    Log(ERROR) << "Ogg Vorbis decoder: Failed to read file.";
+    return -1;
 }
 
 const VorbisDecoder::meta_map_t VorbisDecoder::metatag_map = {

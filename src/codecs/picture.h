@@ -28,19 +28,21 @@
 
 class Picture {
  public:
-    Picture(std::vector<char> data) : data_(data), data_off_(0) {}
+    explicit Picture(std::vector<char> data) : data_(data), data_off_(0) {}
 
     bool decode();
 
     int get_type() const { return type; }
     const char* get_mime_type() const { return mime_type.c_str(); }
     const char* get_description() const { return description.c_str(); }
-    int get_data_length() const { return (int)picture_data.size(); }
+    int get_data_length() const {
+        return static_cast<int>(picture_data.size());
+    }
     const uint8_t* get_data() const { return picture_data.data(); }
 
  private:
-    bool consume_decode_uint32(uint32_t& out);
-    bool consume_decode_string(std::string& out);
+    bool consume_decode_uint32(uint32_t* out);
+    bool consume_decode_string(std::string* out);
 
     bool consume_no_decode(size_t size) {
         data_off_ += size;

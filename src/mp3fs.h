@@ -25,7 +25,7 @@
 /* Global program parameters */
 extern struct mp3fs_params {
     const char* basepath;
-    unsigned int bitrate;
+    int bitrate;
     int debug;
     const char* desttype;
     int gainmode;
@@ -34,7 +34,7 @@ extern struct mp3fs_params {
     int log_stderr;
     int log_syslog;
     const char* logfile;
-    unsigned int quality;
+    int quality;
     unsigned int statcachesize;
     int vbr;
 } params;

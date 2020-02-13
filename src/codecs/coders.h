@@ -65,11 +65,11 @@ class Encoder {
 
     virtual int set_stream_params(uint64_t num_samples, int sample_rate,
                                   int channels) = 0;
-    virtual void set_text_tag(const int key, const char* value) = 0;
+    virtual void set_text_tag(int key, const char* value) = 0;
     virtual void set_picture_tag(const char* mime_type, int type,
                                  const char* description, const uint8_t* data,
                                  int data_length) = 0;
-    virtual void set_gain_db(const double dbgain) = 0;
+    virtual void set_gain_db(double dbgain) = 0;
     void set_gain(double gainref, double album_gain, double track_gain);
     virtual int render_tag() = 0;
     virtual size_t get_actual_size() const = 0;
@@ -80,7 +80,7 @@ class Encoder {
 
     virtual bool no_partial_encode() { return true; }
 
-    static Encoder* CreateEncoder(const std::string file_type, Buffer& buffer,
+    static Encoder* CreateEncoder(const std::string& file_type, Buffer* buffer,
                                   size_t actual_size = 0);
 
     constexpr static double invalid_db = 1000.0;
@@ -97,7 +97,7 @@ class Decoder {
     virtual int process_metadata(Encoder* encoder) = 0;
     virtual int process_single_fr(Encoder* encoder) = 0;
 
-    static Decoder* CreateDecoder(const std::string file_type);
+    static Decoder* CreateDecoder(const std::string& file_type);
 };
 
 /* Print codec versions. */
@@ -108,7 +108,7 @@ extern const std::vector<std::string> decoder_list;
 extern const std::vector<std::string> encoder_list;
 
 /* Check for availability of audio types. */
-int check_encoder(const char* type);
-int check_decoder(const char* type);
+bool check_encoder(const char* type);
+bool check_decoder(const char* type);
 
 #endif
