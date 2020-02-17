@@ -20,9 +20,7 @@
 
 #include "codecs/vorbis_decoder.h"
 
-#include <fcntl.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 
@@ -54,26 +52,19 @@ VorbisDecoder::~VorbisDecoder() {
 int VorbisDecoder::open_file(const char* filename) {
     Log(DEBUG) << "Ogg Vorbis decoder: Initializing.";
 
-    int fd = open(filename, 0);
-    if (fd < 0) {
-        Log(ERROR) << "Ogg Vorbis decoder: open failed.";
+    FILE* file = fopen(filename, "r");
+    if (file == nullptr) {
+        Log(ERROR) << "Ogg Vorbis decoder: fopen failed.";
         return -1;
     }
 
     struct stat s = {};
-    if (fstat(fd, &s) < 0) {
+    if (fstat(fileno(file), &s) < 0) {
         Log(ERROR) << "Ogg Vorbis decoder: fstat failed.";
-        close(fd);
+        fclose(file);
         return -1;
     }
     mtime_ = s.st_mtime;
-
-    FILE* file = fdopen(fd, "r");
-    if (file == nullptr) {
-        Log(ERROR) << "Ogg Vorbis decoder: fdopen failed.";
-        close(fd);
-        return -1;
-    }
 
     /* Initialise decoder */
     if (ov_open(file, &vf, nullptr, 0) < 0) {
