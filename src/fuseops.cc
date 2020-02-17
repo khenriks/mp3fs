@@ -92,7 +92,7 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
     while (struct dirent* de = readdir(dp.get())) {
         std::string origfile = path.NormalSource() + "/" + de->d_name;
 
-        struct stat st;
+        struct stat st = {};
         if (lstat(origfile.c_str(), &st) == -1) {
             return -errno;
         }
@@ -211,7 +211,7 @@ int mp3fs_release(const char* path, struct fuse_file_info* fi) {
 }
 
 fuse_operations init_mp3fs_ops() {
-    fuse_operations ops;
+    fuse_operations ops = {};
 
     ops.getattr = mp3fs_getattr;
     ops.readlink = mp3fs_readlink;

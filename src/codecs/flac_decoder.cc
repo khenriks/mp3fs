@@ -59,7 +59,7 @@ int FlacDecoder::open_file(const char* filename) {
         return -1;
     }
 
-    struct stat s;
+    struct stat s = {};
     if (fstat(fd, &s) < 0) {
         Log(ERROR) << "FLAC stat failed.";
         close(fd);

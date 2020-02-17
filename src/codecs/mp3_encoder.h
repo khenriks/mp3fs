@@ -64,7 +64,7 @@ class Mp3Encoder : public Encoder {
     lame_t lame_encoder;
     size_t actual_size;  // Use this as the size instead of computing it.
     struct id3_tag* id3tag;
-    size_t id3size;
+    size_t id3size = 0;
     Buffer* buffer_;
     using meta_map_t = std::map<int, const char*>;
     static const meta_map_t metatag_map;

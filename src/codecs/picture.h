@@ -54,7 +54,7 @@ class Picture {
     std::vector<char> data_;
     size_t data_off_;
 
-    uint32_t type;
+    uint32_t type = 0;
     std::string mime_type, description;
     std::vector<uint8_t> picture_data;
 };

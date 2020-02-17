@@ -4,6 +4,7 @@ Checks: >-
   cert-*,-cert-err58-cpp,
   google-*,-google-readability-todo,
   readability-*,-readability-isolate-declaration,
-  modernize-*,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays
+  modernize-*,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays,
+  hicpp-member-init,hicpp-multiway-paths-covered
 WarningsAsErrors: '*'
 ...

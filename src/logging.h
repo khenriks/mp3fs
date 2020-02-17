@@ -55,7 +55,7 @@ class Logging {
      private:
         const level loglevel_ = level::DEBUG;
 
-        Logging* logging_;
+        Logging* logging_ = nullptr;
 
         static const std::map<level, int> syslog_level_map_;
         static const std::map<level, std::string> level_name_map_;

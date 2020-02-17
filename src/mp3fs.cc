@@ -178,6 +178,9 @@ int mp3fs_opt_proc(void* /*unused*/, const char* arg, int key,
         case KEY_VERSION:
             print_versions(std::move(std::cout));
             exit(0);
+
+        default:
+            break;
     }
 
     return 1;
@@ -242,7 +245,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    struct stat st;
+    struct stat st = {};
     if (stat(params.basepath, &st) != 0 || !S_ISDIR(st.st_mode)) {
         std::cerr << "flacdir is not a valid directory: " << params.basepath
                   << std::endl;

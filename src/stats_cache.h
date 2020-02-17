@@ -46,7 +46,7 @@ class FileStat {
     size_t size;
     // The last time this object was accessed. Used to implement the most
     // recently used cache policy.
-    time_t atime;
+    time_t atime = 0;
     // The modified time of the decoded file when the size was computed.
     time_t mtime;
 };

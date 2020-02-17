@@ -139,7 +139,7 @@ void StatsCache::prune() {
     for (auto& p : sorted_entries) {
         const std::string& decoded_file = p.first;
         const FileStat& file_stat = p.second;
-        struct stat s;
+        struct stat s = {};
         if (stat(decoded_file.c_str(), &s) < 0 ||
             s.st_mtime > file_stat.get_mtime()) {
             Log(DEBUG) << "Removed out of date file '" << decoded_file

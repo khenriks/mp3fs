@@ -52,8 +52,8 @@ class FlacDecoder : public Decoder, private FLAC::Decoder::File {
     void error_callback(FLAC__StreamDecoderErrorStatus status) override;
 
  private:
-    Encoder* encoder_c;
-    time_t mtime_;
+    Encoder* encoder_c = nullptr;
+    time_t mtime_ = 0;
     FLAC::Metadata::StreamInfo info;
     bool has_streaminfo = false;
     using meta_map_t = std::map<std::string, int>;
