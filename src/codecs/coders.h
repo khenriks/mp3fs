@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef CODERS_H
-#define CODERS_H
+#ifndef MP3FS_CODECS_CODERS_H_
+#define MP3FS_CODECS_CODERS_H_
 
 #include <cstdint>
 #include <ctime>
@@ -111,4 +111,4 @@ extern const std::vector<std::string> encoder_list;
 bool check_encoder(const char* type);
 bool check_decoder(const char* type);
 
-#endif
+#endif  // MP3FS_CODECS_CODERS_H_

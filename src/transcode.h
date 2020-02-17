@@ -19,8 +19,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef MP3FS_TRANSCODE_H
-#define MP3FS_TRANSCODE_H
+#ifndef MP3FS_TRANSCODE_H_
+#define MP3FS_TRANSCODE_H_
 
 #include <sys/types.h>
 
@@ -75,4 +75,4 @@ class Transcoder : public Reader {
     std::mutex mutex_;
 };
 
-#endif  // MP3FS_TRANSCODE_H
+#endif  // MP3FS_TRANSCODE_H_

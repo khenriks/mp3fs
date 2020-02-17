@@ -1,0 +1,24 @@
+#!/bin/bash -e
+# check_guard verifies that include guards are specified correctly.
+
+. "${BASH_SOURCE%/*}/common.sh"
+
+fix_guard () {
+    file="$1"
+    short_file="${file#$ROOT/src/}"
+    want_guard=MP3FS_$(tr '[:lower:]/.' '[:upper:]_' <<< $short_file)_
+    sed -e "0,/#ifndef / s/#ifndef .*/#ifndef $want_guard/" \
+        -e "0,/#define / s/#define .*/#define $want_guard/" \
+        -e "/#endif/,$ s,#endif.*,#endif  // $want_guard," \
+        "$file"
+}
+
+check_guard_single () {
+    file="$1"
+    if [[ "$file" != *.h ]] ; then return 0 ; fi
+    fix_guard "$file" | diff -u "$file" -
+}
+
+if in_main ; then
+    driver check_guard_single :
+fi

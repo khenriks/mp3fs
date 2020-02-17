@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef MP3FS_PATH_H
-#define MP3FS_PATH_H
+#ifndef MP3FS_PATH_H_
+#define MP3FS_PATH_H_
 
 #include <ostream>
 #include <string>
@@ -56,4 +56,4 @@ class Path {
     std::string relative_path_;
 };
 
-#endif  // MP3FS_PATH_H
+#endif  // MP3FS_PATH_H_

@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef FLAC_DECODER_H
-#define FLAC_DECODER_H
+#ifndef MP3FS_CODECS_FLAC_DECODER_H_
+#define MP3FS_CODECS_FLAC_DECODER_H_
 
 #include <ctime>
 #include <map>
@@ -60,4 +60,4 @@ class FlacDecoder : public Decoder, private FLAC::Decoder::File {
     static const meta_map_t metatag_map;
 };
 
-#endif
+#endif  // MP3FS_CODECS_FLAC_DECODER_H_

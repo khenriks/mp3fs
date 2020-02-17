@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef BUFFER_H
-#define BUFFER_H
+#ifndef MP3FS_BUFFER_H_
+#define MP3FS_BUFFER_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -98,4 +98,4 @@ class Buffer {
     std::streamoff end_bound_ = 0;
 };
 
-#endif
+#endif  // MP3FS_BUFFER_H_

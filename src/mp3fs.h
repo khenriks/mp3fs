@@ -19,8 +19,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef MP3FS_MP3FS_H
-#define MP3FS_MP3FS_H
+#ifndef MP3FS_MP3FS_H_
+#define MP3FS_MP3FS_H_
 
 /* Global program parameters */
 extern struct mp3fs_params {
@@ -39,4 +39,4 @@ extern struct mp3fs_params {
     int vbr;
 } params;
 
-#endif  // MP3FS_MP3FS_H
+#endif  // MP3FS_MP3FS_H_

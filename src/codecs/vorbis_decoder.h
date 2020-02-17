@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef VORBIS_DECODER_H
-#define VORBIS_DECODER_H
+#ifndef MP3FS_CODECS_VORBIS_DECODER_H_
+#define MP3FS_CODECS_VORBIS_DECODER_H_
 
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
@@ -47,4 +47,4 @@ class VorbisDecoder : public Decoder {
     static const meta_map_t metatag_map;
 };
 
-#endif
+#endif  // MP3FS_CODECS_VORBIS_DECODER_H_

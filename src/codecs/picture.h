@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef PICTURE_H
-#define PICTURE_H
+#ifndef MP3FS_CODECS_PICTURE_H_
+#define MP3FS_CODECS_PICTURE_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -57,4 +57,4 @@ class Picture {
     std::vector<uint8_t> picture_data;
 };
 
-#endif
+#endif  // MP3FS_CODECS_PICTURE_H_

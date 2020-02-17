@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef MP3_ENCODER_H
-#define MP3_ENCODER_H
+#ifndef MP3FS_CODECS_MP3_ENCODER_H_
+#define MP3FS_CODECS_MP3_ENCODER_H_
 
 #include <lame/lame.h>
 
@@ -69,4 +69,4 @@ class Mp3Encoder : public Encoder {
     static const meta_map_t metatag_map;
 };
 
-#endif
+#endif  // MP3FS_CODECS_MP3_ENCODER_H_

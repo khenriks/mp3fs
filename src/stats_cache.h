@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef STATS_CACHE_H
-#define STATS_CACHE_H
+#ifndef MP3FS_STATS_CACHE_H_
+#define MP3FS_STATS_CACHE_H_
 
 #include <pthread.h>
 
@@ -73,4 +73,4 @@ class StatsCache {
     pthread_mutex_t mutex;
 };
 
-#endif
+#endif  // MP3FS_STATS_CACHE_H_

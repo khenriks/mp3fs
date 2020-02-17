@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef MP3FS_READER_H
-#define MP3FS_READER_H
+#ifndef MP3FS_READER_H_
+#define MP3FS_READER_H_
 
 #include <unistd.h>
 
@@ -47,4 +47,4 @@ class FileReader : public Reader {
     int fd_;
 };
 
-#endif  // MP3FS_READER_H
+#endif  // MP3FS_READER_H_

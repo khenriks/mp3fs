@@ -18,8 +18,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef LOGGING_H
-#define LOGGING_H
+#ifndef MP3FS_LOGGING_H_
+#define MP3FS_LOGGING_H_
 
 #include <cstdarg>
 #include <fstream>
@@ -82,4 +82,4 @@ constexpr auto DEBUG = Logging::level::DEBUG;
 void log_with_level(Logging::level level, const char* prefix,
                     const char* format, va_list ap);
 
-#endif
+#endif  // MP3FS_LOGGING_H_
