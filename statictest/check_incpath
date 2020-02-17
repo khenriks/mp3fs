@@ -1,0 +1,30 @@
+#!/bin/bash -e
+# check_incpath verifies that files are included with the correct path,
+# specifically not relying on the behavior of searching the source directory
+# first.
+
+. "${BASH_SOURCE%/*}/common.sh"
+
+fix_incpath () {
+    file="$1"
+    srcpath="${file%/*}"
+    basesrcpath="${srcpath#$ROOT/src/}"
+    quote_includes=($(grep -Po '(?<=#include ").*(?=")' "$file"))
+    sed_args=()
+    for inc in "${quote_includes[@]}" ; do
+        if [ -f "$srcpath/$inc" -a ! -f "$ROOT/src/$inc" ] ; then
+            sed_args+=('-e')
+            sed_args+=("/#include \"$inc\"/ s,$inc,$basesrcpath/$inc,")
+        fi
+    done
+    sed -e '#' "${sed_args[@]}" "$file"
+}
+
+check_incpath_single () {
+    file="$1"
+    fix_incpath "$file" | diff -u "$file" -
+}
+
+if in_main ; then
+    driver check_incpath_single :
+fi

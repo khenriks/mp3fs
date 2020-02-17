@@ -18,7 +18,7 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#include "vorbis_decoder.h"
+#include "codecs/vorbis_decoder.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>
