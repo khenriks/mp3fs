@@ -105,7 +105,6 @@ void print_codec_versions(std::ostream& out);
 
 /* Define lists of available encoder and decoder extensions. */
 extern const std::vector<std::string> decoder_list;
-extern const std::vector<std::string> encoder_list;
 
 /* Check for availability of audio types. */
 bool check_encoder(const char* type);

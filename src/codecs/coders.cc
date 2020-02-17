@@ -98,13 +98,6 @@ Decoder* Decoder::CreateDecoder(const std::string& file_type) {
     return nullptr;
 }
 
-/* Define list of available encoder extensions. */
-const std::vector<std::string> encoder_list = {
-#ifdef HAVE_MP3
-    "mp3",
-#endif
-};
-
 /* Define list of available decoder extensions. */
 const std::vector<std::string> decoder_list = {
 #ifdef HAVE_FLAC
