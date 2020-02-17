@@ -80,7 +80,7 @@ Encoder* Encoder::CreateEncoder(const std::string& file_type, Buffer* buffer,
         return new Mp3Encoder(buffer, actual_size);
     }
 #endif
-    return NULL;
+    return nullptr;
 }
 
 /* Create instance of class derived from Decoder. */
@@ -95,7 +95,7 @@ Decoder* Decoder::CreateDecoder(const std::string& file_type) {
         return new VorbisDecoder();
     }
 #endif
-    return NULL;
+    return nullptr;
 }
 
 /* Define list of available encoder extensions. */

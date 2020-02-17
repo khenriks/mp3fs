@@ -32,18 +32,18 @@
 
 class VorbisDecoder : public Decoder {
  public:
-    ~VorbisDecoder();
-    int open_file(const char* filename);
-    time_t mtime();
-    int process_metadata(Encoder* encoder);
-    int process_single_fr(Encoder* encoder);
+    ~VorbisDecoder() override;
+    int open_file(const char* filename) override;
+    time_t mtime() override;
+    int process_metadata(Encoder* encoder) override;
+    int process_single_fr(Encoder* encoder) override;
 
  private:
     time_t mtime_;
     OggVorbis_File vf;
     vorbis_info* vi;
     int current_section;
-    typedef std::map<std::string, int> meta_map_t;
+    using meta_map_t = std::map<std::string, int>;
     static const meta_map_t metatag_map;
 };
 

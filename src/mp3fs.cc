@@ -172,7 +172,7 @@ int mp3fs_opt_proc(void* /*unused*/, const char* arg, int key,
         case KEY_HELP:
             usage(outargs->argv[0]);
             fuse_opt_add_arg(outargs, "-ho");
-            fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, NULL);
+            fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, nullptr);
             exit(1);
 
         case KEY_VERSION:
@@ -186,7 +186,7 @@ int mp3fs_opt_proc(void* /*unused*/, const char* arg, int key,
 }  // namespace
 
 struct mp3fs_params params = {
-    .basepath = NULL,
+    .basepath = nullptr,
     .bitrate = kDefaultBitrate,
     .debug = 0,
 #ifdef HAVE_MP3
@@ -287,5 +287,5 @@ int main(int argc, char* argv[]) {
                << "vbr:            " << params.vbr;
 
     // start FUSE
-    return fuse_main(args_ptr->argc, args_ptr->argv, &mp3fs_ops, NULL);
+    return fuse_main(args_ptr->argc, args_ptr->argv, &mp3fs_ops, nullptr);
 }

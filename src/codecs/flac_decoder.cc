@@ -68,7 +68,7 @@ int FlacDecoder::open_file(const char* filename) {
     mtime_ = s.st_mtime;
 
     FILE* file = fdopen(fd, "r");
-    if (file == 0) {
+    if (file == nullptr) {
         Log(ERROR) << "FLAC fdopen failed.";
         close(fd);
         return -1;
@@ -168,7 +168,7 @@ void FlacDecoder::metadata_callback(const FLAC__StreamMetadata* metadata) {
                 std::transform(fname.begin(), fname.end(), fname.begin(),
                                ::toupper);
 
-                meta_map_t::const_iterator it = metatag_map.find(fname);
+                auto it = metatag_map.find(fname);
                 if (it != metatag_map.end()) {
                     encoder_c->set_text_tag(it->second,
                                             comment.get_field_value());

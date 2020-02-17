@@ -61,7 +61,7 @@ enum {
 /* Encoder class interface */
 class Encoder {
  public:
-    virtual ~Encoder() {};
+    virtual ~Encoder() = default;
 
     virtual int set_stream_params(uint64_t num_samples, int sample_rate,
                                   int channels) = 0;
@@ -89,7 +89,7 @@ class Encoder {
 /* Decoder class interface */
 class Decoder {
  public:
-    virtual ~Decoder() {};
+    virtual ~Decoder() = default;
 
     virtual int open_file(const char* filename) = 0;
     /* The modified time of the decoder file */

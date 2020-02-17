@@ -69,14 +69,14 @@ int VorbisDecoder::open_file(const char* filename) {
     mtime_ = s.st_mtime;
 
     FILE* file = fdopen(fd, "r");
-    if (file == 0) {
+    if (file == nullptr) {
         Log(ERROR) << "Ogg Vorbis decoder: fdopen failed.";
         close(fd);
         return -1;
     }
 
     /* Initialise decoder */
-    if (ov_open(file, &vf, NULL, 0) < 0) {
+    if (ov_open(file, &vf, nullptr, 0) < 0) {
         Log(ERROR) << "Ogg Vorbis decoder: Initialization failed.";
         fclose(file);
         return -1;
@@ -97,9 +97,9 @@ time_t VorbisDecoder::mtime() {
  * read the actual PCM stream parameters.
  */
 int VorbisDecoder::process_metadata(Encoder* encoder) {
-    vorbis_comment* vc = NULL;
+    vorbis_comment* vc = nullptr;
 
-    if ((vi = ov_info(&vf, -1)) == NULL) {
+    if ((vi = ov_info(&vf, -1)) == nullptr) {
         Log(ERROR) << "Ogg Vorbis decoder: Failed to retrieve the file info.";
         return -1;
     }
@@ -118,7 +118,7 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         return -1;
     }
 
-    if ((vc = ov_comment(&vf, -1)) == NULL) {
+    if ((vc = ov_comment(&vf, -1)) == nullptr) {
         Log(ERROR)
             << "Ogg Vorbis decoder: Failed to retrieve the Ogg Vorbis comment.";
         return -1;
@@ -151,7 +151,7 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
          * Set the encoder's text tag if it's in the metatag_map, or else,
          * prepare the ReplayGain.
          */
-        meta_map_t::const_iterator it = metatag_map.find(tagname);
+        auto it = metatag_map.find(tagname);
 
         if (it != metatag_map.end()) {
             encoder->set_text_tag(it->second, tagvalue.c_str());

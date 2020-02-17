@@ -24,11 +24,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 class Picture {
  public:
-    explicit Picture(std::vector<char> data) : data_(data), data_off_(0) {}
+    explicit Picture(std::vector<char> data)
+        : data_(std::move(data)), data_off_(0) {}
 
     bool decode();
 

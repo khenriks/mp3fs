@@ -3,6 +3,7 @@ Checks: >-
   bugprone-*,misc-*,portability-*,
   cert-*,-cert-err58-cpp,
   google-*,-google-readability-todo,
-  readability-*,-readability-isolate-declaration
+  readability-*,-readability-isolate-declaration,
+  modernize-*,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays
 WarningsAsErrors: '*'
 ...

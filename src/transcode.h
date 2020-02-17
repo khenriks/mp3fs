@@ -43,7 +43,7 @@ class Transcoder : public Reader {
         Log(DEBUG) << "Creating transcoder object for " << filename;
     }
 
-    ~Transcoder() override {}
+    ~Transcoder() override = default;
 
     /** Initialize the transcoder. This is equivalent of a file open. */
     bool open();

@@ -146,7 +146,7 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
         return;
     }
 
-    meta_map_t::const_iterator it = metatag_map.find(key);
+    auto it = metatag_map.find(key);
 
     if (it != metatag_map.end()) {
         struct id3_frame* frame = id3_tag_findframe(id3tag, it->second, 0);
@@ -175,7 +175,7 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
         }
         struct id3_frame* frame = id3_tag_findframe(id3tag, tagname, 0);
         const id3_latin1_t* lat;
-        id3_latin1_t* tofree = 0;
+        id3_latin1_t* tofree = nullptr;
         if (frame != nullptr) {
             const id3_ucs4_t* pre =
                 id3_field_getstrings(id3_frame_field(frame, 1), 0);

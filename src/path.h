@@ -23,6 +23,7 @@
 
 #include <ostream>
 #include <string>
+#include <utility>
 
 class Path {
  public:
@@ -50,8 +51,8 @@ class Path {
     friend std::ostream& operator<<(std::ostream&, const Path&);
 
  private:
-    explicit Path(const std::string& relative_path)
-        : relative_path_(relative_path) {}
+    explicit Path(std::string relative_path)
+        : relative_path_(std::move(relative_path)) {}
 
     std::string relative_path_;
 };

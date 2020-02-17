@@ -28,8 +28,8 @@
 
 class Buffer {
  public:
-    Buffer() {};
-    ~Buffer() {};
+    Buffer() = default;
+    ~Buffer() = default;
 
     /**
      * Write data to the current position in the Buffer. The position pointer

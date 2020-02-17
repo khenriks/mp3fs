@@ -39,24 +39,24 @@
 
 class FlacDecoder : public Decoder, private FLAC::Decoder::File {
  public:
-    FlacDecoder() : has_streaminfo(false) {};
-    int open_file(const char* filename);
-    time_t mtime();
-    int process_metadata(Encoder* encoder);
-    int process_single_fr(Encoder* encoder);
+    FlacDecoder() = default;
+    int open_file(const char* filename) override;
+    time_t mtime() override;
+    int process_metadata(Encoder* encoder) override;
+    int process_single_fr(Encoder* encoder) override;
 
  protected:
     FLAC__StreamDecoderWriteStatus write_callback(
-        const FLAC__Frame* frame, const FLAC__int32* const buffer[]);
-    void metadata_callback(const FLAC__StreamMetadata* metadata);
-    void error_callback(FLAC__StreamDecoderErrorStatus status);
+        const FLAC__Frame* frame, const FLAC__int32* const buffer[]) override;
+    void metadata_callback(const FLAC__StreamMetadata* metadata) override;
+    void error_callback(FLAC__StreamDecoderErrorStatus status) override;
 
  private:
     Encoder* encoder_c;
     time_t mtime_;
     FLAC::Metadata::StreamInfo info;
-    bool has_streaminfo;
-    typedef std::map<std::string, int> meta_map_t;
+    bool has_streaminfo = false;
+    using meta_map_t = std::map<std::string, int>;
     static const meta_map_t metatag_map;
 };
 

@@ -62,7 +62,7 @@ bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
                               size_t* filesize) {
     bool in_cache = false;
     pthread_mutex_lock(&mutex);
-    cache_t::iterator p = cache.find(filename);
+    auto p = cache.find(filename);
     if (p != cache.end()) {
         FileStat& file_stat = p->second;
         if (mtime > file_stat.get_mtime()) {
@@ -89,7 +89,7 @@ void StatsCache::put_filesize(const std::string& filename, size_t filesize,
                               time_t mtime) {
     FileStat file_stat(filesize, mtime);
     pthread_mutex_lock(&mutex);
-    cache_t::iterator p = cache.find(filename);
+    auto p = cache.find(filename);
     if (p == cache.end()) {
         Log(DEBUG) << "Added file '" << filename
                    << "' to stats cache with size " << file_stat.get_size();
@@ -112,16 +112,16 @@ void StatsCache::put_filesize(const std::string& filename, size_t filesize,
 void StatsCache::prune() {
     Log(DEBUG) << "Pruning stats cache";
     size_t target_size = 9 * params.statcachesize / 10;  // 90% NOLINT
-    typedef std::vector<cache_entry_t> entry_vector;
+    using entry_vector = std::vector<cache_entry_t>;
     entry_vector sorted_entries;
 
     /* Copy all the entries to a vector to be sorted. */
     pthread_mutex_lock(&mutex);
     sorted_entries.reserve(cache.size());
-    for (cache_t::iterator p = cache.begin(); p != cache.end(); ++p) {
+    for (auto& p : cache) {
         /* Force a true copy of the string to prevent multithreading issues. */
-        std::string file(p->first);
-        sorted_entries.push_back(std::make_pair(file, p->second));
+        std::string file(p.first);
+        sorted_entries.push_back(std::make_pair(file, p.second));
     }
     pthread_mutex_unlock(&mutex);
     /* Sort the entries by access time, with the oldest first */
@@ -136,10 +136,9 @@ void StatsCache::prune() {
      * Lock the cache for each entry removed instead of putting the lock around
      * the entire loop because the stat() can be expensive.
      */
-    for (entry_vector::iterator p = sorted_entries.begin();
-         p != sorted_entries.end(); ++p) {
-        const std::string& decoded_file = p->first;
-        const FileStat& file_stat = p->second;
+    for (auto& p : sorted_entries) {
+        const std::string& decoded_file = p.first;
+        const FileStat& file_stat = p.second;
         struct stat s;
         if (stat(decoded_file.c_str(), &s) < 0 ||
             s.st_mtime > file_stat.get_mtime()) {
@@ -154,7 +153,7 @@ void StatsCache::prune() {
 
     /* Remove the oldest entries until the cache size meets the target. */
     pthread_mutex_lock(&mutex);
-    for (entry_vector::iterator p = sorted_entries.begin();
+    for (auto p = sorted_entries.begin();
          p != sorted_entries.end() && cache.size() > target_size; ++p) {
         Log(DEBUG) << "Pruned oldest file '" << p->first
                    << "' from stats cache";
@@ -170,7 +169,7 @@ void StatsCache::prune() {
  */
 void StatsCache::remove_entry(const std::string& file,
                               const FileStat& file_stat) {
-    cache_t::iterator p = cache.find(file);
+    auto p = cache.find(file);
     if (p != cache.end() && p->second == file_stat) {
         cache.erase(p);
     }

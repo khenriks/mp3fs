@@ -53,8 +53,8 @@ class FileStat {
 
 class StatsCache {
  public:
-    typedef std::map<std::string, FileStat> cache_t;
-    typedef std::pair<std::string, FileStat> cache_entry_t;
+    using cache_t = std::map<std::string, FileStat>;
+    using cache_entry_t = std::pair<std::string, FileStat>;
 
     StatsCache() : mutex(PTHREAD_MUTEX_INITIALIZER) {}
     ~StatsCache() { pthread_mutex_destroy(&mutex); }

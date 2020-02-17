@@ -30,7 +30,7 @@ class Reader {
     /** Read bytes into the internal buffer and into the given buffer. */
     virtual ssize_t read(char* buff, off_t offset, size_t len) = 0;
 
-    virtual ~Reader() {}
+    virtual ~Reader() = default;
 };
 
 class FileReader : public Reader {

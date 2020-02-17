@@ -24,7 +24,6 @@
 #define FUSE_USE_VERSION 26
 
 #include <dirent.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <fuse.h>
 #include <fuse_common.h>
@@ -32,6 +31,7 @@
 #include <sys/statvfs.h>
 #include <unistd.h>
 
+#include <cerrno>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -170,7 +170,7 @@ int mp3fs_read(const char* path, char* buf, size_t size, off_t offset,
                struct fuse_file_info* fi) {
     Log(DEBUG) << "read " << path << ": " << size << " bytes from " << offset;
 
-    Reader* reader = reinterpret_cast<Reader*>(fi->fh);
+    auto* reader = reinterpret_cast<Reader*>(fi->fh);
 
     if (reader == nullptr) {
         Log(ERROR) << "Tried to read from unopen file: " << path;
@@ -205,8 +205,7 @@ int mp3fs_statfs(const char* p, struct statvfs* stbuf) {
 int mp3fs_release(const char* path, struct fuse_file_info* fi) {
     Log(DEBUG) << "release " << path;
 
-    Reader* reader = reinterpret_cast<Reader*>(fi->fh);
-    delete reader;
+    delete reinterpret_cast<Reader*>(fi->fh);
 
     return 0;
 }

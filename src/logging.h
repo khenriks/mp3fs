@@ -49,11 +49,11 @@ class Logging {
      public:
         Logger(level loglevel, Logging* logging)
             : loglevel_(loglevel), logging_(logging) {}
-        Logger() : loglevel_(level::DEBUG) {}
-        ~Logger();
+        Logger() = default;
+        ~Logger() override;
 
      private:
-        const level loglevel_;
+        const level loglevel_ = level::DEBUG;
 
         Logging* logging_;
 
