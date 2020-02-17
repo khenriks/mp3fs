@@ -21,10 +21,6 @@
 #ifndef MP3FS_CODECS_FLAC_DECODER_H_
 #define MP3FS_CODECS_FLAC_DECODER_H_
 
-#include <ctime>
-#include <map>
-#include <string>
-
 // The pragmas suppress the named warning from FLAC++, on both GCC and clang.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
@@ -34,6 +30,10 @@
 #include <FLAC/format.h>
 #include <FLAC/ordinals.h>
 #include <FLAC/stream_decoder.h>
+
+#include <ctime>
+#include <map>
+#include <string>
 
 #include "codecs/coders.h"
 
