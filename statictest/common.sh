@@ -37,7 +37,11 @@ driver () {
 }
 
 multidriver () {
-    tabular_multidriver "$@"
+    if [ -t 1 -a "$TRAVIS" != true ] ; then
+        tabular_multidriver "$@"
+    else
+        verbose_multidriver "$@"
+    fi
 }
 
 tabular_multidriver () {
@@ -83,6 +87,22 @@ tabular_multidriver () {
     if [ $everygood != y ] ; then
         echo
         echo "Run individual statictest/check_* scripts for steps to fix."
+        return 1
+    fi
+}
+
+verbose_multidriver () {
+    bad=n
+    for pair in "$@" ; do
+        name="${pair%,*}"
+        func="${pair#*,}"
+        echo "${name}:"
+        if ! driver $func : ; then
+            bad=y
+        fi
+        echo
+    done
+    if [ "$bad" = y ] ; then
         return 1
     fi
 }
