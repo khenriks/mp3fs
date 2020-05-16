@@ -5,6 +5,7 @@
 . "${BASH_SOURCE%/*}/common.sh"
 
 check_iwyu_single () {
+    [ "$TRAVIS" = true ] && return
     file=$1
     if [[ "$file" = *.c ]] ; then
         lang_flags=(--language=c -std=c11)
