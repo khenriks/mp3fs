@@ -23,9 +23,12 @@ else
 REVDATE = $(shell date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)")
 endif
 
-mp3fs.1: mp3fs.1.txt
-	$(AM_V_GEN)a2x -a revnumber="$(VERSION)" \
-		-a revdate="$(REVDATE)" -f manpage $<
+# This variable is needed because Pandoc on Travis doesn't understand "smart".
+mp3fs.1: NOSMART := $(shell pandoc --list-extensions | grep -q smart && echo -smart)
+mp3fs.1: mp3fs.1.md
+	$(AM_V_GEN)pandoc -s -f markdown$(NOSMART) -t man \
+	    -M footer="mp3fs $(VERSION)" \
+	    -M date="$(REVDATE)" $< -o $@
 
 # Remove absolutely every generated file
 .PHONY: squeaky-clean

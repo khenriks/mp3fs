@@ -16,9 +16,7 @@ If building from git, you'll also need:
 
 * autoconf
 * automake
-* asciidoc
-* xmllint
-* xmlto
+* pandoc
 
 The commands to install the prerequisites follow.
 
@@ -28,7 +26,7 @@ The commands to install the prerequisites follow.
 
 If building from git:
 
-    aptitude install autoconf automake asciidoc xmlto
+    aptitude install autoconf automake pandoc
 
 ### Ubuntu
 
@@ -36,7 +34,7 @@ If building from git:
 
 If building from git:
 
-    apt install autoconf automake asciidoc xmlto
+    apt install autoconf automake pandoc
 
 ### macOS with Homebrew
 
@@ -44,7 +42,7 @@ If building from git:
 
 If building from git:
 
-    brew install autoconf automake asciidoc xmlto
+    brew install autoconf automake pandoc
 
 ### RedHat-type systems, with the right repositories
 

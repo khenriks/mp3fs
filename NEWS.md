@@ -1,20 +1,25 @@
-mp3fs NEWS
+mp3fs News
+==========
 
 Important changes in 0.91 (2014-05-14)
+--------------------------------------
 
-This is mainly bug fixes.
+This contains mainly bug fixes.
 
 Changes in this release:
+
 * Fixed a segfault caused by an overflow reading the list of available
   decoders.
 * A number of problems with the previous distribution tar are now fixed.
 * The output of `mp3fs --version` has been made more complete.
 
 Important changes in 0.9 (2014-04-06)
+-------------------------------------
 
 This is a major new release, and brings us very close to a 1.0 release!
 
 Changes in this release:
+
 * All transcoding code has been completely rewritten. Encoding and
   decoding have been abstracted out into base classes defining interfaces
   that can be implemented by different codec classes, with just a FLAC
@@ -23,10 +28,12 @@ Changes in this release:
 * A number of small bugs or code inefficiencies have been fixed.
 
 Important changes in 0.32 (2012-06-18)
+--------------------------------------
 
 This release has a lot of bug fixes and some code cleanup.
 
 Changes in this release:
+
 * The file size calculation should always be correct.
 * A crash affecting programs like scp that might try to access past the
   end of the file has been fixed.
@@ -34,10 +41,12 @@ Changes in this release:
   for full details.
 
 Important changes in 0.31 (2011-12-04)
+--------------------------------------
 
 This is a minor update, with bug fixes and a new feature.
 
 Changes in this release:
+
 * The ReplayGain support added earlier now can be configured through the
   command line.
 * Filename translation (from .flac to .mp3) is now fixed on filesystems
@@ -45,11 +54,13 @@ Changes in this release:
 * A couple other minor bugs fixes and changes were made.
 
 Important changes in 0.30 (2010-12-01)
+--------------------------------------
 
 This is a major new release, and brings mp3fs much closer to an eventual
 1.0 release.
 
 Changes in this release:
+
 * Support for additional metadata tags has been added. (From Gregor
   Zurowski)
 * Documentation improvements: the help message is more useful, and a man
@@ -65,9 +76,11 @@ Changes in this release:
 
 ...
 
-0.01 Initial release 06/Aug/2006
+0.01 Initial release (2006-08-06)
+---------------------------------
 
-========================================================================
+License
+-------
 
 Copyright (C) 2010-2014 K. Henriksson
 
