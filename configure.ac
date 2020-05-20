@@ -65,6 +65,9 @@ AS_IF([test "$with_flac" = no -a "$with_vorbis" = no],
 # Checks for packages which use pkg-config.
 PKG_CHECK_MODULES([fuse], [fuse >= 2.6.0])
 
+# Check for GNU date.
+AM_CONDITIONAL([HAVE_GNUDATE], [test "$(date -u -d @1262304000 +%F 2>/dev/null)" = 2010-01-01])
+
 # Large file support
 AC_SYS_LARGEFILE
 

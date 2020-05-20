@@ -16,7 +16,12 @@ EXTRA_DIST = INSTALL.md README.md mp3fs.1.txt
 
 DATE_FMT = %B %Y
 SOURCE_DATE_EPOCH ?= $(shell date +%s)
-REVDATE = $(shell date -u -d "@(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)" 2>/dev/null || date -u "+$(DATE_FMT)")
+if HAVE_GNUDATE
+REVDATE = $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)")
+else
+# Assume non-GNU date must be BSD date. We don't support anything else.
+REVDATE = $(shell date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)")
+endif
 
 mp3fs.1: mp3fs.1.txt
 	$(AM_V_GEN)a2x -a revnumber="$(VERSION)" \
