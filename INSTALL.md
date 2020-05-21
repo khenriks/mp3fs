@@ -1,22 +1,20 @@
-Installation Instructions for mp3fs
-===================================
+# Installation Instructions for mp3fs
 
-Prerequisites
--------------
+## Prerequisites
 
 mp3fs requires the following libraries:
 
-* fuse (>= 2.6.0)
-* flac++ (>= 1.1.4)
-* libvorbis (>= 1.3.0)
-* lame
-* libid3tag
+  - fuse (\>= 2.6.0)
+  - flac++ (\>= 1.1.4)
+  - libvorbis (\>= 1.3.0)
+  - lame
+  - libid3tag
 
 If building from git, you'll also need:
 
-* autoconf
-* automake
-* pandoc
+  - autoconf
+  - automake
+  - pandoc
 
 The commands to install the prerequisites follow.
 
@@ -48,8 +46,7 @@ If building from git:
 
     yum install fuse-devel flac-devel libvorbis-devel lame-devel libid3tag-devel
 
-Installation
-------------
+## Installation
 
 **mp3fs** uses the GNU build system.
 
@@ -65,8 +62,7 @@ To build and install, run:
     make
     make install
 
-License
--------
+## License
 
 This file is copyright (C) 2013-2014 K. Henriksson.
 

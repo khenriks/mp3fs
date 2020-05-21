@@ -1,86 +1,77 @@
-mp3fs News
-==========
+# mp3fs News
 
-Important changes in 0.91 (2014-05-14)
---------------------------------------
+## Important changes in 0.91 (2014-05-14)
 
 This contains mainly bug fixes.
 
 Changes in this release:
 
-* Fixed a segfault caused by an overflow reading the list of available
-  decoders.
-* A number of problems with the previous distribution tar are now fixed.
-* The output of `mp3fs --version` has been made more complete.
+  - Fixed a segfault caused by an overflow reading the list of available
+    decoders.
+  - A number of problems with the previous distribution tar are now fixed.
+  - The output of `mp3fs --version` has been made more complete.
 
-Important changes in 0.9 (2014-04-06)
--------------------------------------
+## Important changes in 0.9 (2014-04-06)
 
-This is a major new release, and brings us very close to a 1.0 release!
+This is a major new release, and brings us very close to a 1.0 release\!
 
 Changes in this release:
 
-* All transcoding code has been completely rewritten. Encoding and
-  decoding have been abstracted out into base classes defining interfaces
-  that can be implemented by different codec classes, with just a FLAC
-  decoder and MP3 encoder at the moment.
-* The build system has been modified as well to support this usage.
-* A number of small bugs or code inefficiencies have been fixed.
+  - All transcoding code has been completely rewritten. Encoding and decoding
+    have been abstracted out into base classes defining interfaces that can be
+    implemented by different codec classes, with just a FLAC decoder and MP3
+    encoder at the moment.
+  - The build system has been modified as well to support this usage.
+  - A number of small bugs or code inefficiencies have been fixed.
 
-Important changes in 0.32 (2012-06-18)
---------------------------------------
+## Important changes in 0.32 (2012-06-18)
 
 This release has a lot of bug fixes and some code cleanup.
 
 Changes in this release:
 
-* The file size calculation should always be correct.
-* A crash affecting programs like scp that might try to access past the
-  end of the file has been fixed.
-* Too many other little fixes were made to list here. See the ChangeLog
-  for full details.
+  - The file size calculation should always be correct.
+  - A crash affecting programs like scp that might try to access past the end
+    of the file has been fixed.
+  - Too many other little fixes were made to list here. See the ChangeLog for
+    full details.
 
-Important changes in 0.31 (2011-12-04)
---------------------------------------
+## Important changes in 0.31 (2011-12-04)
 
 This is a minor update, with bug fixes and a new feature.
 
 Changes in this release:
 
-* The ReplayGain support added earlier now can be configured through the
-  command line.
-* Filename translation (from .flac to .mp3) is now fixed on filesystems
-  such as XFS that do not populate dirent.d_type.
-* A couple other minor bugs fixes and changes were made.
+  - The ReplayGain support added earlier now can be configured through the
+    command line.
+  - Filename translation (from .flac to .mp3) is now fixed on filesystems such
+    as XFS that do not populate dirent.d\_type.
+  - A couple other minor bugs fixes and changes were made.
 
-Important changes in 0.30 (2010-12-01)
---------------------------------------
+## Important changes in 0.30 (2010-12-01)
 
-This is a major new release, and brings mp3fs much closer to an eventual
-1.0 release.
+This is a major new release, and brings mp3fs much closer to an eventual 1.0
+release.
 
 Changes in this release:
 
-* Support for additional metadata tags has been added. (From Gregor
-  Zurowski)
-* Documentation improvements: the help message is more useful, and a man
-  page has been added.
-* Choosing bitrate is now done with a command-line or mount option, rather
-  than the old comma syntax.
-* A new option to select LAME encoding quality is now available. (From
-  Gregor Zurowski)
-* Debug output can be enabled at runtime.
-* Old external libraries included in distribution (StringIO, talloc) have
-  been removed and replaced.
-* Numerous bug fixes have been made. (Some from Gregor Zurowski)
+  - Support for additional metadata tags has been added. (From Gregor Zurowski)
+  - Documentation improvements: the help message is more useful, and a man page
+    has been added.
+  - Choosing bitrate is now done with a command-line or mount option, rather
+    than the old comma syntax.
+  - A new option to select LAME encoding quality is now available. (From Gregor
+    Zurowski)
+  - Debug output can be enabled at runtime.
+  - Old external libraries included in distribution (StringIO, talloc) have
+    been removed and replaced.
+  - Numerous bug fixes have been made. (Some from Gregor Zurowski)
 
 ...
 
-0.01 Initial release (2006-08-06)
----------------------------------
+## 0.01 Initial release (2006-08-06)
 
-License
--------
+## License
 
 Copyright (C) 2010-2014 K. Henriksson
 

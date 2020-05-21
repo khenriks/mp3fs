@@ -1,0 +1,5 @@
+# Default options for pandoc when using as a formatter
+columns: 79
+from: gfm
+to: gfm
+standalone: true

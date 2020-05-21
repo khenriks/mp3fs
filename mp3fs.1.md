@@ -6,29 +6,30 @@ hyphenate: false
 
 NAME
 ====
-mp3fs - mounts and transcodes FLACs and OGGs to MP3s on the fly
 
+mp3fs - mounts and transcodes FLACs and OGGs to MP3s on the fly
 
 SYNOPSIS
 ========
-**mp3fs** [*OPTION*]...\ *IN_DIR* *OUT_DIR*
 
+**mp3fs** \[*OPTION*\]...\ *IN\_DIR* *OUT\_DIR*
 
 DESCRIPTION
 ===========
-The mp3fs(1) command will mount the directory *IN_DIR* on *OUT_DIR*.
-Thereafter, accessing *OUT_DIR* will show the contents of *IN_DIR*, with
-all FLAC/Ogg Vorbis files transparently renamed and transcoded to MP3
-format upon access.
 
+The mp3fs(1) command will mount the directory *IN\_DIR* on *OUT\_DIR*.
+Thereafter, accessing *OUT\_DIR* will show the contents of *IN\_DIR*, with all
+FLAC/Ogg Vorbis files transparently renamed and transcoded to MP3 format upon
+access.
 
 OPTIONS
 =======
+
 **-b, -obitrate**=*RATE*
 
-:   Set the bitrate to use for encoding. Acceptable values for *RATE* are
-    any which are allowed by the MP3 format. According to the manual for
-    LAME, this means:
+:   Set the bitrate to use for encoding. Acceptable values for *RATE* are any
+    which are allowed by the MP3 format. According to the manual for LAME, this
+    means:
 
     For sampling frequencies of 32, 44.1, and 48 kHz, *RATE* can be among 32,
     40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, and 320.
@@ -41,28 +42,28 @@ OPTIONS
 
 **-d, -odebug**
 
-:   Enable debug output. This will result in a large quantity of
-    diagnostic information being printed to stderr as the program runs.
-    This option will normally not be used. It implies **-f**.
+:   Enable debug output. This will result in a large quantity of diagnostic
+    information being printed to stderr as the program runs. This option will
+    normally not be used. It implies **-f**.
 
 **--gainmode, -ogainmode**=*MODE*
 
-:   Set mode to use for interpreting ReplayGain tags. The allowed
-    values for *MODE* are:
+:   Set mode to use for interpreting ReplayGain tags. The allowed values for
+    *MODE* are:
 
     0 - Ignore all ReplayGain tags.
 
-    1 - Prefer album gain tag, but fall back to track gain if album gain
-        is not present.
+    1 - Prefer album gain tag, but fall back to track gain if album gain is not
+    present.
 
     2 - Use track gain if present.
 
 **--gainref, -ogainref**=*REF*
 
 :   Set the reference loudness in decibels to adjust ReplayGain tags.
-    ReplayGain software usually defaults to a loudness of 89 dB, but if
-    this is too quiet, a higher value can be set here, causing adjustment
-    of ReplayGain values in tags.
+    ReplayGain software usually defaults to a loudness of 89 dB, but if this is
+    too quiet, a higher value can be set here, causing adjustment of ReplayGain
+    values in tags.
 
 **-f**
 
@@ -75,8 +76,8 @@ OPTIONS
 **--quality, -oquality**=*QUALITY*
 
 :   Set quality for encoding, as understood by LAME. The slowest and best
-    quality is 0, while 9 is the fastest and worst quality. The default
-    value is 5, although according to the LAME manual, 2 is recommended.
+    quality is 0, while 9 is the fastest and worst quality. The default value
+    is 5, although according to the LAME manual, 2 is recommended.
 
 **-s**
 
@@ -86,14 +87,14 @@ OPTIONS
 
 :   Output version information.
 
-
 COPYRIGHT
 =========
-Copyright (C) 2006-2008 David Collett and 2008-2013 K.\ Henriksson.
-This is free software: you are free to change and redistribute it under
-the terms of the GNU General Public License (GPL) version 3 or later.
 
-This manual is copyright (C) 2010-2011 K.\ Henriksson and may be
-distributed under the GNU Free Documentation License (GFDL) 1.3 or later with no
-invariant sections, or alternatively under the GNU General Public License (GPL)
-version 3 or later.
+Copyright (C) 2006-2008 David Collett and 2008-2013 K.\ Henriksson. This is
+free software: you are free to change and redistribute it under the terms of
+the GNU General Public License (GPL) version 3 or later.
+
+This manual is copyright (C) 2010-2011 K.\ Henriksson and may be distributed
+under the GNU Free Documentation License (GFDL) 1.3 or later with no invariant
+sections, or alternatively under the GNU General Public License (GPL) version 3
+or later.

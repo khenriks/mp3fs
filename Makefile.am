@@ -46,6 +46,20 @@ dist-hook:
 		&& mv -f ChangeLog.tmp $(top_distdir)/ChangeLog \
 		|| ( rm -f ChangeLog.tmp ; exit 1 )
 
-.PHONY: staticcheck
+.PHONY: staticcheck mdcheck
 staticcheck:
 	@statictest/checkall
+
+# The special logic for mp3fs.1.md is because it needs certain features for
+# manpage output. The weird sed logic is there to preserve '.\ ' sequences,
+# and the check is made automatically passing because the headers aren't
+# preserved properly.
+mdcheck:
+	@set -e ; for f in *.md ; do \
+	    echo "Checking format for $$f." ; \
+	    if [ "$$f" = mp3fs.1.md ] ; then \
+	    	sed 's/\.\\/!./g' "$$f" | pandoc -d .pandocfmt.yaml -f markdown -t markdown | sed 's/!\./.\\/g' | diff -u $$f - || : ; \
+	    else \
+	    	pandoc -d .pandocfmt.yaml "$$f" | diff -u "$$f" - ; \
+	    fi ; \
+	    done
