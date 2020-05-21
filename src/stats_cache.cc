@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <iterator>
 #include <ostream>
 #include <vector>
 
@@ -93,18 +94,13 @@ bool StatsCache::cmp_by_atime(const StatsCache::cache_entry_t& a1,
 void StatsCache::prune() {
     Log(DEBUG) << "Pruning stats cache";
     const size_t target_size = 9 * params.statcachesize / 10;  // 90% NOLINT
-    std::vector<cache_entry_t> sorted_entries;
 
     /* Copy all the entries to a vector to be sorted. */
+    std::vector<cache_entry_t> sorted_entries;
     {
         std::lock_guard<std::mutex> l(mutex_);
-        sorted_entries.reserve(cache_.size());
-        for (const auto& entry : cache_) {
-            /* Force a true copy of the string to prevent multithreading issues.
-             */
-            std::string file(entry.first);
-            sorted_entries.emplace_back(std::make_pair(file, entry.second));
-        }
+        std::copy(cache_.begin(), cache_.end(),
+                  std::back_inserter(sorted_entries));
     }
     /* Sort the entries by access time, with the oldest first */
     std::sort(sorted_entries.begin(), sorted_entries.end(), cmp_by_atime);
