@@ -21,17 +21,16 @@
 #ifndef MP3FS_STATS_CACHE_H_
 #define MP3FS_STATS_CACHE_H_
 
-#include <pthread.h>
-
 #include <ctime>
 #include <map>
+#include <mutex>
 #include <string>
 #include <utility>
 
 class StatsCache {
  public:
-    StatsCache() : mutex_(PTHREAD_MUTEX_INITIALIZER) {}
-    ~StatsCache() { pthread_mutex_destroy(&mutex_); }
+    StatsCache() = default;
+    ~StatsCache() = default;
     StatsCache(const StatsCache&) = delete;
     StatsCache& operator=(const StatsCache&) = delete;
 
@@ -70,7 +69,7 @@ class StatsCache {
     void remove_entry(const std::string& file, const FileStat& file_stat);
 
     std::map<std::string, FileStat> cache_;
-    pthread_mutex_t mutex_;
+    std::mutex mutex_;
 };
 
 #endif  // MP3FS_STATS_CACHE_H_

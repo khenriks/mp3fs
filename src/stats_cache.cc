@@ -37,8 +37,7 @@
  */
 bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
                               size_t* filesize) {
-    bool in_cache = false;
-    pthread_mutex_lock(&mutex_);
+    std::lock_guard<std::mutex> l(mutex_);
     auto it = cache_.find(filename);
     if (it != cache_.end()) {
         FileStat& file_stat = it->second;
@@ -51,13 +50,12 @@ bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
         } else {
             Log(DEBUG) << "Found file '" << it->first
                        << "' in stats cache with size " << file_stat.get_size();
-            in_cache = true;
             *filesize = file_stat.get_size();
             file_stat.update_atime();
+            return true;
         }
     }
-    pthread_mutex_unlock(&mutex_);
-    return in_cache;
+    return false;
 }
 
 /* Add or update an entry in the stats cache */
@@ -65,7 +63,7 @@ bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
 void StatsCache::put_filesize(const std::string& filename, size_t filesize,
                               time_t mtime) {
     const FileStat file_stat(filesize, mtime);
-    pthread_mutex_lock(&mutex_);
+    std::unique_lock<std::mutex> l(mutex_);
     auto it = cache_.find(filename);
     if (it == cache_.end()) {
         Log(DEBUG) << "Added file '" << filename
@@ -76,9 +74,9 @@ void StatsCache::put_filesize(const std::string& filename, size_t filesize,
                    << "' in stats cache with size " << file_stat.get_size();
         it->second = file_stat;
     }
-    const bool needs_pruning = cache_.size() > params.statcachesize;
-    pthread_mutex_unlock(&mutex_);
-    if (needs_pruning) {
+    if (cache_.size() > params.statcachesize) {
+        // Don't hold lock when calling prune.
+        l.unlock();
         prune();
     }
 }
@@ -98,14 +96,16 @@ void StatsCache::prune() {
     std::vector<cache_entry_t> sorted_entries;
 
     /* Copy all the entries to a vector to be sorted. */
-    pthread_mutex_lock(&mutex_);
-    sorted_entries.reserve(cache_.size());
-    for (const auto& entry : cache_) {
-        /* Force a true copy of the string to prevent multithreading issues. */
-        std::string file(entry.first);
-        sorted_entries.emplace_back(std::make_pair(file, entry.second));
+    {
+        std::lock_guard<std::mutex> l(mutex_);
+        sorted_entries.reserve(cache_.size());
+        for (const auto& entry : cache_) {
+            /* Force a true copy of the string to prevent multithreading issues.
+             */
+            std::string file(entry.first);
+            sorted_entries.emplace_back(std::make_pair(file, entry.second));
+        }
     }
-    pthread_mutex_unlock(&mutex_);
     /* Sort the entries by access time, with the oldest first */
     std::sort(sorted_entries.begin(), sorted_entries.end(), cmp_by_atime);
 
@@ -127,14 +127,13 @@ void StatsCache::prune() {
             Log(DEBUG) << "Removed out of date file '" << decoded_file
                        << "' from stats cache";
             errno = 0;
-            pthread_mutex_lock(&mutex_);
+            std::lock_guard<std::mutex> l(mutex_);
             remove_entry(decoded_file, file_stat);
-            pthread_mutex_unlock(&mutex_);
         }
     }
 
     /* Remove the oldest entries until the cache size meets the target. */
-    pthread_mutex_lock(&mutex_);
+    std::lock_guard<std::mutex> l(mutex_);
     for (const auto& e : sorted_entries) {
         if (cache_.size() <= target_size) {
             break;
@@ -142,7 +141,6 @@ void StatsCache::prune() {
         Log(DEBUG) << "Pruned oldest file '" << e.first << "' from stats cache";
         remove_entry(e.first, e.second);
     }
-    pthread_mutex_unlock(&mutex_);
 }
 
 /*
