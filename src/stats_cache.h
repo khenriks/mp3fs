@@ -28,36 +28,10 @@
 #include <string>
 #include <utility>
 
-/*
- * Holds the size and modified time for a file, and is used in the file stats
- * cache.
- */
-class FileStat {
- public:
-    FileStat(size_t _size, time_t _mtime);
-
-    void update_atime();
-    size_t get_size() const { return size; }
-    time_t get_atime() const { return atime; }
-    time_t get_mtime() const { return mtime; }
-    bool operator==(const FileStat& other) const;
-
- private:
-    size_t size;
-    // The last time this object was accessed. Used to implement the most
-    // recently used cache policy.
-    time_t atime = 0;
-    // The modified time of the decoded file when the size was computed.
-    time_t mtime;
-};
-
 class StatsCache {
  public:
-    using cache_t = std::map<std::string, FileStat>;
-    using cache_entry_t = std::pair<std::string, FileStat>;
-
-    StatsCache() : mutex(PTHREAD_MUTEX_INITIALIZER) {}
-    ~StatsCache() { pthread_mutex_destroy(&mutex); }
+    StatsCache() : mutex_(PTHREAD_MUTEX_INITIALIZER) {}
+    ~StatsCache() { pthread_mutex_destroy(&mutex_); }
     StatsCache(const StatsCache&) = delete;
     StatsCache& operator=(const StatsCache&) = delete;
 
@@ -67,10 +41,36 @@ class StatsCache {
                       time_t mtime);
 
  private:
+    /* Holds the size and modified time for a file. */
+    class FileStat {
+     public:
+        FileStat(size_t size, time_t mtime);
+
+        void update_atime();
+
+        size_t get_size() const { return size_; }
+        time_t get_atime() const { return atime_; }
+        time_t get_mtime() const { return mtime_; }
+        bool operator==(const FileStat& other) const;
+
+     private:
+        size_t size_;
+        // The last time this object was accessed. Used to implement the most
+        // recently used cache policy.
+        time_t atime_ = 0;
+        // The modified time of the decoded file when the size was computed.
+        time_t mtime_;
+    };
+
+    using cache_entry_t = std::pair<std::string, FileStat>;
+
+    static bool cmp_by_atime(const cache_entry_t& a1, const cache_entry_t& a2);
+
     void prune();
     void remove_entry(const std::string& file, const FileStat& file_stat);
-    cache_t cache;
-    pthread_mutex_t mutex;
+
+    std::map<std::string, FileStat> cache_;
+    pthread_mutex_t mutex_;
 };
 
 #endif  // MP3FS_STATS_CACHE_H_
