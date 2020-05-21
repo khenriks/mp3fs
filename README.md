@@ -35,8 +35,9 @@ up as `/mnt/mp3/**.mp3`.
 ## How it Works
 
 When a file is opened, the decoder and encoder are initialised and the file
-metadata is read. At this time the final filesize can be determined as we only
-support constant bitrate (CBR) MP3 files.
+metadata is read. At this time the final filesize can be determined when using
+constant bitrate (CBR) MP3 files. We also support VBR output, but can only
+estimate the size in that case.
 
 As the file is read, it is transcoded into an internal per-file buffer. This
 buffer continues to grow while the file is being read until the whole file is
@@ -48,7 +49,7 @@ Seeking within a file will cause the file to be transcoded up to the seek point
 read a file from start to finish. Future enhancements may provide true random
 seeking.
 
-ID3 version 2.4 and 1.1 tags are created from the vorbis comments in the FLAC
+ID3 version 2.4 and 1.1 tags are created from the Vorbis comments in the FLAC
 or Ogg Vorbis file. They are located at the start and end of the file
 respectively.
 
