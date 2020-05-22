@@ -55,7 +55,7 @@ staticcheck:
 # and the check is made automatically passing because the headers aren't
 # preserved properly.
 mdcheck:
-	@set -e ; for f in *.md ; do \
+	@set -e ; for f in *.md */*.md ; do \
 	    echo "Checking format for $$f." ; \
 	    if [ "$$f" = mp3fs.1.md ] ; then \
 	    	sed 's/\.\\/!./g' "$$f" | pandoc -d .pandocfmt.yaml -f markdown -t markdown | sed 's/!\./.\\/g' | diff -u $$f - || : ; \
