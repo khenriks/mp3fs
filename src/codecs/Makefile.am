@@ -1,4 +1,4 @@
-lib_LIBRARIES = libcodecs.a
+noinst_LIBRARIES = libcodecs.a
 libcodecs_a_SOURCES = coders.cc coders.h
 INCLUDES = $(fuse_CFLAGS) -I..
 
