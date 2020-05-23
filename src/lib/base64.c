@@ -410,7 +410,7 @@ decode_4 (char const *restrict in, size_t inlen,
 
   if (*outleft)
     {
-      *out++ = (((b64[to_uchar (in[0])] << 2) & 0xff)
+      *out++ = (char)(((b64[to_uchar (in[0])] << 2) & 0xff)
                 | (b64[to_uchar (in[1])] >> 4));
       --*outleft;
     }
@@ -433,7 +433,7 @@ decode_4 (char const *restrict in, size_t inlen,
 
       if (*outleft)
         {
-          *out++ = (((b64[to_uchar (in[1])] << 4) & 0xf0)
+          *out++ = (char)(((b64[to_uchar (in[1])] << 4) & 0xf0)
                     | (b64[to_uchar (in[2])] >> 2));
           --*outleft;
         }
@@ -453,7 +453,7 @@ decode_4 (char const *restrict in, size_t inlen,
 
           if (*outleft)
             {
-              *out++ = (((b64[to_uchar (in[2])] << 6) & 0xc0)
+              *out++ = (char)(((b64[to_uchar (in[2])] << 6) & 0xc0)
                         | b64[to_uchar (in[3])]);
               --*outleft;
             }

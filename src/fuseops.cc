@@ -83,8 +83,11 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
 
     // Using a unique_ptr with a custom deleter ensures closedir gets called
     // before function exit.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-attributes"
     std::unique_ptr<DIR, decltype(&closedir)> dp(
         opendir(path.NormalSource().c_str()), closedir);
+#pragma GCC diagnostic pop
     if (!dp) {
         return -errno;
     }

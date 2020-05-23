@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <cstdlib>
 #include <thread>
 #include <vector>
 
@@ -9,7 +10,9 @@ int fd;
 void read_from_offset(int off) {
     const int buffer_size = 10000;
     char buffer[buffer_size];
-    pread(fd, buffer, sizeof(buffer), off);
+    if (pread(fd, buffer, sizeof(buffer), off) == -1) {
+        exit(1);
+    }
 }
 
 int main(int argc, char* argv[]) {
