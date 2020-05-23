@@ -12,7 +12,7 @@ dist_man_MANS = mp3fs.1
 
 MAINTAINERCLEANFILES = mp3fs.1
 
-EXTRA_DIST = INSTALL.md README.md mp3fs.1.txt
+EXTRA_DIST = INSTALL.md NEWS.md README.md mp3fs.1.md
 
 DATE_FMT = %B %Y
 SOURCE_DATE_EPOCH ?= $(shell date +%s)
