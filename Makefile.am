@@ -33,7 +33,8 @@ mp3fs.1: mp3fs.1.md
 # Remove absolutely every generated file
 .PHONY: squeaky-clean
 squeaky-clean: maintainer-clean
-	rm -rf aclocal.m4 configure config Makefile.in lib/Makefile.in src/Makefile.in test/Makefile.in
+	find . -name Makefile.in -delete
+	rm -rf aclocal.m4 configure config
 
 .PHONY: staticcheck mdcheck
 staticcheck:
