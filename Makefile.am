@@ -24,7 +24,7 @@ REVDATE = $(shell date -u -r "$(SOURCE_DATE_EPOCH)" "+$(DATE_FMT)")
 endif
 
 # This variable is needed because Pandoc on Travis doesn't understand "smart".
-mp3fs.1: NOSMART := $(shell pandoc --list-extensions | grep -q smart && echo -smart)
+mp3fs.1: NOSMART := $(shell pandoc --list-extensions 2> /dev/null | grep -q smart && echo -smart)
 mp3fs.1: mp3fs.1.md
 	$(AM_V_GEN)pandoc -s -f markdown$(NOSMART) -t man \
 	    -M footer="mp3fs $(VERSION)" \
