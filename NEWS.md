@@ -1,5 +1,28 @@
 # mp3fs News
 
+## Important changes in 1.0 (2020-05-24)
+
+mp3fs 1.0 is finally here\!
+
+Fixes/code improvements:
+
+  - Many, many bug fixes (buffer overflows, memory leaks, and others)
+  - Memory handling improvements (using RAII with C++ nearly everywhere)
+  - Adopting C++11 and modernizing code
+  - Static tests for code (e.g. clang-format, clang-tidy, IWYU)
+
+New features:
+
+  - Ogg Vorbis decoding support
+  - MP3 VBR encoding support
+  - Improved, much more customizable logging
+
+Other:
+
+  - Docs licensed under GPL 3+ (now entire codebase is distributable as GPL 3)
+  - All docs switched to Markdown (including manpage, using pandoc)
+  - Docker image now available
+
 ## Important changes in 0.91 (2014-05-14)
 
 This contains mainly bug fixes.
