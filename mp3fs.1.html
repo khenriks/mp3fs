@@ -2,124 +2,49 @@
 layout: base
 title: mp3fs(1) manual
 ---
-<h1>
-    MP3FS(1) Manual Page
-</h1>
-<hr>
-<h2>NAME</h2>
-<p>mp3fs -
-   mounts and transcodes FLACs to MP3s on the fly
-</p>
-<h2><a name="_synopsis"></a>SYNOPSIS</h2>
-<p><strong>mp3fs</strong> [<b>OPTION</b>]&#8230; <b>FLACDIR</b> <b>MP3DIR</b></p>
-<h2><a name="_description"></a>DESCRIPTION</h2>
-<p>The mp3fs(1) command will mount the directory <b>FLACDIR</b> on <b>MP3DIR</b>.
-Thereafter, accessing <b>MP3DIR</b> will show the contents of <b>FLACDIR</b>, with
-all FLAC files transparently renamed and transcoded to MP3 format upon
-access.</p>
-<h2><a name="_options"></a>OPTIONS</h2>
+<h1>MP3FS(1) Manual Page</h1>
+<h2 id="name">NAME</h2>
+<p>mp3fs - mounts and transcodes FLACs and OGGs to MP3s on the fly</p>
+<h2 id="synopsis">SYNOPSIS</h2>
+<p><strong>mp3fs</strong> [<em>OPTION</em>]... <em>IN_DIR</em> <em>OUT_DIR</em></p>
+<h2 id="description">DESCRIPTION</h2>
+<p>The mp3fs(1) command will mount the directory <em>IN_DIR</em> on <em>OUT_DIR</em>. Thereafter, accessing <em>OUT_DIR</em> will show the contents of <em>IN_DIR</em>, with all FLAC/Ogg Vorbis files transparently renamed and transcoded to MP3 format upon access.</p>
+<h2 id="options">OPTIONS</h2>
 <dl>
-<dt>
-<strong>-b, -obitrate</strong>=<b>RATE</b>
-</dt>
-<dd>
-<p>
-    Set the bitrate to use for encoding. Acceptable values for <b>RATE</b> are
-    any which are allowed by the MP3 format. According to the manual for
-    LAME, this means:
-</p>
-<p>For sampling frequencies of 32, 44.1, and 48 kHz, <b>RATE</b> can be among 32,
-40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, and 320.</p>
-<p>For sampling frequencies of 16, 22.05, and 24 kHz, <b>RATE</b> can be among 8,
-16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, and 160.</p>
-<p>When in doubt, it is recommended to choose a bitrate among 96, 112, 128,
-160, 192, 224, 256, and 320. If not specified, <b>RATE</b> defaults to 128.</p>
+<dt><strong>-b, -obitrate</strong>=<em>RATE</em></dt>
+<dd><p>Set the bitrate to use for encoding. Acceptable values for <em>RATE</em> are any which are allowed by the MP3 format. According to the manual for LAME, this means:</p>
+<p>For sampling frequencies of 32, 44.1, and 48 kHz, <em>RATE</em> can be among 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, and 320.</p>
+<p>For sampling frequencies of 16, 22.05, and 24 kHz, <em>RATE</em> can be among 8, 16, 24, 32, 40, 48, 56, 64, 80, 96, 112, 128, 144, and 160.</p>
+<p>When in doubt, it is recommended to choose a bitrate among 96, 112, 128, 160, 192, 224, 256, and 320. If not specified, <em>RATE</em> defaults to 128.</p>
 </dd>
-<dt>
-<strong>-d, -odebug</strong>
-</dt>
-<dd>
-<p>
-    Enable debug output. This will result in a large quantity of
-    diagnostic information being printed to stderr as the program runs.
-    This option will normally not be used. It implies <strong>-f</strong>.
-</p>
+<dt><strong>-d, -odebug</strong></dt>
+<dd><p>Enable debug output. This will result in a large quantity of diagnostic information being printed to stderr as the program runs. This option will normally not be used. It implies <strong>-f</strong>.</p>
 </dd>
-<dt>
-<strong>--gainmode, -ogainmode</strong>=<b>MODE</b>
-</dt>
-<dd>
-<p>
-    Set mode to use for interpreting ReplayGain tags. The allowed
-    values for <b>MODE</b> are:<br>
-    0 - Ignore all ReplayGain tags.<br>
-    1 - Prefer album gain tag, but fall back to track gain if album gain
-        is not present.<br>
-    2 - Use track gain if present.<br>
-</p>
+<dt><strong>--gainmode, -ogainmode</strong>=<em>MODE</em></dt>
+<dd><p>Set mode to use for interpreting ReplayGain tags. The allowed values for <em>MODE</em> are:</p>
+<p>0 - Ignore all ReplayGain tags.</p>
+<p>1 - Prefer album gain tag, but fall back to track gain if album gain is not present.</p>
+<p>2 - Use track gain if present.</p>
 </dd>
-<dt>
-<strong>--gainref, -ogainref</strong>=<b>REF</b>
-</dt>
-<dd>
-<p>
-    Set the reference loudness in decibels to adjust ReplayGain tags.
-    ReplayGain software usually defaults to a loudness of 89 dB, but if
-    this is too quiet, a higher value can be set here, causing adjustment
-    of ReplayGain values in tags.
-</p>
+<dt><strong>--gainref, -ogainref</strong>=<em>REF</em></dt>
+<dd><p>Set the reference loudness in decibels to adjust ReplayGain tags. ReplayGain software usually defaults to a loudness of 89 dB, but if this is too quiet, a higher value can be set here, causing adjustment of ReplayGain values in tags.</p>
 </dd>
-<dt>
-<strong>-f</strong>
-</dt>
-<dd>
-<p>
-    Run in foreground instead of detaching from the terminal.
-</p>
+<dt><strong>-f</strong></dt>
+<dd><p>Run in foreground instead of detaching from the terminal.</p>
 </dd>
-<dt>
-<strong>-h, --help</strong>
-</dt>
-<dd>
-<p>
-    Print usage information.
-</p>
+<dt><strong>-h, --help</strong></dt>
+<dd><p>Print usage information.</p>
 </dd>
-<dt>
-<strong>--quality, -oquality</strong>=<b>QUALITY</b>
-</dt>
-<dd>
-<p>
-    Set quality for encoding, as understood by LAME. The slowest and best
-    quality is 0, while 9 is the fastest and worst quality. The default
-    value is 5, although according to the LAME manual, 2 is recommended.
-</p>
+<dt><strong>--quality, -oquality</strong>=<em>QUALITY</em></dt>
+<dd><p>Set quality for encoding, as understood by LAME. The slowest and best quality is 0, while 9 is the fastest and worst quality. The default value is 5, although according to the LAME manual, 2 is recommended.</p>
 </dd>
-<dt>
-<strong>-s</strong>
-</dt>
-<dd>
-<p>
-    Force single-threaded operation.
-</p>
+<dt><strong>-s</strong></dt>
+<dd><p>Force single-threaded operation.</p>
 </dd>
-<dt>
-<strong>-V, --version</strong>
-</dt>
-<dd>
-<p>
-    Output version information.
-</p>
+<dt><strong>-V, --version</strong></dt>
+<dd><p>Output version information.</p>
 </dd>
 </dl>
-<h2><a name="_copyright"></a>COPYRIGHT</h2>
-<p>Copyright (C) 2006-2008 David Collett and 2008-2013 K. Henriksson.
-This is free software: you are free to change and redistribute it under
-the terms of the GNU General Public License (GPL) version 3 or later.</p>
-<p>This manual is copyright (C) 2010-2011 K. Henriksson and may be
-distributed under GNU Free Documentation License 1.3 or later.</p>
-<p></p>
-<p></p>
-<hr><p><small>
-Last updated 2014-04-06 00:38:24 EDT
-</small></p>
+<h2 id="copyright">COPYRIGHT</h2>
+<p>Copyright (C) 2006-2008 David Collett and 2008-2013 K. Henriksson. This is free software: you are free to change and redistribute it under the terms of the GNU General Public License (GPL) version 3 or later.</p>
+<p>This manual is copyright (C) 2010-2011 K. Henriksson and may be distributed under the GNU Free Documentation License (GFDL) 1.3 or later with no invariant sections, or alternatively under the GNU General Public License (GPL) version 3 or later.</p>
