@@ -20,38 +20,60 @@
 
 #include "path.h"
 
-#include <unistd.h>
+#include <glob.h>
 
-#include <cerrno>
+#include <algorithm>
 #include <cstddef>
+#include <iterator>
+#include <memory>
 #include <string>
-// IWYU pragma: no_include <vector>
+#include <vector>
 
 #include "codecs/coders.h"
 #include "mp3fs.h"
+
+namespace {
+
+// Simple C++ wrapper for glob.
+std::vector<std::string> glob_match(const std::string& pattern) {
+    std::vector<std::string> result;
+
+    glob_t globbuf;
+    if (glob(pattern.c_str(), 0, nullptr, &globbuf) == 0) {
+        std::copy(globbuf.gl_pathv, globbuf.gl_pathv + globbuf.gl_pathc,
+                  std::back_inserter(result));
+    }
+
+    globfree(&globbuf);
+    return result;
+}
+
+}  // namespace
 
 std::string Path::NormalSource() const {
     return std::string(params.basepath) + relative_path_;
 }
 
 std::string Path::TranscodeSource() const {
-    const std::string base = NormalSource();
-    const size_t dot = base.rfind('.');
+    const std::string source = NormalSource();
+    const size_t dot_idx = source.rfind('.');
 
-    if (dot != std::string::npos && base.substr(dot + 1) == params.desttype) {
-        for (const auto& dec : decoder_list) {
-            std::string candidate = base.substr(0, dot + 1) + dec;
-            if (access(candidate.c_str(), F_OK) == 0) {
-                /* File exists with this extension */
+    if (dot_idx != std::string::npos &&
+        source.substr(dot_idx + 1) == params.desttype) {
+        const std::string source_base = source.substr(0, dot_idx);
+        for (const std::string& candidate : glob_match(source_base + ".*")) {
+            const std::string candidate_ext =
+                candidate.substr(candidate.rfind('.') + 1);
+
+            std::unique_ptr<Decoder> dec(Decoder::CreateDecoder(candidate_ext));
+            if (dec != nullptr) {
+                /* This is a valid transcode source file. */
                 return candidate;
             }
-
-            /* File does not exist; not an error */
-            errno = 0;
         }
     }
 
-    return base;
+    return source;
 }
 
 std::ostream& operator<<(std::ostream& ostream, const Path& path) {

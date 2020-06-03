@@ -25,7 +25,6 @@
 #include <ctime>
 #include <ostream>
 #include <string>
-#include <vector>
 
 class Buffer;
 
@@ -97,14 +96,11 @@ class Decoder {
     virtual int process_metadata(Encoder* encoder) = 0;
     virtual int process_single_fr(Encoder* encoder) = 0;
 
-    static Decoder* CreateDecoder(const std::string& file_type);
+    static Decoder* CreateDecoder(std::string file_type);
 };
 
 /* Print codec versions. */
 void print_codec_versions(std::ostream& out);
-
-/* Define lists of available encoder and decoder extensions. */
-extern const std::vector<std::string> decoder_list;
 
 /* Check for availability of audio types. */
 bool check_encoder(const char* type);

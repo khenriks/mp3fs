@@ -20,6 +20,8 @@
 
 #include "codecs/coders.h"
 
+#include <algorithm>
+#include <cctype>
 #include <memory>
 
 /*
@@ -84,7 +86,10 @@ Encoder* Encoder::CreateEncoder(const std::string& file_type, Buffer* buffer,
 }
 
 /* Create instance of class derived from Decoder. */
-Decoder* Decoder::CreateDecoder(const std::string& file_type) {
+Decoder* Decoder::CreateDecoder(std::string file_type) {
+    // Convert file type to lowercase.
+    std::transform(file_type.begin(), file_type.end(), file_type.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
 #ifdef HAVE_FLAC
     if (file_type == "flac") {
         return new FlacDecoder();
@@ -97,17 +102,6 @@ Decoder* Decoder::CreateDecoder(const std::string& file_type) {
 #endif
     return nullptr;
 }
-
-/* Define list of available decoder extensions. */
-const std::vector<std::string> decoder_list = {
-#ifdef HAVE_FLAC
-    "flac",
-#endif
-#ifdef HAVE_VORBIS
-    "ogg",
-    "oga",
-#endif
-};
 
 /* Check if an encoder is available to encode to the specified type. */
 bool check_encoder(const char* type) {
