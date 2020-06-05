@@ -55,7 +55,7 @@ constexpr int kBytesPerBlock = 512;
 void convert_extension(char* path) {
     char* ext = strrchr(path, '.');
 
-    if (ext != nullptr && check_decoder(ext + 1)) {
+    if (ext != nullptr && Decoder::CreateDecoder(ext + 1) != nullptr) {
         strcpy(ext + 1, params.desttype);  // NOLINT
     }
 }

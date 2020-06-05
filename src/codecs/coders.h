@@ -80,6 +80,9 @@ class Encoder {
 
     virtual bool no_partial_encode() { return true; }
 
+    // Create and return an Encoder for the specified file type. buffer will
+    // not be owned by the class, and dervied classes *must* construct
+    // successfully when buffer is nullptr.
     static std::unique_ptr<Encoder> CreateEncoder(const std::string& file_type,
                                                   Buffer* buffer,
                                                   size_t actual_size = 0);
@@ -103,9 +106,5 @@ class Decoder {
 
 /* Print codec versions. */
 void print_codec_versions(std::ostream& out);
-
-/* Check for availability of audio types. */
-bool check_encoder(const char* type);
-bool check_decoder(const char* type);
 
 #endif  // MP3FS_CODECS_CODERS_H_

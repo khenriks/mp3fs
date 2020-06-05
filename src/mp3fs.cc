@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
     }
 
     /* Check for valid destination type. */
-    if (!check_encoder(params.desttype)) {
+    if (Encoder::CreateEncoder(params.desttype, nullptr) == nullptr) {
         std::cerr << "No encoder available for desttype: " << params.desttype
                   << std::endl
                   << std::endl;

@@ -44,7 +44,6 @@
 #include "codecs/vorbis_decoder.h"
 #endif
 
-#include "buffer.h"
 #include "mp3fs.h"
 
 namespace {
@@ -102,17 +101,6 @@ std::unique_ptr<Decoder> Decoder::CreateDecoder(std::string file_type) {
     }
 #endif
     return nullptr;
-}
-
-/* Check if an encoder is available to encode to the specified type. */
-bool check_encoder(const char* type) {
-    Buffer b;
-    return Encoder::CreateEncoder(type, &b) != nullptr;
-}
-
-/* Check if a decoder is available to decode from the specified type. */
-bool check_decoder(const char* type) {
-    return Decoder::CreateDecoder(type) != nullptr;
 }
 
 void print_codec_versions(std::ostream& out) {
