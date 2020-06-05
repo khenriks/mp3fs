@@ -65,8 +65,7 @@ std::string Path::TranscodeSource() const {
             const std::string candidate_ext =
                 candidate.substr(candidate.rfind('.') + 1);
 
-            std::unique_ptr<Decoder> dec(Decoder::CreateDecoder(candidate_ext));
-            if (dec != nullptr) {
+            if (Decoder::CreateDecoder(candidate_ext) != nullptr) {
                 /* This is a valid transcode source file. */
                 return candidate;
             }

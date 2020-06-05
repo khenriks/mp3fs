@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include <ctime>
+#include <memory>
 #include <ostream>
 #include <string>
 
@@ -79,8 +80,9 @@ class Encoder {
 
     virtual bool no_partial_encode() { return true; }
 
-    static Encoder* CreateEncoder(const std::string& file_type, Buffer* buffer,
-                                  size_t actual_size = 0);
+    static std::unique_ptr<Encoder> CreateEncoder(const std::string& file_type,
+                                                  Buffer* buffer,
+                                                  size_t actual_size = 0);
 
     constexpr static double invalid_db = 1000.0;
 };
@@ -96,7 +98,7 @@ class Decoder {
     virtual int process_metadata(Encoder* encoder) = 0;
     virtual int process_single_fr(Encoder* encoder) = 0;
 
-    static Decoder* CreateDecoder(std::string file_type);
+    static std::unique_ptr<Decoder> CreateDecoder(std::string file_type);
 };
 
 /* Print codec versions. */

@@ -75,29 +75,30 @@ void Encoder::set_gain(double gainref, double album_gain, double track_gain) {
 }
 
 /* Create instance of class derived from Encoder. */
-Encoder* Encoder::CreateEncoder(const std::string& file_type, Buffer* buffer,
-                                size_t actual_size) {
+std::unique_ptr<Encoder> Encoder::CreateEncoder(const std::string& file_type,
+                                                Buffer* buffer,
+                                                size_t actual_size) {
 #ifdef HAVE_MP3
     if (file_type == "mp3") {
-        return new Mp3Encoder(buffer, actual_size);
+        return std::unique_ptr<Encoder>(new Mp3Encoder(buffer, actual_size));
     }
 #endif
     return nullptr;
 }
 
 /* Create instance of class derived from Decoder. */
-Decoder* Decoder::CreateDecoder(std::string file_type) {
+std::unique_ptr<Decoder> Decoder::CreateDecoder(std::string file_type) {
     // Convert file type to lowercase.
     std::transform(file_type.begin(), file_type.end(), file_type.begin(),
                    [](unsigned char c) { return std::tolower(c); });
 #ifdef HAVE_FLAC
     if (file_type == "flac") {
-        return new FlacDecoder();
+        return std::unique_ptr<Decoder>(new FlacDecoder());
     }
 #endif
 #ifdef HAVE_VORBIS
     if (file_type == "ogg" || file_type == "oga") {
-        return new VorbisDecoder();
+        return std::unique_ptr<Decoder>(new VorbisDecoder());
     }
 #endif
     return nullptr;
@@ -106,14 +107,12 @@ Decoder* Decoder::CreateDecoder(std::string file_type) {
 /* Check if an encoder is available to encode to the specified type. */
 bool check_encoder(const char* type) {
     Buffer b;
-    std::unique_ptr<Encoder> enc(Encoder::CreateEncoder(type, &b));
-    return enc != nullptr;
+    return Encoder::CreateEncoder(type, &b) != nullptr;
 }
 
 /* Check if a decoder is available to decode from the specified type. */
 bool check_decoder(const char* type) {
-    std::unique_ptr<Decoder> dec(Decoder::CreateDecoder(type));
-    return dec != nullptr;
+    return Decoder::CreateDecoder(type) != nullptr;
 }
 
 void print_codec_versions(std::ostream& out) {

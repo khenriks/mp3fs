@@ -42,7 +42,7 @@ StatsCache stats_cache;
 
 bool Transcoder::open() {
     /* Create Encoder and Decoder objects. */
-    decoder_.reset(Decoder::CreateDecoder(strrchr(filename_.c_str(), '.') + 1));
+    decoder_ = Decoder::CreateDecoder(strrchr(filename_.c_str(), '.') + 1);
     if (!decoder_) {
         errno = EIO;
         return false;
@@ -58,8 +58,8 @@ bool Transcoder::open() {
     Log(DEBUG) << "Decoder initialized successfully.";
 
     stats_cache.get_filesize(filename_, decoder_->mtime(), &encoded_filesize_);
-    encoder_.reset(
-        Encoder::CreateEncoder(params.desttype, &buffer_, encoded_filesize_));
+    encoder_ =
+        Encoder::CreateEncoder(params.desttype, &buffer_, encoded_filesize_);
     if (!encoder_) {
         errno = EIO;
         return false;
