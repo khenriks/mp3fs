@@ -24,7 +24,6 @@
 #include <algorithm>
 #include <cerrno>
 #include <cstdint>
-#include <cstring>
 #include <ctime>  // IWYU pragma: keep (time_t)
 #include <limits>
 #include <mutex>
@@ -42,7 +41,10 @@ StatsCache stats_cache;
 
 bool Transcoder::open() {
     /* Create Encoder and Decoder objects. */
-    decoder_ = Decoder::CreateDecoder(strrchr(filename_.c_str(), '.') + 1);
+    size_t dot_idx = filename_.rfind('.');
+    if (dot_idx != std::string::npos) {
+        decoder_ = Decoder::CreateDecoder(filename_.substr(dot_idx + 1));
+    }
     if (!decoder_) {
         errno = EIO;
         return false;

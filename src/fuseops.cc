@@ -32,8 +32,8 @@
 #include <unistd.h>
 
 #include <cerrno>
+#include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <memory>
 #include <ostream>
 #include <string>
@@ -52,12 +52,15 @@ constexpr int kBytesPerBlock = 512;
 /**
  * Convert file extension from source to destination name.
  */
-void convert_extension(char* path) {
-    char* ext = strrchr(path, '.');
+std::string convert_extension(const std::string& path) {
+    size_t ext_pos = path.rfind('.');
 
-    if (ext != nullptr && Decoder::CreateDecoder(ext + 1) != nullptr) {
-        strcpy(ext + 1, params.desttype);  // NOLINT
+    if (ext_pos != std::string::npos &&
+        Decoder::CreateDecoder(path.substr(ext_pos + 1)) != nullptr) {
+        return path.substr(0, ext_pos + 1) + params.desttype;
     }
+
+    return path;
 }
 
 int mp3fs_readlink(const char* p, char* buf, size_t size) {
@@ -71,7 +74,8 @@ int mp3fs_readlink(const char* p, char* buf, size_t size) {
 
     buf[len] = '\0';
 
-    convert_extension(buf);
+    size_t outlen = convert_extension(buf).copy(buf, size - 1);
+    buf[outlen] = '\0';
 
     return 0;
 }
@@ -93,7 +97,7 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
     }
 
     while (struct dirent* de = readdir(dp.get())) {
-        std::string origfile = path.NormalSource() + "/" + de->d_name;
+        const std::string origfile = path.NormalSource() + "/" + de->d_name;
 
         struct stat st = {};
         if (lstat(origfile.c_str(), &st) == -1) {
@@ -101,8 +105,9 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
         }
 
         if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
-            // TODO: Make this safe if converting from short to long ext.
-            convert_extension(de->d_name);
+            size_t len = convert_extension(de->d_name)
+                             .copy(de->d_name, sizeof(de->d_name) - 1);
+            de->d_name[len] = '\0';
         }
 
         if (filler(buf, de->d_name, &st, 0) != 0) {
