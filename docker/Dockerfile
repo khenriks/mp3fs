@@ -2,6 +2,7 @@ FROM debian:buster-slim AS base
 
 FROM base AS build
 
+ARG VERSION=1.0
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -15,9 +16,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libvorbis-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sL https://github.com/khenriks/mp3fs/releases/download/v1.0/mp3fs-1.0.tar.gz | \
+RUN curl -sL https://github.com/khenriks/mp3fs/releases/download/v${VERSION}/mp3fs-${VERSION}.tar.gz | \
     tar -xz && \
-    cd mp3fs-1.0 && \
+    cd mp3fs-${VERSION} && \
     ./configure && make && make install
 
 FROM base
