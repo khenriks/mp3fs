@@ -6,5 +6,5 @@
 cat "$DIRNAME/obama.mp3" > /dev/null
 cat "$DIRNAME/raven.mp3" > /dev/null
 
-[ $(stat -c %s "$DIRNAME/obama.mp3") -eq 106781 ]
-[ $(stat -c %s "$DIRNAME/raven.mp3") -eq 346594 ]
+check_equal "$(stat -c %s "$DIRNAME/obama.mp3")" 106781
+check_equal "$(stat -c %s "$DIRNAME/raven.mp3")" 346594

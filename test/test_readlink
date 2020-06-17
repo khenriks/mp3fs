@@ -2,5 +2,5 @@
 
 . "${BASH_SOURCE%/*}/funcs.sh"
 
-[ "$(readlink "$DIRNAME/obama2.mp3")" = "obama.mp3" ]
-[ "$(readlink "$DIRNAME/some.txt")" = "other.txt" ]
+check_equal "$(readlink "$DIRNAME/obama2.mp3")" obama.mp3
+check_equal "$(readlink "$DIRNAME/some.txt")" other.txt

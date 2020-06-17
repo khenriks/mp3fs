@@ -2,4 +2,5 @@
 
 . "${BASH_SOURCE%/*}/funcs.sh"
 
-[ "$(ls -m "$DIRNAME")" = "dir.flac, obama.mp3, obama2.mp3, random.mp3, raven.mp3, some.txt" ]
+check_equal "$(ls -m "$DIRNAME")" \
+    "dir.flac, obama.mp3, obama2.mp3, random.mp3, raven.mp3, some.txt"

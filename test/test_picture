@@ -11,5 +11,5 @@ print(hashlib.sha1(artwork).hexdigest())
 END
 }
 
-[ "$(hash_image "$DIRNAME/obama.mp3")" = 794865299f4fac10ba5719b203f0c71b5b524e95 ]
-[ "$(hash_image "$DIRNAME/raven.mp3")" = 5cd44d9e64c90d137ed3614213e309afec060dbc ]
+check_equal "$(hash_image "$DIRNAME/obama.mp3")" 794865299f4fac10ba5719b203f0c71b5b524e95
+check_equal "$(hash_image "$DIRNAME/raven.mp3")" 5cd44d9e64c90d137ed3614213e309afec060dbc
