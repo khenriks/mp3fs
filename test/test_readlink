@@ -1,0 +1,6 @@
+#!/bin/bash
+
+. "${BASH_SOURCE%/*}/funcs.sh"
+
+[ "$(readlink "$DIRNAME/obama2.mp3")" = "obama.mp3" ]
+[ "$(readlink "$DIRNAME/some.txt")" = "other.txt" ]
