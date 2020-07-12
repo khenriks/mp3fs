@@ -1,9 +1,8 @@
 # Docker Instructions
 
-There is now a [Docker
-image](https://hub.docker.com/repository/docker/khenriks/mp3fs) available for
-mp3fs. Most users will probably prefer to use the command normally, but it's
-available for those who want it.
+There is now a [Docker image](https://hub.docker.com/r/khenriks/mp3fs)
+available for mp3fs. Most users will probably prefer to use the command
+normally, but the image is available for those who want it.
 
 ## docker run
 
