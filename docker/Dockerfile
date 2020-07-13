@@ -6,6 +6,8 @@ ARG VERSION=1.0
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    autoconf \
+    automake \
     build-essential \
     ca-certificates \
     curl \
@@ -14,12 +16,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libid3tag0-dev \
     libmp3lame-dev \
     libvorbis-dev \
+    pandoc \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -sL https://github.com/khenriks/mp3fs/releases/download/v${VERSION}/mp3fs-${VERSION}.tar.gz | \
-    tar -xz && \
-    cd mp3fs-${VERSION} && \
-    ./configure && make && make install
+ADD . /mp3fs
+
+RUN cd /mp3fs && ./autogen.sh && ./configure && make && make install
 
 FROM base
 

@@ -1,0 +1,22 @@
+# Ignore everything, unless specifically included
+*
+
+# Allow build source files
+!autogen.sh
+!configure.ac
+
+# Explicitly listing the Automake sources is necessary due to Docker bugginess;
+# see https://github.com/moby/moby/issues/30018.
+!Makefile.am
+!src/Makefile.am
+!src/codecs/Makefile.am
+!src/lib/Makefile.am
+!test/Makefile.am
+
+# Allow code sources
+!**/*.c
+!**/*.cc
+!**/*.h
+
+# Allow manpage
+!mp3fs.1.md
