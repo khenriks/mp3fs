@@ -71,7 +71,7 @@ class Encoder {
                                  int data_length) = 0;
     virtual void set_gain_db(double dbgain) = 0;
     void set_gain(double gainref, double album_gain, double track_gain);
-    virtual int render_tag() = 0;
+    virtual int render_tag(size_t file_size) = 0;
     virtual size_t get_actual_size() const = 0;
     virtual size_t calculate_size() const = 0;
     virtual int encode_pcm_data(const int32_t* const data[], int numsamples,
@@ -84,8 +84,7 @@ class Encoder {
     // not be owned by the class, and dervied classes *must* construct
     // successfully when buffer is nullptr.
     static std::unique_ptr<Encoder> CreateEncoder(const std::string& file_type,
-                                                  Buffer* buffer,
-                                                  size_t actual_size = 0);
+                                                  Buffer* buffer);
 
     constexpr static double invalid_db = 1000.0;
 };

@@ -66,8 +66,7 @@ void lame_debug(const char* fmt, va_list list) {
  * particular file. Currently error handling is poor. If we run out
  * of memory, these routines will fail silently.
  */
-Mp3Encoder::Mp3Encoder(Buffer* buffer, size_t _actual_size)
-    : actual_size(_actual_size), buffer_(buffer) {
+Mp3Encoder::Mp3Encoder(Buffer* buffer) : buffer_(buffer) {
     id3tag = id3_tag_new();
 
     Log(DEBUG) << "LAME ready to initialize.";
@@ -245,7 +244,7 @@ void Mp3Encoder::set_gain_db(const double dbgain) {
  * thing to go into the Buffer. The ID3v1 tag will also be written 128
  * bytes from the calculated end of the buffer. It has a fixed size.
  */
-int Mp3Encoder::render_tag() {
+int Mp3Encoder::render_tag(size_t file_size) {
     /*
      * Disable ID3 compression because it hardly saves space and some
      * players don't like it.
@@ -267,7 +266,10 @@ int Mp3Encoder::render_tag() {
     id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
     std::vector<uint8_t> tag1(id3v1_tag_length);
     id3_tag_render(id3tag, tag1.data());
-    buffer_->write(tag1, calculate_size() - id3v1_tag_length);
+    if (file_size == 0) {
+        file_size = calculate_size();
+    }
+    buffer_->write(tag1, file_size - id3v1_tag_length);
 
     return 0;
 }
@@ -296,9 +298,6 @@ size_t Mp3Encoder::get_actual_size() const {
  * so our conversion factor is actually 144000.
  */
 size_t Mp3Encoder::calculate_size() const {
-    if (actual_size != 0) {
-        return actual_size;
-    }
     const int conversion_factor = 144000;
     if (params.vbr != 0) {
         return id3size + id3v1_tag_length + MAX_VBR_FRAME_SIZE +

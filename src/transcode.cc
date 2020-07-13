@@ -60,8 +60,7 @@ bool Transcoder::open() {
     Log(DEBUG) << "Decoder initialized successfully.";
 
     stats_cache.get_filesize(filename_, decoder_->mtime(), &encoded_filesize_);
-    encoder_ =
-        Encoder::CreateEncoder(params.desttype, &buffer_, encoded_filesize_);
+    encoder_ = Encoder::CreateEncoder(params.desttype, &buffer_);
     if (!encoder_) {
         errno = EIO;
         return false;
@@ -80,7 +79,7 @@ bool Transcoder::open() {
     Log(DEBUG) << "Metadata processing finished.";
 
     /* Render tag from Encoder to Buffer. */
-    if (encoder_->render_tag() == -1) {
+    if (encoder_->render_tag(encoded_filesize_) == -1) {
         Log(ERROR) << "Error rendering tag in Encoder.";
         errno = EIO;
         return false;
