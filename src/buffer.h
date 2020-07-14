@@ -79,6 +79,12 @@ class Buffer {
      */
     bool valid_bytes(std::streamoff offset, size_t size) const;
 
+    /**
+     * Return the maximum number of bytes that can be read from offset. This is
+     * the maximum size such that valid_bytes(offset, size) == true.
+     */
+    size_t max_valid_bytes(std::streamoff offset) const;
+
  private:
     std::vector<uint8_t> main_data_;
     std::vector<uint8_t> end_data_;

@@ -21,7 +21,6 @@
 
 #include "transcode.h"
 
-#include <algorithm>
 #include <cerrno>
 #include <cstdint>
 #include <ctime>  // IWYU pragma: keep (time_t)
@@ -119,9 +118,10 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
         }
     }
 
-    // truncate if we didn't actually get len
-    if (buffer_.tell() < offset + len) {
-        len = std::max<off_t>(buffer_.tell() - offset, 0);
+    // truncate if we can't get len
+    size_t max_len = buffer_.max_valid_bytes(offset);
+    if (len > max_len) {
+        len = max_len;
     }
 
     buffer_.copy_into(reinterpret_cast<uint8_t*>(buff), offset, len);

@@ -64,3 +64,20 @@ bool Buffer::valid_bytes(std::streamoff offset, size_t size) const {
            (end <= main_data_.size() || offset >= end_offset_ ||
             main_data_.size() == static_cast<size_t>(end_offset_));
 }
+
+size_t Buffer::max_valid_bytes(std::streamoff offset) const {
+    if (static_cast<size_t>(offset) > size()) {
+        return 0;
+    }
+    if (main_data_.size() == static_cast<size_t>(end_offset_) ||
+        offset >= end_offset_) {
+        // In either case, the whole rest of the Buffer is valid.
+        return size() - offset;
+    }
+    if (static_cast<size_t>(offset) <= main_data_.size()) {
+        // In this case, everything to the end of the main segment is valid.
+        return main_data_.size() - offset;
+    }
+    // The offset is between the main and end segments, so nothing is valid.
+    return 0;
+}
