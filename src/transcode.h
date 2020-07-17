@@ -55,13 +55,6 @@ class Transcoder : public Reader {
     size_t get_size() const;
 
  private:
-    /**
-     * Transcode into the buffer until the buffer has at least end bytes or
-     * until an error occurs.
-     * Returns true if no errors and false otherwise.
-     */
-    bool transcode_until(size_t end);
-
     /** Close the input file and free everything but the buffer. */
     bool finish();
 

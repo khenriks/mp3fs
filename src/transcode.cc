@@ -115,11 +115,15 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
         return -1;
     }
 
-    if (!transcode_until(encoder_->no_partial_encode()
-                             ? std::numeric_limits<size_t>::max()
-                             : offset + len)) {
-        errno = EIO;
-        return -1;
+    while (decoder_ && encoder_ &&
+           buffer_.tell() < (encoder_->no_partial_encode()
+                                 ? std::numeric_limits<size_t>::max()
+                                 : offset + len)) {
+        int stat = decoder_->process_single_fr(encoder_.get());
+        if (stat == -1 || (stat == 1 && !finish())) {
+            errno = EIO;
+            return -1;
+        }
     }
 
     // truncate if we didn't actually get len
@@ -141,16 +145,6 @@ size_t Transcoder::get_size() const {
     }
 
     return buffer_.tell();
-}
-
-bool Transcoder::transcode_until(size_t end) {
-    while (encoder_ && buffer_.tell() < end) {
-        int stat = decoder_->process_single_fr(encoder_.get());
-        if (stat == -1 || (stat == 1 && !finish())) {
-            return false;
-        }
-    }
-    return true;
 }
 
 bool Transcoder::finish() {
