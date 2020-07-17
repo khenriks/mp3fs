@@ -53,7 +53,7 @@ void lame_error(const char* fmt, va_list list) {
     log_with_level(ERROR, "LAME: ", fmt, list);
 }
 void lame_msg(const char* fmt, va_list list) {
-    log_with_level(ERROR, "LAME: ", fmt, list);
+    log_with_level(INFO, "LAME: ", fmt, list);
 }
 void lame_debug(const char* fmt, va_list list) {
     log_with_level(DEBUG, "LAME: ", fmt, list);
