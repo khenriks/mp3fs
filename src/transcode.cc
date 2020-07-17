@@ -126,6 +126,7 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
 
     buffer_.copy_into(reinterpret_cast<uint8_t*>(buff), offset, len);
 
+    Log(DEBUG) << "Successfully read " << len << " bytes.";
     return len;
 }
 

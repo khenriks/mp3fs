@@ -65,7 +65,7 @@ std::string convert_extension(const std::string& path) {
 
 int mp3fs_readlink(const char* p, char* buf, size_t size) {
     Path path = Path::FromMp3fsRelative(p);
-    Log(DEBUG) << "readlink " << path;
+    Log(INFO) << "readlink " << path;
 
     ssize_t len = readlink(path.TranscodeSource().c_str(), buf, size - 2);
     if (len == -1) {
@@ -83,7 +83,7 @@ int mp3fs_readlink(const char* p, char* buf, size_t size) {
 int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
                   off_t /*unused*/, struct fuse_file_info* /*unused*/) {
     Path path = Path::FromMp3fsRelative(p);
-    Log(DEBUG) << "readdir " << path;
+    Log(INFO) << "readdir " << path;
 
     // Using a unique_ptr with a custom deleter ensures closedir gets called
     // before function exit.
@@ -120,7 +120,7 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
 
 int mp3fs_getattr(const char* p, struct stat* stbuf) {
     Path path = Path::FromMp3fsRelative(p);
-    Log(DEBUG) << "getattr " << path;
+    Log(INFO) << "getattr " << path;
 
     /* pass-through for regular files */
     if (lstat(path.NormalSource().c_str(), stbuf) == 0) {
@@ -150,7 +150,7 @@ int mp3fs_getattr(const char* p, struct stat* stbuf) {
 
 int mp3fs_open(const char* p, struct fuse_file_info* fi) {
     Path path = Path::FromMp3fsRelative(p);
-    Log(DEBUG) << "open " << path;
+    Log(INFO) << "open " << path;
 
     int fd = open(path.NormalSource().c_str(), fi->flags);
 
@@ -176,7 +176,7 @@ int mp3fs_open(const char* p, struct fuse_file_info* fi) {
 
 int mp3fs_read(const char* path, char* buf, size_t size, off_t offset,
                struct fuse_file_info* fi) {
-    Log(DEBUG) << "read " << path << ": " << size << " bytes from " << offset;
+    Log(INFO) << "read " << path << ": " << size << " bytes from " << offset;
 
     auto* reader = reinterpret_cast<Reader*>(fi->fh);
 
@@ -196,7 +196,7 @@ int mp3fs_read(const char* path, char* buf, size_t size, off_t offset,
 
 int mp3fs_statfs(const char* p, struct statvfs* stbuf) {
     Path path = Path::FromMp3fsRelative(p);
-    Log(DEBUG) << "statfs " << path;
+    Log(INFO) << "statfs " << path;
 
     /* pass-through for regular files */
     if (statvfs(path.NormalSource().c_str(), stbuf) == 0) {
@@ -211,7 +211,7 @@ int mp3fs_statfs(const char* p, struct statvfs* stbuf) {
 }
 
 int mp3fs_release(const char* path, struct fuse_file_info* fi) {
-    Log(DEBUG) << "release " << path;
+    Log(INFO) << "release " << path;
 
     delete reinterpret_cast<Reader*>(fi->fh);
 
