@@ -36,9 +36,12 @@ squeaky-clean: maintainer-clean
 	find . -name Makefile.in -delete
 	rm -rf aclocal.m4 configure config
 
-.PHONY: staticcheck mdcheck
+.PHONY: staticcheck faststaticcheck mdcheck
 staticcheck:
 	@statictest/checkall
+
+faststaticcheck:
+	@statictest/checkall fast
 
 # The special logic for mp3fs.1.md is because it needs certain features for
 # manpage output. The weird sed logic is there to preserve '.\ ' sequences,

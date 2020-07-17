@@ -8,9 +8,17 @@ cd "${BASH_SOURCE%/*}"
 . ./check_guard
 . ./check_incpath
 
-multidriver \
-    format,check_format_single \
-    iwyu,check_iwyu_single \
-    tidy,check_tidy_single \
-    guard,check_guard_single \
+CHECKS=(
+    format,check_format_single
+    guard,check_guard_single
     incpath,check_incpath_single
+)
+
+if [ "$1" != fast ] ; then
+    CHECKS+=(
+        iwyu,check_iwyu_single
+        tidy,check_tidy_single
+    )
+fi
+
+multidriver "${CHECKS[@]}"
