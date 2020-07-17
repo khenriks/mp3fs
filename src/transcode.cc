@@ -108,13 +108,6 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
         return len;
     }
 
-    // If we don't already have the data and we can't produce it, return error.
-    if (!decoder_ || !encoder_) {
-        Log(ERROR) << "Can't generate data with closed coders.";
-        errno = EINVAL;
-        return -1;
-    }
-
     while (decoder_ && encoder_ &&
            buffer_.tell() < (encoder_->no_partial_encode()
                                  ? std::numeric_limits<size_t>::max()
