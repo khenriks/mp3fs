@@ -269,7 +269,7 @@ int Mp3Encoder::render_tag(size_t file_size) {
     if (file_size == 0) {
         file_size = calculate_size();
     }
-    buffer_->write(tag1, file_size - id3v1_tag_length);
+    buffer_->write_end(tag1, file_size - id3v1_tag_length);
 
     return 0;
 }

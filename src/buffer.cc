@@ -26,62 +26,41 @@
 #include "logging.h"
 
 void Buffer::write(const std::vector<uint8_t>& data) {
-    ensure_size(buffer_pos_ + data.size());
-    std::copy(data.begin(), data.end(), data_.begin() + buffer_pos_);
-    mark_valid(buffer_pos_, buffer_pos_ + data.size());
-    buffer_pos_ += data.size();
+    main_data_.insert(main_data_.end(), data.begin(), data.end());
 }
 
-void Buffer::write(const std::vector<uint8_t>& data, size_t offset) {
-    ensure_size(offset + data.size());
-    std::copy(data.begin(), data.end(), data_.begin() + offset);
-    mark_valid(offset, offset + data.size());
+void Buffer::write(const std::vector<uint8_t>& data, std::streamoff offset) {
+    std::copy(data.begin(), data.end(), main_data_.begin() + offset);
 }
 
-void Buffer::ensure_size(size_t size) {
-    if (data_.size() < size) {
-        if (static_cast<size_t>(end_bound_) == data_.size()) {
-            end_bound_ = size;
-        }
-        data_.resize(size, 0);
+void Buffer::write_end(const std::vector<uint8_t>& data,
+                       std::streamoff offset) {
+    end_data_ = data;
+    end_offset_ = offset;
+}
+
+void Buffer::copy_into(uint8_t* out_data, std::streamoff offset,
+                       size_t size) const {
+    if (!valid_bytes(offset, size)) {
+        Log(ERROR) << "Invalid offset=" << offset << " size=" << size
+                   << " in Buffer::copy_into.";
+        return;
     }
-}
-
-void Buffer::copy_into(uint8_t* out_data, size_t offset, size_t size) const {
-    std::copy(data_.begin() + offset, data_.begin() + offset + size, out_data);
-}
-
-bool Buffer::valid_bytes(size_t offset, size_t size) const {
-    std::streamoff end = offset + size;
-
-    /*
-     * Bytes are valid if [ offset,end ) lies within
-     * [ 0,start_bound_ ) U [ end_bound,data_.size() )
-     *
-     * This requires that end <= data_.size(), and further that
-     *   a) end <= start_bound_,
-     *   b) offset >= end_bound_, or
-     *   c) start_bound_ == end_bound_.
-     */
-    return end <= static_cast<std::streamoff>(data_.size()) &&
-           (end <= start_bound_ ||
-            static_cast<std::streamoff>(offset) >= end_bound_ ||
-            start_bound_ == end_bound_);
-}
-
-void Buffer::mark_valid(std::streamoff start, std::streamoff end) {
-    if (start <= start_bound_) {
-        if (end > start_bound_) {
-            start_bound_ = end;
-        }
-    } else if (end >= end_bound_) {
-        if (start < end_bound_) {
-            end_bound_ = start;
-        }
+    if (offset + size <= main_data_.size()) {
+        std::copy_n(main_data_.begin() + offset, size, out_data);
+    } else if (offset >= end_offset_) {
+        std::copy_n(end_data_.begin() + offset - end_offset_, size, out_data);
     } else {
-        Log(ERROR) << "Cannot mark [" << start << "," << end
-                   << ") as valid with start_bound=" << start_bound_
-                   << " and end_bound=" << end_bound_;
-        start_bound_ = end;
+        size_t start_size = main_data_.size() - offset;
+        uint8_t* next =
+            std::copy_n(main_data_.end() - start_size, start_size, out_data);
+        std::copy_n(end_data_.begin(), size - start_size, next);
     }
+}
+
+bool Buffer::valid_bytes(std::streamoff offset, size_t size) const {
+    size_t end = offset + size;
+    return offset >= 0 && end <= this->size() &&
+           (end <= main_data_.size() || offset >= end_offset_ ||
+            main_data_.size() == static_cast<size_t>(end_offset_));
 }

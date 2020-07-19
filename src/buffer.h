@@ -32,21 +32,34 @@ class Buffer {
     ~Buffer() = default;
 
     /**
-     * Write data to the current position in the Buffer. The position pointer
-     * will be updated.
+     * Write data to the end of the Buffer's main segment.
      */
     void write(const std::vector<uint8_t>& data);
 
     /**
-     * Write data to a specified position in the Buffer. The position pointer
-     * will not be updated.
+     * Write data to a specified position in the Buffer. Results in undefined
+     * behavior if this section of the Buffer had not previously been filled in.
      */
-    void write(const std::vector<uint8_t>& data, size_t offset);
+    void write(const std::vector<uint8_t>& data, std::streamoff offset);
 
     /**
-     * Give the value of the internal position pointer.
+     * Write data that will be placed at the end of the Buffer. This overwrites
+     * data (if any) already written at the end previously. The offset parameter
+     * and data size determine the total size of the Buffer. It is permissible
+     * to write an empty buffer with an offset; doing so sets the total size of
+     * the Buffer when there is no trailing data.
      */
-    size_t tell() const { return buffer_pos_; }
+    void write_end(const std::vector<uint8_t>& data, std::streamoff offset);
+
+    /**
+     * Give the size of data already written in the main segment.
+     */
+    size_t tell() const { return main_data_.size(); }
+
+    /**
+     * Retrieve the total size of the buffer.
+     */
+    size_t size() const { return end_offset_ + end_data_.size(); }
 
     /**
      * Copy data of the given size and at the given offset from the buffer to
@@ -54,48 +67,22 @@ class Buffer {
      *
      * If the given range is not valid, an error will be logged.
      */
-    void copy_into(uint8_t* out_data, size_t offset, size_t size) const;
+    void copy_into(uint8_t* out_data, std::streamoff offset, size_t size) const;
 
     /**
      * Return whether the given number of bytes at the given offset are valid
      * (have been already filled).
+     *
+     * Bytes are valid if the range lies fully within main_data_, fully within
+     * end_data_ (subject to end_offset_), or overlaps the two and
+     * main_data_.size() == end_offset_.
      */
-    bool valid_bytes(size_t offset, size_t size) const;
+    bool valid_bytes(std::streamoff offset, size_t size) const;
 
  private:
-    /**
-     * Ensure the Buffer has at least the size given.
-     */
-    void ensure_size(size_t size);
-
-    /**
-     * Mark the given range of bytes in the buffer as valid. This is treated as
-     * a semi-closed interval [start,end). If this interval is not contiguous
-     * with the two existing intervals, log an error and treat this as extending
-     * the first interval.
-     *
-     * Valid bytes in the buffer are used to track which portions have actually
-     * been populated with data, and which are simply capacity allocations. The
-     * following ranges determine whether a byte is valid:
-     * [0,start_bound_) are valid.
-     * [start_bound_,end_bound_) are invalid.
-     * [end_bound_,data_.size()) are valid.
-     *
-     * This simple model corresponds to current transcoding patterns, where some
-     * number of bytes at the beginning and end have been filled, but others
-     * have not.
-     */
-    void mark_valid(std::streamoff start, std::streamoff end);
-
-    std::vector<uint8_t> data_;
-    std::streamoff buffer_pos_ = 0;
-
-    // start_bound_ indicates the first invalid byte in the buffer. All previous
-    // bytes are considered to be valid.
-    std::streamoff start_bound_ = 0;
-    // end_bound_ indicates the first valid byte at the end of the buffer. This
-    // and all following bytes are considered to be valid.
-    std::streamoff end_bound_ = 0;
+    std::vector<uint8_t> main_data_;
+    std::vector<uint8_t> end_data_;
+    std::streamoff end_offset_ = 0;
 };
 
 #endif  // MP3FS_BUFFER_H_
