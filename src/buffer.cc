@@ -25,11 +25,18 @@
 
 #include "logging.h"
 
-void Buffer::write(const std::vector<uint8_t>& data) {
+void Buffer::write(const std::vector<uint8_t>& data, bool extend_buffer) {
     main_data_.insert(main_data_.end(), data.begin(), data.end());
+    if (main_data_.size() > static_cast<size_t>(end_offset_)) {
+        if (extend_buffer) {
+            end_offset_ = main_data_.size();
+        } else {
+            main_data_.resize(end_offset_);
+        }
+    }
 }
 
-void Buffer::write(const std::vector<uint8_t>& data, std::streamoff offset) {
+void Buffer::write_to(const std::vector<uint8_t>& data, std::streamoff offset) {
     std::copy(data.begin(), data.end(), main_data_.begin() + offset);
 }
 

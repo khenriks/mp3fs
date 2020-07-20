@@ -38,8 +38,7 @@
 /* Transcoder for open file */
 class Transcoder : public Reader {
  public:
-    explicit Transcoder(const std::string& filename)
-        : filename_(filename), encoded_filesize_(0) {
+    explicit Transcoder(const std::string& filename) : filename_(filename) {
         Log(DEBUG) << "Creating transcoder object for " << filename;
     }
 
@@ -52,7 +51,7 @@ class Transcoder : public Reader {
     ssize_t read(char* buff, off_t offset, size_t len) override;
 
     /** Return size of output file, as computed by Encoder. */
-    size_t get_size() const;
+    size_t get_size() const { return buffer_.size(); }
 
  private:
     /** Close the input file and free everything but the buffer. */
@@ -60,7 +59,6 @@ class Transcoder : public Reader {
 
     Buffer buffer_;
     std::string filename_;
-    size_t encoded_filesize_;
 
     std::unique_ptr<Encoder> encoder_;
     std::unique_ptr<Decoder> decoder_;

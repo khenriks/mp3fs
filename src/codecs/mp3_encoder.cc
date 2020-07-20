@@ -260,7 +260,7 @@ int Mp3Encoder::render_tag(size_t file_size) {
     id3size = id3_tag_render(id3tag, nullptr);
     std::vector<uint8_t> tag24(id3size);
     id3_tag_render(id3tag, tag24.data());
-    buffer_->write(tag24);
+    buffer_->write(tag24, true);
 
     // Write v1 tag at end of buffer.
     id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
@@ -272,14 +272,6 @@ int Mp3Encoder::render_tag(size_t file_size) {
     buffer_->write_end(tag1, file_size - id3v1_tag_length);
 
     return 0;
-}
-
-/*
- * Get the actual number of bytes in the encoded file, i.e. without any
- * padding. Valid only after encode_finish() has been called.
- */
-size_t Mp3Encoder::get_actual_size() const {
-    return actual_size;
 }
 
 /*
@@ -352,7 +344,7 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
     }
     vbuffer.resize(len);
 
-    buffer_->write(vbuffer);
+    buffer_->write(vbuffer, false);
 
     return 0;
 }
@@ -372,8 +364,12 @@ int Mp3Encoder::encode_finish() {
     }
     vbuffer.resize(len);
 
-    buffer_->write(vbuffer);
-    actual_size = buffer_->tell() + id3v1_tag_length;
+    buffer_->write(vbuffer, params.statcachesize > 0);
+    if (params.statcachesize > 0) {
+        buffer_->truncate();
+    } else {
+        buffer_->extend();
+    }
 
     /*
      * Write the VBR tag data at id3size bytes after the beginning. lame
@@ -386,7 +382,7 @@ int Mp3Encoder::encode_finish() {
         if (vbr_tag_size > MAX_VBR_FRAME_SIZE) {
             return -1;
         }
-        buffer_->write(tail, id3size);
+        buffer_->write_to(tail, id3size);
     }
 
     return len;

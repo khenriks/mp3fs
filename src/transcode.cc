@@ -58,7 +58,6 @@ bool Transcoder::open() {
 
     Log(DEBUG) << "Decoder initialized successfully.";
 
-    stats_cache.get_filesize(filename_, decoder_->mtime(), &encoded_filesize_);
     encoder_ = Encoder::CreateEncoder(params.desttype, &buffer_);
     if (!encoder_) {
         errno = EIO;
@@ -78,7 +77,9 @@ bool Transcoder::open() {
     Log(DEBUG) << "Metadata processing finished.";
 
     /* Render tag from Encoder to Buffer. */
-    if (encoder_->render_tag(encoded_filesize_) == -1) {
+    size_t cached_size = 0;
+    stats_cache.get_filesize(filename_, decoder_->mtime(), &cached_size);
+    if (encoder_->render_tag(cached_size) == -1) {
         Log(ERROR) << "Error rendering tag in Encoder.";
         errno = EIO;
         return false;
@@ -94,10 +95,6 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
     Log(DEBUG) << "Reading " << len << " bytes from offset " << offset << ".";
     if (static_cast<size_t>(offset) > get_size()) {
         return 0;
-    }
-    if (offset + len > get_size()) {
-        len = get_size() - offset;
-        Log(DEBUG) << "Actual length to read: " << len;
     }
 
     // If the requested data has already been filled into the buffer, simply
@@ -130,17 +127,6 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
     return len;
 }
 
-size_t Transcoder::get_size() const {
-    if (encoded_filesize_ != 0) {
-        return encoded_filesize_;
-    }
-    if (encoder_) {
-        return encoder_->calculate_size();
-    }
-
-    return buffer_.tell();
-}
-
 bool Transcoder::finish() {
     // Decoder cleanup
     time_t decoded_file_mtime = 0;
@@ -156,16 +142,14 @@ bool Transcoder::finish() {
         }
 
         /* Check encoded buffer size. */
-        encoded_filesize_ = encoder_->get_actual_size();
         Log(DEBUG) << "Finishing file. Predicted size: "
                    << encoder_->calculate_size()
-                   << ", final size: " << encoded_filesize_;
+                   << ", final size: " << buffer_.size();
         encoder_.reset(nullptr);
     }
 
-    if (params.statcachesize > 0 && encoded_filesize_ != 0) {
-        stats_cache.put_filesize(filename_, encoded_filesize_,
-                                 decoded_file_mtime);
+    if (params.statcachesize > 0 && buffer_.size() != 0) {
+        stats_cache.put_filesize(filename_, buffer_.size(), decoded_file_mtime);
     }
 
     return true;

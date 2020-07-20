@@ -72,7 +72,6 @@ class Encoder {
     virtual void set_gain_db(double dbgain) = 0;
     void set_gain(double gainref, double album_gain, double track_gain);
     virtual int render_tag(size_t file_size) = 0;
-    virtual size_t get_actual_size() const = 0;
     virtual size_t calculate_size() const = 0;
     virtual int encode_pcm_data(const int32_t* const data[], int numsamples,
                                 int sample_size) = 0;

@@ -47,7 +47,6 @@ class Mp3Encoder : public Encoder {
                          int data_length) override;
     void set_gain_db(double dbgain) override;
     int render_tag(size_t file_size) override;
-    size_t get_actual_size() const override;
     size_t calculate_size() const override;
     int encode_pcm_data(const int32_t* const data[], int numsamples,
                         int sample_size) override;
@@ -62,7 +61,6 @@ class Mp3Encoder : public Encoder {
 
  private:
     lame_t lame_encoder;
-    size_t actual_size = 0;  // Use this as the size instead of computing it.
     struct id3_tag* id3tag;
     size_t id3size = 0;
     Buffer* buffer_;

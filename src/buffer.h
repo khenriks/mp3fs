@@ -33,14 +33,19 @@ class Buffer {
 
     /**
      * Write data to the end of the Buffer's main segment.
+     *
+     * If enough data is provided, the main segment will run into the end
+     * segment. If extend_buffer is false, the data written will be truncated to
+     * avoid this. Otherwise, the buffer length will be increased to accommodate
+     * the data.
      */
-    void write(const std::vector<uint8_t>& data);
+    void write(const std::vector<uint8_t>& data, bool extend_buffer);
 
     /**
      * Write data to a specified position in the Buffer. Results in undefined
      * behavior if this section of the Buffer had not previously been filled in.
      */
-    void write(const std::vector<uint8_t>& data, std::streamoff offset);
+    void write_to(const std::vector<uint8_t>& data, std::streamoff offset);
 
     /**
      * Write data that will be placed at the end of the Buffer. This overwrites
@@ -84,6 +89,16 @@ class Buffer {
      * the maximum size such that valid_bytes(offset, size) == true.
      */
     size_t max_valid_bytes(std::streamoff offset) const;
+
+    /**
+     * Move end of main segment to start of end segment.
+     */
+    void extend() { main_data_.resize(end_offset_); }
+
+    /**
+     * Move end segment to end of main segment.
+     */
+    void truncate() { end_offset_ = main_data_.size(); }
 
  private:
     std::vector<uint8_t> main_data_;
