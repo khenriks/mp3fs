@@ -74,6 +74,8 @@ struct fuse_opt mp3fs_opts[] = {
     MP3FS_OPT("gainmode=%d", gainmode, 0),
     MP3FS_OPT("--gainref=%f", gainref, 0),
     MP3FS_OPT("gainref=%f", gainref, 0),
+    MP3FS_OPT("--log_format=%s", log_format, 0),
+    MP3FS_OPT("log_format=%s", log_format, 0),
     MP3FS_OPT("--log_maxlevel=%s", log_maxlevel, 0),
     MP3FS_OPT("log_maxlevel=%s", log_maxlevel, 0),
     MP3FS_OPT("--log_stderr", log_stderr, 1),
@@ -115,6 +117,15 @@ Encoding options:
     --gainref=REF, -ogainref=REF
                            reference value to use for ReplayGain in
                            decibels: defaults to 89 dB
+    --log_format=FORMAT, -olog_format=FORMAT
+                           format string to use for log messages. The following
+                           tokens in the string will be substituted as
+                           indicated:
+                             %I - thread ID
+                             %L - log level
+                             %M - log message
+                             %T - time, formatted as YYYY-MM-DD HH:MM:SS
+                           default: [%T] tid=%I %L: %M
     --log_maxlevel=LEVEL, -olog_maxlevel=LEVEL
                            maximum level of messages to log, either ERROR,
                            INFO, or DEBUG. Defaults to INFO, and always set
@@ -199,6 +210,7 @@ struct mp3fs_params params = {
 #endif
     .gainmode = 1,
     .gainref = kDefaultGainRef,
+    .log_format = "[%T] tid=%I %L: %M",
     .log_maxlevel = "INFO",
     .log_stderr = 0,
     .log_syslog = 0,
@@ -228,7 +240,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (!InitLogging(params.logfile, StringToLevel(params.log_maxlevel),
-                     params.log_stderr != 0, params.log_syslog != 0)) {
+                     params.log_format, params.log_stderr != 0,
+                     params.log_syslog != 0)) {
         std::cerr << "Failed to initialize logging module." << std::endl;
         std::cerr << "Maybe log file couldn't be opened for writing?"
                   << std::endl;

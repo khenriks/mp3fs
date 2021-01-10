@@ -36,11 +36,12 @@ class Logging {
      *   logfile: The name of a file to write logging output to. If empty, no
      *     output will be written.
      *   max_level: The maximum level of log output to write.
+     *   log_format: The format to use for writing log entries.
      *   to_stderr: Whether to write log output to stderr.
      *   to_syslog: Whether to write log output to syslog.
      */
-    explicit Logging(std::string logfile, level max_level, bool to_stderr,
-                     bool to_syslog);
+    explicit Logging(std::string logfile, level max_level,
+                     std::string log_format, bool to_stderr, bool to_syslog);
 
     bool GetFail() const { return logfile_.fail(); }
 
@@ -66,14 +67,15 @@ class Logging {
 
     std::ofstream logfile_;
     const level max_level_;
+    const std::string log_format_;
     const bool to_stderr_;
     const bool to_syslog_;
 };
 
 Logging::level StringToLevel(std::string level);
 
-bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr,
-                 bool to_syslog);
+bool InitLogging(std::string logfile, Logging::level max_level,
+                 std::string log_format, bool to_stderr, bool to_syslog);
 
 constexpr auto ERROR = Logging::level::ERROR;
 constexpr auto INFO = Logging::level::INFO;

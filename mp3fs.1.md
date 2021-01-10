@@ -73,6 +73,21 @@ OPTIONS
 
 :   Print usage information.
 
+**--log\_format, -olog\_format**=*FORMAT*
+
+:   Specify the format to use for log messages, with the following
+    substitutions:
+
+    %I - thread ID
+
+    %L - log level
+
+    %M - log message
+
+    %T - time, formatted as YYYY-MM-DD HH:MM:SS
+
+    The default is "[%T] tid=%I %L: %M".
+
 **--log\_maxlevel, -olog\_maxlevel**=*LEVEL*
 
 :   Set the maximum level of messages to log, either ERROR, INFO, or DEBUG.

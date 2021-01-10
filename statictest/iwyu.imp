@@ -25,5 +25,6 @@
   { "symbol": ["int64_t", "private", "<stdint.h>", "public"] },
   { "symbol": ["uint64_t", "private", "<stdint.h>", "public"] },
   { "symbol": ["std::unique_lock", "private", "<mutex>", "public"] },
-  { "symbol": ["tolower", "private", "<ctype.h>", "public"] }
+  { "symbol": ["tolower", "private", "<ctype.h>", "public"] },
+  { "symbol": ["std::this_thread::get_id", "private", "<thread>", "public"] }
 ]

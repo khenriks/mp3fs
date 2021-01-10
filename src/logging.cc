@@ -22,20 +22,47 @@
 
 #include <syslog.h>
 
+#include <algorithm>
 #include <cstdarg>
 #include <cstdio>
 #include <ctime>
 #include <iostream>
+#include <thread>
+#include <unordered_map>
 #include <utility>
 
 namespace {
 Logging* logging;
 constexpr size_t kTimeBufferSize = 30;
+
+std::string MultiSubstitute(std::string src,
+                            std::unordered_map<std::string, std::string> subs) {
+    std::string result;
+    for (auto it = src.cbegin(); it != src.cend();) {
+        bool matched = false;
+        for (const auto& kv : subs) {
+            if (std::equal(kv.first.begin(), kv.first.end(), it)) {
+                result.append(kv.second);
+                it += kv.first.length();
+                matched = true;
+                break;
+            }
+        }
+        if (!matched) {
+            result.push_back(*it);
+            ++it;
+        }
+    }
+    return result;
+}
 }  // namespace
 
-Logging::Logging(std::string logfile, level max_level, bool to_stderr,
-                 bool to_syslog)
-    : max_level_(max_level), to_stderr_(to_stderr), to_syslog_(to_syslog) {
+Logging::Logging(std::string logfile, level max_level, std::string log_format,
+                 bool to_stderr, bool to_syslog)
+    : max_level_(max_level),
+      log_format_(std::move(log_format)),
+      to_stderr_(to_stderr),
+      to_syslog_(to_syslog) {
     if (!logfile.empty()) {
         logfile_.open(logfile);
     }
@@ -55,8 +82,15 @@ Logging::Logger::~Logger() {
     time_string.resize(std::strftime(&time_string[0], time_string.size(),
                                      "%F %T", std::localtime(&now)));
 
-    std::string msg =
-        "[" + time_string + "] " + level_name_map_.at(loglevel_) + ": " + str();
+    // Construct string with thread ID
+    std::ostringstream tid_stream;
+    tid_stream << std::this_thread::get_id();
+
+    std::string msg = MultiSubstitute(logging_->log_format_,
+                                      {{"%T", time_string},
+                                       {"%I", tid_stream.str()},
+                                       {"%L", level_name_map_.at(loglevel_)},
+                                       {"%M", str()}});
 
     if (logging_->to_syslog_) {
         syslog(syslog_level_map_.at(loglevel_), "%s", msg.c_str());
@@ -101,12 +135,12 @@ Logging::level StringToLevel(std::string level) {
     return it->second;
 }
 
-bool InitLogging(std::string logfile, Logging::level max_level, bool to_stderr,
-                 bool to_syslog) {
+bool InitLogging(std::string logfile, Logging::level max_level,
+                 std::string log_format, bool to_stderr, bool to_syslog) {
     if (max_level == Logging::level::INVALID) {
         return false;
     }
-    logging = new Logging(logfile, max_level, to_stderr, to_syslog);
+    logging = new Logging(logfile, max_level, log_format, to_stderr, to_syslog);
     return !logging->GetFail();
 }
 

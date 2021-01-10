@@ -30,6 +30,7 @@ extern struct mp3fs_params {
     const char* desttype;
     int gainmode;
     float gainref;
+    const char* log_format;
     const char* log_maxlevel;
     int log_stderr;
     int log_syslog;
