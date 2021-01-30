@@ -296,6 +296,7 @@ int main(int argc, char* argv[]) {
                << "desttype:       " << params.desttype << std::endl
                << "gainmode:       " << params.gainmode << std::endl
                << "gainref:        " << params.gainref << std::endl
+               << "log_format:     " << params.log_format << std::endl
                << "log_maxlevel:   " << params.log_maxlevel << std::endl
                << "log_stderr:     " << params.log_stderr << std::endl
                << "log_syslog:     " << params.log_syslog << std::endl
