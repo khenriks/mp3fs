@@ -2,7 +2,6 @@ FROM debian:buster-slim AS base
 
 FROM base AS build
 
-ARG VERSION=1.0
 ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
