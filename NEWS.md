@@ -1,5 +1,19 @@
 # mp3fs News
 
+## Important changes in 1.1 (2021-01-30)
+
+This contains various bug fixes, mostly.
+
+Fixes/improvements:
+
+  - Recognize upper/mixed case in input filenames
+  - Fix file size handling with and without cache
+  - Various code simplifications/cleanup
+
+New features:
+
+  - Log lines now include thread ID and can be customized.
+
 ## Important changes in 1.0 (2020-05-24)
 
 mp3fs 1.0 is finally here\!
