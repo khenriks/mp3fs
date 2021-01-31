@@ -20,6 +20,9 @@ title: mp3fs(1) manual
 <dt><strong>-d, -odebug</strong></dt>
 <dd><p>Enable debug output. This will result in a large quantity of diagnostic information being printed to stderr as the program runs. This option will normally not be used. It implies <strong>-f</strong>.</p>
 </dd>
+<dt><strong>-f</strong></dt>
+<dd><p>Run in the foreground instead of detaching from the terminal.</p>
+</dd>
 <dt><strong>--gainmode, -ogainmode</strong>=<em>MODE</em></dt>
 <dd><p>Set mode to use for interpreting ReplayGain tags. The allowed values for <em>MODE</em> are:</p>
 <p>0 - Ignore all ReplayGain tags.</p>
@@ -29,11 +32,28 @@ title: mp3fs(1) manual
 <dt><strong>--gainref, -ogainref</strong>=<em>REF</em></dt>
 <dd><p>Set the reference loudness in decibels to adjust ReplayGain tags. ReplayGain software usually defaults to a loudness of 89 dB, but if this is too quiet, a higher value can be set here, causing adjustment of ReplayGain values in tags.</p>
 </dd>
-<dt><strong>-f</strong></dt>
-<dd><p>Run in foreground instead of detaching from the terminal.</p>
-</dd>
 <dt><strong>-h, --help</strong></dt>
 <dd><p>Print usage information.</p>
+</dd>
+<dt><strong>--log_format, -olog_format</strong>=<em>FORMAT</em></dt>
+<dd><p>Specify the format to use for log messages, with the following substitutions:</p>
+<p>%I - thread ID</p>
+<p>%L - log level</p>
+<p>%M - log message</p>
+<p>%T - time, formatted as YYYY-MM-DD HH:MM:SS</p>
+<p>The default is "[%T] tid=%I %L: %M".</p>
+</dd>
+<dt><strong>--log_maxlevel, -olog_maxlevel</strong>=<em>LEVEL</em></dt>
+<dd><p>Set the maximum level of messages to log, either ERROR, INFO, or DEBUG. Defaults to INFO, and forced to DEBUG in debug mode. Note that this does not enable logging; other log flags must be set to specify where to log.</p>
+</dd>
+<dt><strong>--log_stderr, -olog_stderr</strong></dt>
+<dd><p>Output logging messages to stderr. Enabled in debug mode.</p>
+</dd>
+<dt><strong>--log_syslog, -olog_syslog</strong></dt>
+<dd><p>Output logging messages to the system log.</p>
+</dd>
+<dt><strong>--logfile, -ologfile</strong>=<em>FILE</em></dt>
+<dd><p>Set the file to log to. By default, no log file will be written.</p>
 </dd>
 <dt><strong>--quality, -oquality</strong>=<em>QUALITY</em></dt>
 <dd><p>Set quality for encoding, as understood by LAME. The slowest and best quality is 0, while 9 is the fastest and worst quality. The default value is 5, although according to the LAME manual, 2 is recommended.</p>
@@ -41,10 +61,16 @@ title: mp3fs(1) manual
 <dt><strong>-s</strong></dt>
 <dd><p>Force single-threaded operation.</p>
 </dd>
+<dt><strong>--statcachesize, -ostatcachesize</strong>=<em>SIZE</em></dt>
+<dd><p>Set the number of cached stat entries to store. This is needed for reasonable performance when VBR is enabled. Each entry takes 100-200 bytes of memory. Entries are evicted from the cache in least recently used order.</p>
+</dd>
+<dt><strong>--vbr, -ovbr</strong></dt>
+<dd><p>Use variable bit rate encoding. When enabled, the <strong>-b</strong> or <strong>-obitrate</strong> options set the maximum bit rate. If enabled, the <strong>--statcachesize</strong> or <strong>-ostatcachesize</strong> options are strongly recommended.</p>
+</dd>
 <dt><strong>-V, --version</strong></dt>
 <dd><p>Output version information.</p>
 </dd>
 </dl>
 <h2 id="copyright">COPYRIGHT</h2>
 <p>Copyright (C) 2006-2008 David Collett and 2008-2013 K. Henriksson. This is free software: you are free to change and redistribute it under the terms of the GNU General Public License (GPL) version 3 or later.</p>
-<p>This manual is copyright (C) 2010-2011 K. Henriksson and may be distributed under the GNU Free Documentation License (GFDL) 1.3 or later with no invariant sections, or alternatively under the GNU General Public License (GPL) version 3 or later.</p>
+<p>This manual is copyright (C) 2010-2020 K. Henriksson and may be distributed under the GNU Free Documentation License (GFDL) 1.3 or later with no invariant sections, or alternatively under the GNU General Public License (GPL) version 3 or later.</p>
