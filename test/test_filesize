@@ -4,7 +4,7 @@
 
 # Ensure log contains file sizes, predicted and actual
 cat "$DIRNAME/obama.mp3" > /dev/null
-cat "$DIRNAME/raven.mp3" > /dev/null
+cat "$DIRNAME/ra[ven].mp3" > /dev/null
 
 check_equal "$(stat -c %s "$DIRNAME/obama.mp3")" 106781
-check_equal "$(stat -c %s "$DIRNAME/raven.mp3")" 346594
+check_equal "$(stat -c %s "$DIRNAME/ra[ven].mp3")" 346594

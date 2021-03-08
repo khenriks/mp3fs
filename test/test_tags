@@ -24,7 +24,7 @@ TRCK=1/1
 TSSE=MP3FS
 END
 
-cmp -s - <(get_metadata "$DIRNAME/raven.mp3") <<END
+cmp -s - <(get_metadata "$DIRNAME/ra[ven].mp3") <<END
 TALB=The Raven
 TCON=Speech
 TDRC=2007

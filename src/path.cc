@@ -20,35 +20,14 @@
 
 #include "path.h"
 
-#include <glob.h>
+#include <dirent.h>
 
-#include <algorithm>
 #include <cstddef>
-#include <iterator>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "codecs/coders.h"
 #include "mp3fs.h"
-
-namespace {
-
-// Simple C++ wrapper for glob.
-std::vector<std::string> glob_match(const std::string& pattern) {
-    std::vector<std::string> result;
-
-    glob_t globbuf;
-    if (glob(pattern.c_str(), 0, nullptr, &globbuf) == 0) {
-        std::copy(globbuf.gl_pathv, globbuf.gl_pathv + globbuf.gl_pathc,
-                  std::back_inserter(result));
-    }
-
-    globfree(&globbuf);
-    return result;
-}
-
-}  // namespace
 
 std::string Path::NormalSource() const {
     return std::string(params.basepath) + relative_path_;
@@ -57,17 +36,24 @@ std::string Path::NormalSource() const {
 std::string Path::TranscodeSource() const {
     const std::string source = NormalSource();
     const size_t dot_idx = source.rfind('.');
+    const size_t slash_idx = source.rfind('/');
+    const std::string source_dir = source.substr(0, slash_idx);
 
     if (dot_idx != std::string::npos &&
         source.substr(dot_idx + 1) == params.desttype) {
-        const std::string source_base = source.substr(0, dot_idx);
-        for (const std::string& candidate : glob_match(source_base + ".*")) {
-            const std::string candidate_ext =
-                candidate.substr(candidate.rfind('.') + 1);
-
-            if (Decoder::CreateDecoder(candidate_ext) != nullptr) {
-                /* This is a valid transcode source file. */
-                return candidate;
+        const std::string source_base =
+            source.substr(slash_idx + 1, dot_idx - slash_idx);
+        std::unique_ptr<DIR, decltype(&closedir)> dp(
+            opendir(source_dir.c_str()), closedir);
+        while (struct dirent* de = readdir(dp.get())) {
+            std::string de_name = de->d_name;
+            if (de_name.find(source_base) == 0) {
+                const std::string de_ext =
+                    de_name.substr(de_name.rfind('.') + 1);
+                if (Decoder::CreateDecoder(de_ext) != nullptr) {
+                    /* This is a valid transcode source file. */
+                    return source_dir + "/" + de_name;
+                }
             }
         }
     }
