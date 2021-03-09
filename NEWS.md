@@ -1,5 +1,10 @@
 # mp3fs News
 
+## Important changes in 1.1.1 (2021-03-08)
+
+The only change in this release is a fix for an issue with filenames containing
+square brackets.
+
 ## Important changes in 1.1 (2021-01-30)
 
 This contains various bug fixes, mostly.
