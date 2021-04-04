@@ -32,6 +32,10 @@ following entry in `/etc/fstab`:
 At this point the files `/mnt/music/**.flac` and `/mnt/music/**.ogg` will show
 up as `/mnt/mp3/**.mp3`.
 
+**Tip:** If your mp3fs mount fails because the underlying filesystem hasn't
+been mounted yet, try adding the `x-systemd.requires-mounts-for=/mnt/music`
+mount option, where `/mnt/music` would be the location of the underlying mount.
+
 ## How it Works
 
 When a file is opened, the decoder and encoder are initialised and the file
