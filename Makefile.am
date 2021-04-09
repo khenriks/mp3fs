@@ -44,14 +44,12 @@ faststaticcheck:
 	@statictest/checkall fast
 
 # The special logic for mp3fs.1.md is because it needs certain features for
-# manpage output. The weird sed logic is there to preserve '.\ ' sequences,
-# and the check is made automatically passing because the headers aren't
-# preserved properly.
+# manpage output. The weird sed logic is there to preserve '.\ ' sequences.
 mdcheck:
 	@set -e ; for f in *.md */*.md ; do \
 	    echo "Checking format for $$f." ; \
 	    if [ "$$f" = mp3fs.1.md ] ; then \
-	    	sed 's/\.\\/!./g' "$$f" | pandoc -d .pandocfmt.yaml -f markdown -t markdown | sed 's/!\./.\\/g' | diff -u $$f - || : ; \
+	    	sed 's/\.\\/!./g' "$$f" | pandoc -d .pandocfmt.yaml -f markdown -t markdown | sed 's/!\./.\\/g' | diff -u $$f - ; \
 	    else \
 	    	pandoc -d .pandocfmt.yaml "$$f" | diff -u "$$f" - ; \
 	    fi ; \

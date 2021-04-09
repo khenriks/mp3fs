@@ -1,29 +1,25 @@
-% MP3FS(1) | User Commands
 ---
 adjusting: l
 hyphenate: false
-...
+title: MP3FS(1) \| User Commands
+---
 
-NAME
-====
+# NAME
 
 mp3fs - mounts and transcodes FLACs and OGGs to MP3s on the fly
 
-SYNOPSIS
-========
+# SYNOPSIS
 
-**mp3fs** \[*OPTION*\]...\ *IN\_DIR* *OUT\_DIR*
+**mp3fs** \[*OPTION*\]...\ *IN_DIR* *OUT_DIR*
 
-DESCRIPTION
-===========
+# DESCRIPTION
 
-The mp3fs(1) command will mount the directory *IN\_DIR* on *OUT\_DIR*.
-Thereafter, accessing *OUT\_DIR* will show the contents of *IN\_DIR*, with all
+The mp3fs(1) command will mount the directory *IN_DIR* on *OUT_DIR*.
+Thereafter, accessing *OUT_DIR* will show the contents of *IN_DIR*, with all
 FLAC/Ogg Vorbis files transparently renamed and transcoded to MP3 format upon
 access.
 
-OPTIONS
-=======
+# OPTIONS
 
 **-b, -obitrate**=*RATE*
 
@@ -73,7 +69,7 @@ OPTIONS
 
 :   Print usage information.
 
-**--log\_format, -olog\_format**=*FORMAT*
+**--log_format, -olog_format**=*FORMAT*
 
 :   Specify the format to use for log messages, with the following
     substitutions:
@@ -86,19 +82,19 @@ OPTIONS
 
     %T - time, formatted as YYYY-MM-DD HH:MM:SS
 
-    The default is "[%T] tid=%I %L: %M".
+    The default is "\[%T\] tid=%I %L: %M".
 
-**--log\_maxlevel, -olog\_maxlevel**=*LEVEL*
+**--log_maxlevel, -olog_maxlevel**=*LEVEL*
 
 :   Set the maximum level of messages to log, either ERROR, INFO, or DEBUG.
     Defaults to INFO, and forced to DEBUG in debug mode. Note that this does
     not enable logging; other log flags must be set to specify where to log.
 
-**--log\_stderr, -olog\_stderr**
+**--log_stderr, -olog_stderr**
 
 :   Output logging messages to stderr. Enabled in debug mode.
 
-**--log\_syslog, -olog\_syslog**
+**--log_syslog, -olog_syslog**
 
 :   Output logging messages to the system log.
 
@@ -132,8 +128,7 @@ OPTIONS
 
 :   Output version information.
 
-COPYRIGHT
-=========
+# COPYRIGHT
 
 Copyright (C) 2006-2008 David Collett and 2008-2013 K.\ Henriksson. This is
 free software: you are free to change and redistribute it under the terms of
