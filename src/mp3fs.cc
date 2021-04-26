@@ -56,7 +56,7 @@ constexpr int kQualityMax = 9;
 enum { KEY_HELP, KEY_VERSION, KEY_KEEP_OPT };
 
 #define MP3FS_OPT(t, p, v) \
-    { t, offsetof(struct mp3fs_params, p), v }
+    { t, offsetof(mp3fs_params, p), v }
 
 // Redefine FUSE_OPT_KEY to avoid warning.
 #undef FUSE_OPT_KEY
@@ -201,7 +201,7 @@ int mp3fs_opt_proc(void* /*unused*/, const char* arg, int key,
 
 }  // namespace
 
-struct mp3fs_params params = {
+mp3fs_params params = {
     .basepath = nullptr,
     .bitrate = kDefaultBitrate,
     .debug = 0,
