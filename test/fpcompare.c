@@ -2,8 +2,6 @@
 #include <sox.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 #define NUM_SAMPLES 2048
 
@@ -47,60 +45,22 @@ error:
 }
 
 int main(int argc, char** argv) {
-    int num_file_names = 0;
     int raw_fingerprint_size[2];
     uint32_t* raw_fingerprints[2] = {0};
-    char* file_names[2];
     ChromaprintContext* chromaprint_ctx;
-    int algo = CHROMAPRINT_ALGORITHM_DEFAULT, num_failed = 0;
+    int num_failed = 0;
 
-    for (int i = 1; i < argc; i++) {
-        char* arg = argv[i];
-        if (!strcmp(arg, "-algo") && i + 1 < argc) {
-            const char* v = argv[++i];
-            if (!strcmp(v, "test1")) {
-                algo = CHROMAPRINT_ALGORITHM_TEST1;
-            } else if (!strcmp(v, "test2")) {
-                algo = CHROMAPRINT_ALGORITHM_TEST2;
-            } else if (!strcmp(v, "test3")) {
-                algo = CHROMAPRINT_ALGORITHM_TEST3;
-            } else if (!strcmp(v, "test4")) {
-                algo = CHROMAPRINT_ALGORITHM_TEST4;
-            } else {
-                fprintf(stderr,
-                        "WARNING: unknown algorithm, using the default\n");
-            }
-        } else if (!strcmp(arg, "-set") && i + 1 < argc) {
-            i += 1;
-        } else if (num_file_names < 2) {
-            file_names[num_file_names++] = argv[i];
-        }
-    }
-
-    if (num_file_names != 2) {
-        printf("usage: %s [OPTIONS] FILE1 FILE2\n\n", argv[0]);
+    if (argc != 3) {
+        printf("usage: %s FILE1 FILE2\n\n", argv[0]);
         return 2;
     }
 
     sox_format_init();
 
-    chromaprint_ctx = chromaprint_new(algo);
+    chromaprint_ctx = chromaprint_new(CHROMAPRINT_ALGORITHM_DEFAULT);
 
-    for (int i = 1; i < argc; i++) {
-        char* arg = argv[i];
-        if (!strcmp(arg, "-set") && i + 1 < argc) {
-            char* name = argv[++i];
-            char* value = strchr(name, '=');
-            if (value) {
-                *value++ = '\0';
-                chromaprint_set_option(chromaprint_ctx, name,
-                                       (int)strtol(value, NULL, 0));
-            }
-        }
-    }
-
-    for (int i = 0; i < num_file_names; i++) {
-        char* file_name = file_names[i];
+    for (int i = 0; i < 2; i++) {
+        char* file_name = argv[i + 1];
         if (!decode_audio_file(chromaprint_ctx, file_name)) {
             fprintf(stderr,
                     "ERROR: unable to calculate fingerprint for file %s, "
@@ -141,12 +101,8 @@ int main(int argc, char** argv) {
         printf("1.0\n");
     }
 
-    if (raw_fingerprints[0]) {
-        chromaprint_dealloc(raw_fingerprints[0]);
-    }
-    if (raw_fingerprints[1]) {
-        chromaprint_dealloc(raw_fingerprints[1]);
-    }
+    chromaprint_dealloc(raw_fingerprints[0]);
+    chromaprint_dealloc(raw_fingerprints[1]);
 
     chromaprint_free(chromaprint_ctx);
     sox_format_quit();
