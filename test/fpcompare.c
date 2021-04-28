@@ -88,7 +88,7 @@ int main(int argc, char** argv) {
         int i;
         for (i = 0; i < raw_fingerprint_size[0] && i < raw_fingerprint_size[1];
              i++) {
-            int32_t thisdiff = raw_fingerprints[0][i] ^ raw_fingerprints[1][i];
+            uint32_t thisdiff = raw_fingerprints[0][i] ^ raw_fingerprints[1][i];
             setbits += __builtin_popcount(thisdiff);
         }
         const int int32_bits = 32;

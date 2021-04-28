@@ -68,13 +68,14 @@ class Encoder {
     virtual void set_text_tag(int key, const char* value) = 0;
     virtual void set_picture_tag(const char* mime_type, int type,
                                  const char* description, const uint8_t* data,
-                                 int data_length) = 0;
+                                 unsigned int data_length) = 0;
     virtual void set_gain_db(double dbgain) = 0;
     void set_gain(double gainref, double album_gain, double track_gain);
     virtual int render_tag(size_t file_size) = 0;
     virtual size_t calculate_size() const = 0;
-    virtual int encode_pcm_data(const int32_t* const data[], int numsamples,
-                                int sample_size) = 0;
+    virtual int encode_pcm_data(const int32_t* const data[],
+                                unsigned int numsamples,
+                                unsigned int sample_size) = 0;
     virtual int encode_finish() = 0;
 
     virtual bool no_partial_encode() { return true; }

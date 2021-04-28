@@ -34,7 +34,7 @@ class Picture {
 
     bool decode();
 
-    int get_type() const { return type; }
+    int get_type() const { return static_cast<int>(type); }
     const char* get_mime_type() const { return mime_type.c_str(); }
     const char* get_description() const { return description.c_str(); }
     int get_data_length() const {

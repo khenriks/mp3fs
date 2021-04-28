@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <cstdarg>
+#include <cstddef>
 #include <cstdio>
 #include <ctime>
 #include <iostream>
@@ -43,7 +44,7 @@ std::string MultiSubstitute(std::string src,
         for (const auto& kv : subs) {
             if (std::equal(kv.first.begin(), kv.first.end(), it)) {
                 result.append(kv.second);
-                it += kv.first.length();
+                it += static_cast<ptrdiff_t>(kv.first.length());
                 matched = true;
                 break;
             }

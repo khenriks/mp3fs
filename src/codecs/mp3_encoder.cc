@@ -208,7 +208,7 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
 /* Set an ID3 picture ("APIC") tag. */
 void Mp3Encoder::set_picture_tag(const char* mime_type, int type,
                                  const char* description, const uint8_t* data,
-                                 int data_length) {
+                                 unsigned int data_length) {
     struct id3_frame* frame = id3_frame_new("APIC");
     id3_tag_attachframe(id3tag, frame);
 
@@ -269,7 +269,8 @@ int Mp3Encoder::render_tag(size_t file_size) {
     if (file_size == 0) {
         file_size = calculate_size();
     }
-    buffer_->write_end(tag1, file_size - id3v1_tag_length);
+    buffer_->write_end(
+        tag1, static_cast<std::ptrdiff_t>(file_size - id3v1_tag_length));
 
     return 0;
 }
@@ -314,8 +315,9 @@ size_t Mp3Encoder::calculate_size() const {
  * -2**(sample_size-1) to 2**(sample_size-1)-1. This is not coincidentally
  * the format used by the FLAC library.
  */
-int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
-                                int sample_size) {
+int Mp3Encoder::encode_pcm_data(const int32_t* const data[],
+                                unsigned int numsamples,
+                                unsigned int sample_size) {
     /*
      * We need to properly resample input data to a format LAME wants. LAME
      * requires samples in a C89 sized type, left aligned (i.e. scaled to
@@ -325,7 +327,7 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
      * first to avoid integer overflow.
      */
     std::vector<int> lbuf(numsamples), rbuf(numsamples);
-    for (int i = 0; i < numsamples; ++i) {
+    for (unsigned int i = 0; i < numsamples; ++i) {
         lbuf[i] = data[0][i] << (sizeof(int) * kBitsPerByte - sample_size);
         /* ignore rbuf for mono data */
         if (lame_get_num_channels(lame_encoder) > 1) {
@@ -336,9 +338,9 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[], int numsamples,
     // Buffer size formula recommended by LAME docs: 1.25 * samples + 7200
     std::vector<uint8_t> vbuffer(5 * numsamples / 4 + kBufferSlop);  // NOLINT
 
-    int len = lame_encode_buffer_int(lame_encoder, &lbuf[0], &rbuf[0],
-                                     numsamples, vbuffer.data(),
-                                     static_cast<int>(vbuffer.size()));
+    int len = lame_encode_buffer_int(
+        lame_encoder, &lbuf[0], &rbuf[0], static_cast<int>(numsamples),
+        vbuffer.data(), static_cast<int>(vbuffer.size()));
     if (len < 0) {
         return -1;
     }
@@ -382,7 +384,7 @@ int Mp3Encoder::encode_finish() {
         if (vbr_tag_size > MAX_VBR_FRAME_SIZE) {
             return -1;
         }
-        buffer_->write_to(tail, id3size);
+        buffer_->write_to(tail, static_cast<std::ptrdiff_t>(id3size));
     }
 
     return len;

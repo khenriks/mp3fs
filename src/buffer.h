@@ -23,7 +23,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <ios>
 #include <vector>
 
 class Buffer {
@@ -45,7 +44,7 @@ class Buffer {
      * Write data to a specified position in the Buffer. Results in undefined
      * behavior if this section of the Buffer had not previously been filled in.
      */
-    void write_to(const std::vector<uint8_t>& data, std::streamoff offset);
+    void write_to(const std::vector<uint8_t>& data, std::ptrdiff_t offset);
 
     /**
      * Write data that will be placed at the end of the Buffer. This overwrites
@@ -54,7 +53,7 @@ class Buffer {
      * to write an empty buffer with an offset; doing so sets the total size of
      * the Buffer when there is no trailing data.
      */
-    void write_end(const std::vector<uint8_t>& data, std::streamoff offset);
+    void write_end(const std::vector<uint8_t>& data, std::ptrdiff_t offset);
 
     /**
      * Give the size of data already written in the main segment.
@@ -72,7 +71,7 @@ class Buffer {
      *
      * If the given range is not valid, an error will be logged.
      */
-    void copy_into(uint8_t* out_data, std::streamoff offset, size_t size) const;
+    void copy_into(uint8_t* out_data, std::ptrdiff_t offset, size_t size) const;
 
     /**
      * Return whether the given number of bytes at the given offset are valid
@@ -82,13 +81,13 @@ class Buffer {
      * end_data_ (subject to end_offset_), or overlaps the two and
      * main_data_.size() == end_offset_.
      */
-    bool valid_bytes(std::streamoff offset, size_t size) const;
+    bool valid_bytes(std::ptrdiff_t offset, size_t size) const;
 
     /**
      * Return the maximum number of bytes that can be read from offset. This is
      * the maximum size such that valid_bytes(offset, size) == true.
      */
-    size_t max_valid_bytes(std::streamoff offset) const;
+    size_t max_valid_bytes(std::ptrdiff_t offset) const;
 
     /**
      * Move end of main segment to start of end segment.
@@ -98,12 +97,14 @@ class Buffer {
     /**
      * Move end segment to end of main segment.
      */
-    void truncate() { end_offset_ = main_data_.size(); }
+    void truncate() {
+        end_offset_ = static_cast<std::ptrdiff_t>(main_data_.size());
+    }
 
  private:
     std::vector<uint8_t> main_data_;
     std::vector<uint8_t> end_data_;
-    std::streamoff end_offset_ = 0;
+    std::ptrdiff_t end_offset_ = 0;
 };
 
 #endif  // MP3FS_BUFFER_H_

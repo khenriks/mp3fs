@@ -29,24 +29,24 @@ void Buffer::write(const std::vector<uint8_t>& data, bool extend_buffer) {
     main_data_.insert(main_data_.end(), data.begin(), data.end());
     if (main_data_.size() > static_cast<size_t>(end_offset_)) {
         if (extend_buffer) {
-            end_offset_ = main_data_.size();
+            end_offset_ = static_cast<std::ptrdiff_t>(main_data_.size());
         } else {
             main_data_.resize(end_offset_);
         }
     }
 }
 
-void Buffer::write_to(const std::vector<uint8_t>& data, std::streamoff offset) {
+void Buffer::write_to(const std::vector<uint8_t>& data, std::ptrdiff_t offset) {
     std::copy(data.begin(), data.end(), main_data_.begin() + offset);
 }
 
 void Buffer::write_end(const std::vector<uint8_t>& data,
-                       std::streamoff offset) {
+                       std::ptrdiff_t offset) {
     end_data_ = data;
     end_offset_ = offset;
 }
 
-void Buffer::copy_into(uint8_t* out_data, std::streamoff offset,
+void Buffer::copy_into(uint8_t* out_data, std::ptrdiff_t offset,
                        size_t size) const {
     if (!valid_bytes(offset, size)) {
         Log(ERROR) << "Invalid offset=" << offset << " size=" << size
@@ -60,19 +60,19 @@ void Buffer::copy_into(uint8_t* out_data, std::streamoff offset,
     } else {
         size_t start_size = main_data_.size() - offset;
         uint8_t* next =
-            std::copy_n(main_data_.end() - start_size, start_size, out_data);
+            std::copy_n(main_data_.begin() + offset, start_size, out_data);
         std::copy_n(end_data_.begin(), size - start_size, next);
     }
 }
 
-bool Buffer::valid_bytes(std::streamoff offset, size_t size) const {
+bool Buffer::valid_bytes(std::ptrdiff_t offset, size_t size) const {
     size_t end = offset + size;
     return offset >= 0 && end <= this->size() &&
            (end <= main_data_.size() || offset >= end_offset_ ||
             main_data_.size() == static_cast<size_t>(end_offset_));
 }
 
-size_t Buffer::max_valid_bytes(std::streamoff offset) const {
+size_t Buffer::max_valid_bytes(std::ptrdiff_t offset) const {
     if (static_cast<size_t>(offset) > size()) {
         return 0;
     }

@@ -97,9 +97,9 @@ int FlacDecoder::process_metadata(Encoder* encoder) {
         return -1;
     }
 
-    if (encoder->set_stream_params(info.get_total_samples(),
-                                   info.get_sample_rate(),
-                                   info.get_channels()) == -1) {
+    if (encoder->set_stream_params(
+            info.get_total_samples(), static_cast<int>(info.get_sample_rate()),
+            static_cast<int>(info.get_channels())) == -1) {
         return -1;
     }
 

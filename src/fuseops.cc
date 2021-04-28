@@ -140,7 +140,7 @@ int mp3fs_getattr(const char* p, struct stat* stbuf) {
             return -errno;
         }
 
-        stbuf->st_size = trans.get_size();
+        stbuf->st_size = static_cast<off_t>(trans.get_size());
         stbuf->st_blocks =
             (stbuf->st_size + kBytesPerBlock - 1) / kBytesPerBlock;
     }

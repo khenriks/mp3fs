@@ -44,12 +44,12 @@ class Mp3Encoder : public Encoder {
     void set_text_tag(int key, const char* value) override;
     void set_picture_tag(const char* mime_type, int type,
                          const char* description, const uint8_t* data,
-                         int data_length) override;
+                         unsigned int data_length) override;
     void set_gain_db(double dbgain) override;
     int render_tag(size_t file_size) override;
     size_t calculate_size() const override;
-    int encode_pcm_data(const int32_t* const data[], int numsamples,
-                        int sample_size) override;
+    int encode_pcm_data(const int32_t* const data[], unsigned int numsamples,
+                        unsigned int sample_size) override;
     int encode_finish() override;
 
     /*
