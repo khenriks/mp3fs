@@ -34,7 +34,7 @@ class Buffer;
 
 class Mp3Encoder : public Encoder {
  public:
-    static const size_t id3v1_tag_length = 128;
+    static const size_t kId3v1TagLength = 128;
 
     explicit Mp3Encoder(Buffer* buffer);
     ~Mp3Encoder() override;
@@ -60,12 +60,12 @@ class Mp3Encoder : public Encoder {
     bool no_partial_encode() override { return params.vbr != 0; }
 
  private:
-    lame_t lame_encoder;
-    struct id3_tag* id3tag;
-    size_t id3size = 0;
+    lame_t lame_encoder_;
+    struct id3_tag* id3tag_;
+    size_t id3size_ = 0;
     Buffer* buffer_;
     using meta_map_t = std::map<int, const char*>;
-    static const meta_map_t metatag_map;
+    static const meta_map_t kMetatagMap;
 };
 
 #endif  // MP3FS_CODECS_MP3_ENCODER_H_

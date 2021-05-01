@@ -67,7 +67,7 @@ int mp3fs_readlink(const char* p, char* buf, size_t size) {
     Path path = Path::FromMp3fsRelative(p);
     Log(INFO) << "readlink " << path;
 
-    ssize_t len = readlink(path.TranscodeSource().c_str(), buf, size - 2);
+    ssize_t len = readlink(path.transcode_source().c_str(), buf, size - 2);
     if (len == -1) {
         return -errno;
     }
@@ -90,14 +90,14 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-attributes"
     std::unique_ptr<DIR, decltype(&closedir)> dp(
-        opendir(path.NormalSource().c_str()), closedir);
+        opendir(path.normal_source().c_str()), closedir);
 #pragma GCC diagnostic pop
     if (!dp) {
         return -errno;
     }
 
     while (struct dirent* de = readdir(dp.get())) {
-        const std::string origfile = path.NormalSource() + "/" + de->d_name;
+        const std::string origfile = path.normal_source() + "/" + de->d_name;
 
         struct stat st = {};
         if (lstat(origfile.c_str(), &st) == -1) {
@@ -123,11 +123,11 @@ int mp3fs_getattr(const char* p, struct stat* stbuf) {
     Log(INFO) << "getattr " << path;
 
     /* pass-through for regular files */
-    if (lstat(path.NormalSource().c_str(), stbuf) == 0) {
+    if (lstat(path.normal_source().c_str(), stbuf) == 0) {
         return 0;
     }
 
-    if (lstat(path.TranscodeSource().c_str(), stbuf) == -1) {
+    if (lstat(path.transcode_source().c_str(), stbuf) == -1) {
         return -errno;
     }
 
@@ -135,7 +135,7 @@ int mp3fs_getattr(const char* p, struct stat* stbuf) {
      * Get size for resulting mp3 from regular file, otherwise it's a
      * symbolic link. */
     if (S_ISREG(stbuf->st_mode)) {
-        Transcoder trans(path.TranscodeSource());
+        Transcoder trans(path.transcode_source());
         if (!trans.open()) {
             return -errno;
         }
@@ -152,7 +152,7 @@ int mp3fs_open(const char* p, struct fuse_file_info* fi) {
     Path path = Path::FromMp3fsRelative(p);
     Log(INFO) << "open " << path;
 
-    int fd = open(path.NormalSource().c_str(), fi->flags);
+    int fd = open(path.normal_source().c_str(), fi->flags);
 
     if (fd != -1) {  // File exists and was successfully opened.
         fi->fh = reinterpret_cast<uint64_t>(new FileReader(fd));
@@ -163,7 +163,7 @@ int mp3fs_open(const char* p, struct fuse_file_info* fi) {
     }
 
     // File does not exist; try again after translating path.
-    std::unique_ptr<Transcoder> trans(new Transcoder(path.TranscodeSource()));
+    std::unique_ptr<Transcoder> trans(new Transcoder(path.transcode_source()));
     if (!trans->open()) {
         return -errno;
     }
@@ -199,11 +199,11 @@ int mp3fs_statfs(const char* p, struct statvfs* stbuf) {
     Log(INFO) << "statfs " << path;
 
     /* pass-through for regular files */
-    if (statvfs(path.NormalSource().c_str(), stbuf) == 0) {
+    if (statvfs(path.normal_source().c_str(), stbuf) == 0) {
         return 0;
     }
 
-    if (statvfs(path.TranscodeSource().c_str(), stbuf) == 0) {
+    if (statvfs(path.transcode_source().c_str(), stbuf) == 0) {
         return 0;
     }
 

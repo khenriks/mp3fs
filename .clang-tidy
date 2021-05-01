@@ -7,4 +7,42 @@ Checks: >-
   modernize-*,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays,
   hicpp-member-init,hicpp-multiway-paths-covered
 WarningsAsErrors: '*'
-...
+CheckOptions:
+  - key:    readability-identifier-naming.ClassCase
+    value:  CamelCase
+  - key:    readability-identifier-naming.ClassMethodCase
+    value:  CamelCase
+  - key:    readability-identifier-naming.EnumCase
+    value:  CamelCase
+  - key:    readability-identifier-naming.EnumConstantCase
+    value:  UPPER_CASE
+  - key:    readability-identifier-naming.FunctionCase
+    value:  lower_case
+  - key:    readability-identifier-naming.GlobalConstantCase
+    value:  CamelCase
+  - key:    readability-identifier-naming.GlobalConstantPrefix
+    value:  k
+  - key:    readability-identifier-naming.StaticConstantCase
+    value:  CamelCase
+  - key:    readability-identifier-naming.StaticConstantPrefix
+    value:  k
+  - key:    readability-identifier-naming.MacroDefinitionCase
+    value:  UPPER_CASE
+  - key:    readability-identifier-naming.MacroDefinitionIgnoredRegexp
+    value:  MP3FS_[A-Z0-9_]+_
+  - key:    readability-identifier-naming.MemberCase
+    value:  lower_case
+  - key:    readability-identifier-naming.MethodCase
+    value:  lower_case
+  - key:    readability-identifier-naming.NamespaceCase
+    value:  lower_case
+  - key:    readability-identifier-naming.ParameterCase
+    value:  lower_case
+  - key:    readability-identifier-naming.PrivateMemberSuffix
+    value:  _
+  - key:    readability-identifier-naming.TypeAliasCase
+    value:  lower_case
+  - key:    readability-identifier-naming.TypeAliasSuffix
+    value:  _t
+  - key:    readability-identifier-naming.VariableCase
+    value:  lower_case

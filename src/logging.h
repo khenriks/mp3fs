@@ -29,7 +29,7 @@
 
 class Logging {
  public:
-    enum class level { INVALID = 0, ERROR = 1, INFO = 2, DEBUG = 3 };
+    enum class Level { INVALID = 0, ERROR = 1, INFO = 2, DEBUG = 3 };
 
     /*
      * Arguments:
@@ -40,48 +40,51 @@ class Logging {
      *   to_stderr: Whether to write log output to stderr.
      *   to_syslog: Whether to write log output to syslog.
      */
-    explicit Logging(std::string logfile, level max_level,
+    explicit Logging(std::string logfile, Level max_level,
                      std::string log_format, bool to_stderr, bool to_syslog);
 
-    bool GetFail() const { return logfile_.fail(); }
+    bool get_fail() const { return logfile_.fail(); }
 
  private:
     class Logger : public std::ostringstream {
      public:
-        Logger(level loglevel, Logging* logging)
+        Logger(Level loglevel, Logging* logging)
             : loglevel_(loglevel), logging_(logging) {}
         Logger() = default;
         ~Logger() override;
 
      private:
-        const level loglevel_ = level::DEBUG;
+        const Level loglevel_ = Level::DEBUG;
 
         Logging* logging_ = nullptr;
 
-        static const std::map<level, int> syslog_level_map_;
-        static const std::map<level, std::string> level_name_map_;
+        static const std::map<Level, int> kSyslogLevelMap;
+        static const std::map<Level, std::string> kLevelNameMap;
     };
 
-    friend Logger Log(level lev);
+    friend Logger Log(Level lev);  // NOLINT(readability-identifier-naming)
     friend Logger;
 
     std::ofstream logfile_;
-    const level max_level_;
+    const Level max_level_;
     const std::string log_format_;
     const bool to_stderr_;
     const bool to_syslog_;
 };
 
-Logging::level StringToLevel(std::string level);
+Logging::Level string_to_level(std::string level);
 
-bool InitLogging(std::string logfile, Logging::level max_level,
-                 std::string log_format, bool to_stderr, bool to_syslog);
+bool init_logging(std::string logfile, Logging::Level max_level,
+                  std::string log_format, bool to_stderr, bool to_syslog);
 
-constexpr auto ERROR = Logging::level::ERROR;
-constexpr auto INFO = Logging::level::INFO;
-constexpr auto DEBUG = Logging::level::DEBUG;
+// NOLINTNEXTLINE(readability-identifier-naming)
+constexpr auto ERROR = Logging::Level::ERROR;
+// NOLINTNEXTLINE(readability-identifier-naming)
+constexpr auto INFO = Logging::Level::INFO;
+// NOLINTNEXTLINE(readability-identifier-naming)
+constexpr auto DEBUG = Logging::Level::DEBUG;
 
-void log_with_level(Logging::level level, const char* prefix,
+void log_with_level(Logging::Level level, const char* prefix,
                     const char* format, va_list ap);
 
 #endif  // MP3FS_LOGGING_H_

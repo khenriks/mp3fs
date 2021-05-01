@@ -51,15 +51,15 @@ constexpr double kDefaultGain = 89.0;
 }
 
 void Encoder::set_gain(double gainref, double album_gain, double track_gain) {
-    if (gainref == invalid_db) {
+    if (gainref == kInvalidDb) {
         gainref = kDefaultGain;
     }
 
-    double dbgain = invalid_db;
-    if (params.gainmode == 1 && album_gain != invalid_db) {
+    double dbgain = kInvalidDb;
+    if (params.gainmode == 1 && album_gain != kInvalidDb) {
         dbgain = album_gain;
     } else if ((params.gainmode == 1 || params.gainmode == 2) &&
-               track_gain != invalid_db) {
+               track_gain != kInvalidDb) {
         dbgain = track_gain;
     }
 
@@ -68,7 +68,7 @@ void Encoder::set_gain(double gainref, double album_gain, double track_gain) {
      * value for dbgain is set in the above if statements according to
      * the value of gainmode. Obey the gainref option here.
      */
-    if (dbgain != invalid_db) {
+    if (dbgain != kInvalidDb) {
         set_gain_db(params.gainref - gainref + dbgain);
     }
 }

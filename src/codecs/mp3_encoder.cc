@@ -67,28 +67,28 @@ void lame_debug(const char* fmt, va_list list) {
  * of memory, these routines will fail silently.
  */
 Mp3Encoder::Mp3Encoder(Buffer* buffer) : buffer_(buffer) {
-    id3tag = id3_tag_new();
+    id3tag_ = id3_tag_new();
 
     Log(DEBUG) << "LAME ready to initialize.";
 
-    lame_encoder = lame_init();
+    lame_encoder_ = lame_init();
 
     Mp3Encoder::set_text_tag(METATAG_ENCODER, PACKAGE_NAME);
 
     /* Set lame parameters. */
     if (params.vbr != 0) {
-        lame_set_VBR(lame_encoder, vbr_mt);
-        lame_set_VBR_q(lame_encoder, params.quality);
-        lame_set_VBR_max_bitrate_kbps(lame_encoder, params.bitrate);
-        lame_set_bWriteVbrTag(lame_encoder, 1);
+        lame_set_VBR(lame_encoder_, vbr_mt);
+        lame_set_VBR_q(lame_encoder_, params.quality);
+        lame_set_VBR_max_bitrate_kbps(lame_encoder_, params.bitrate);
+        lame_set_bWriteVbrTag(lame_encoder_, 1);
     } else {
-        lame_set_quality(lame_encoder, params.quality);
-        lame_set_brate(lame_encoder, params.bitrate);
-        lame_set_bWriteVbrTag(lame_encoder, 0);
+        lame_set_quality(lame_encoder_, params.quality);
+        lame_set_brate(lame_encoder_, params.bitrate);
+        lame_set_bWriteVbrTag(lame_encoder_, 0);
     }
-    lame_set_errorf(lame_encoder, &lame_error);
-    lame_set_msgf(lame_encoder, &lame_msg);
-    lame_set_debugf(lame_encoder, &lame_debug);
+    lame_set_errorf(lame_encoder_, &lame_error);
+    lame_set_msgf(lame_encoder_, &lame_msg);
+    lame_set_debugf(lame_encoder_, &lame_debug);
 }
 
 /*
@@ -96,10 +96,10 @@ Mp3Encoder::Mp3Encoder(Buffer* buffer) : buffer_(buffer) {
  * so we have to check ourselves to avoid this case.
  */
 Mp3Encoder::~Mp3Encoder() {
-    if (id3tag != nullptr) {
-        id3_tag_delete(id3tag);
+    if (id3tag_ != nullptr) {
+        id3_tag_delete(id3tag_);
     }
-    lame_close(lame_encoder);
+    lame_close(lame_encoder_);
 }
 
 /*
@@ -109,14 +109,14 @@ Mp3Encoder::~Mp3Encoder() {
  */
 int Mp3Encoder::set_stream_params(uint64_t num_samples, int sample_rate,
                                   int channels) {
-    lame_set_num_samples(lame_encoder, num_samples);
-    lame_set_in_samplerate(lame_encoder, sample_rate);
-    lame_set_num_channels(lame_encoder, channels);
+    lame_set_num_samples(lame_encoder_, num_samples);
+    lame_set_in_samplerate(lame_encoder_, sample_rate);
+    lame_set_num_channels(lame_encoder_, channels);
 
     Log(DEBUG) << "LAME partially initialized.";
 
     /* Initialise encoder */
-    if (lame_init_params(lame_encoder) == -1) {
+    if (lame_init_params(lame_encoder_) == -1) {
         Log(ERROR) << "lame_init_params failed.";
         return -1;
     }
@@ -145,13 +145,13 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
         return;
     }
 
-    auto it = metatag_map.find(key);
+    auto it = kMetatagMap.find(key);
 
-    if (it != metatag_map.end()) {
-        struct id3_frame* frame = id3_tag_findframe(id3tag, it->second, 0);
+    if (it != kMetatagMap.end()) {
+        struct id3_frame* frame = id3_tag_findframe(id3tag_, it->second, 0);
         if (frame == nullptr) {
             frame = id3_frame_new(it->second);
-            id3_tag_attachframe(id3tag, frame);
+            id3_tag_attachframe(id3tag_, frame);
 
             id3_field_settextencoding(id3_frame_field(frame, 0),
                                       ID3_FIELD_TEXTENCODING_UTF_8);
@@ -172,7 +172,7 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
         } else {
             tagname = "TPOS";
         }
-        struct id3_frame* frame = id3_tag_findframe(id3tag, tagname, 0);
+        struct id3_frame* frame = id3_tag_findframe(id3tag_, tagname, 0);
         const id3_latin1_t* lat;
         id3_latin1_t* tofree = nullptr;
         if (frame != nullptr) {
@@ -182,7 +182,7 @@ void Mp3Encoder::set_text_tag(const int key, const char* value) {
             lat = tofree;
         } else {
             frame = id3_frame_new(tagname);
-            id3_tag_attachframe(id3tag, frame);
+            id3_tag_attachframe(id3tag_, frame);
             id3_field_settextencoding(id3_frame_field(frame, 0),
                                       ID3_FIELD_TEXTENCODING_UTF_8);
             lat = reinterpret_cast<const id3_latin1_t*>("");
@@ -210,7 +210,7 @@ void Mp3Encoder::set_picture_tag(const char* mime_type, int type,
                                  const char* description, const uint8_t* data,
                                  unsigned int data_length) {
     struct id3_frame* frame = id3_frame_new("APIC");
-    id3_tag_attachframe(id3tag, frame);
+    id3_tag_attachframe(id3tag_, frame);
 
     id3_field_settextencoding(id3_frame_field(frame, 0),
                               ID3_FIELD_TEXTENCODING_UTF_8);
@@ -236,7 +236,7 @@ void Mp3Encoder::set_picture_tag(const char* mime_type, int type,
 void Mp3Encoder::set_gain_db(const double dbgain) {
     Log(DEBUG) << "LAME setting gain to " << dbgain << ".";
     // NOLINTNEXTLINE(readability-magic-numbers)
-    lame_set_scale(lame_encoder, static_cast<float>(pow(10.0, dbgain / 20)));
+    lame_set_scale(lame_encoder_, static_cast<float>(pow(10.0, dbgain / 20)));
 }
 
 /*
@@ -252,25 +252,26 @@ int Mp3Encoder::render_tag(size_t file_size) {
      * are buggy.
      * Some players = iTunes
      */
-    id3_tag_options(id3tag, ID3_TAG_OPTION_COMPRESSION, 0);
+    id3_tag_options(id3tag_, ID3_TAG_OPTION_COMPRESSION, 0);
     const int extra_padding = 12;
-    id3_tag_setlength(id3tag, id3_tag_render(id3tag, nullptr) + extra_padding);
+    id3_tag_setlength(id3tag_,
+                      id3_tag_render(id3tag_, nullptr) + extra_padding);
 
     // write v2 tag
-    id3size = id3_tag_render(id3tag, nullptr);
-    std::vector<uint8_t> tag24(id3size);
-    id3_tag_render(id3tag, tag24.data());
+    id3size_ = id3_tag_render(id3tag_, nullptr);
+    std::vector<uint8_t> tag24(id3size_);
+    id3_tag_render(id3tag_, tag24.data());
     buffer_->write(tag24, true);
 
     // Write v1 tag at end of buffer.
-    id3_tag_options(id3tag, ID3_TAG_OPTION_ID3V1, ~0);
-    std::vector<uint8_t> tag1(id3v1_tag_length);
-    id3_tag_render(id3tag, tag1.data());
+    id3_tag_options(id3tag_, ID3_TAG_OPTION_ID3V1, ~0);
+    std::vector<uint8_t> tag1(kId3v1TagLength);
+    id3_tag_render(id3tag_, tag1.data());
     if (file_size == 0) {
         file_size = calculate_size();
     }
     buffer_->write_end(
-        tag1, static_cast<std::ptrdiff_t>(file_size - id3v1_tag_length));
+        tag1, static_cast<std::ptrdiff_t>(file_size - kId3v1TagLength));
 
     return 0;
 }
@@ -293,15 +294,15 @@ int Mp3Encoder::render_tag(size_t file_size) {
 size_t Mp3Encoder::calculate_size() const {
     const int conversion_factor = 144000;
     if (params.vbr != 0) {
-        return id3size + id3v1_tag_length + MAX_VBR_FRAME_SIZE +
-               static_cast<uint64_t>(lame_get_totalframes(lame_encoder)) *
+        return id3size_ + kId3v1TagLength + MAX_VBR_FRAME_SIZE +
+               static_cast<uint64_t>(lame_get_totalframes(lame_encoder_)) *
                    conversion_factor * params.bitrate /
-                   lame_get_in_samplerate(lame_encoder);
+                   lame_get_in_samplerate(lame_encoder_);
     }
-    return id3size + id3v1_tag_length +
-           static_cast<uint64_t>(lame_get_totalframes(lame_encoder)) *
+    return id3size_ + kId3v1TagLength +
+           static_cast<uint64_t>(lame_get_totalframes(lame_encoder_)) *
                conversion_factor * params.bitrate /
-               lame_get_out_samplerate(lame_encoder);
+               lame_get_out_samplerate(lame_encoder_);
 }
 
 /*
@@ -330,7 +331,7 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[],
     for (unsigned int i = 0; i < numsamples; ++i) {
         lbuf[i] = data[0][i] << (sizeof(int) * kBitsPerByte - sample_size);
         /* ignore rbuf for mono data */
-        if (lame_get_num_channels(lame_encoder) > 1) {
+        if (lame_get_num_channels(lame_encoder_) > 1) {
             rbuf[i] = data[1][i] << (sizeof(int) * kBitsPerByte - sample_size);
         }
     }
@@ -339,7 +340,7 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[],
     std::vector<uint8_t> vbuffer(5 * numsamples / 4 + kBufferSlop);  // NOLINT
 
     int len = lame_encode_buffer_int(
-        lame_encoder, &lbuf[0], &rbuf[0], static_cast<int>(numsamples),
+        lame_encoder_, &lbuf[0], &rbuf[0], static_cast<int>(numsamples),
         vbuffer.data(), static_cast<int>(vbuffer.size()));
     if (len < 0) {
         return -1;
@@ -359,7 +360,7 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[],
 int Mp3Encoder::encode_finish() {
     std::vector<uint8_t> vbuffer(kBufferSlop);
 
-    int len = lame_encode_flush(lame_encoder, vbuffer.data(),
+    int len = lame_encode_flush(lame_encoder_, vbuffer.data(),
                                 static_cast<int>(vbuffer.size()));
     if (len < 0) {
         return -1;
@@ -379,12 +380,12 @@ int Mp3Encoder::encode_finish() {
      */
     if (params.vbr != 0) {
         std::vector<uint8_t> tail(MAX_VBR_FRAME_SIZE);
-        size_t vbr_tag_size = lame_get_lametag_frame(lame_encoder, tail.data(),
+        size_t vbr_tag_size = lame_get_lametag_frame(lame_encoder_, tail.data(),
                                                      MAX_VBR_FRAME_SIZE);
         if (vbr_tag_size > MAX_VBR_FRAME_SIZE) {
             return -1;
         }
-        buffer_->write_to(tail, static_cast<std::ptrdiff_t>(id3size));
+        buffer_->write_to(tail, static_cast<std::ptrdiff_t>(id3size_));
     }
 
     return len;
@@ -394,7 +395,7 @@ int Mp3Encoder::encode_finish() {
  * This map contains the association from the standard values in the enum in
  * coders.h to ID3 values.
  */
-const Mp3Encoder::meta_map_t Mp3Encoder::metatag_map = {
+const Mp3Encoder::meta_map_t Mp3Encoder::kMetatagMap = {
     {METATAG_TITLE, "TIT2"},     {METATAG_ARTIST, "TPE1"},
     {METATAG_ALBUM, "TALB"},     {METATAG_GENRE, "TCON"},
     {METATAG_DATE, "TDRC"},      {METATAG_COMPOSER, "TCOM"},

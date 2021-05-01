@@ -41,7 +41,7 @@
  * after the decoding process has finished.
  */
 VorbisDecoder::~VorbisDecoder() {
-    ov_clear(&vf);
+    ov_clear(&vf_);
     Log(DEBUG) << "Ogg Vorbis decoder: Closed.";
 }
 
@@ -67,7 +67,7 @@ int VorbisDecoder::open_file(const char* filename) {
     mtime_ = s.st_mtime;
 
     /* Initialise decoder */
-    if (ov_open(file, &vf, nullptr, 0) < 0) {
+    if (ov_open(file, &vf_, nullptr, 0) < 0) {
         Log(ERROR) << "Ogg Vorbis decoder: Initialization failed.";
         fclose(file);
         return -1;
@@ -90,33 +90,33 @@ time_t VorbisDecoder::mtime() {
 int VorbisDecoder::process_metadata(Encoder* encoder) {
     vorbis_comment* vc = nullptr;
 
-    if ((vi = ov_info(&vf, -1)) == nullptr) {
+    if ((vi_ = ov_info(&vf_, -1)) == nullptr) {
         Log(ERROR) << "Ogg Vorbis decoder: Failed to retrieve the file info.";
         return -1;
     }
 
-    if (vi->channels > 2) {
+    if (vi_->channels > 2) {
         Log(ERROR) << "Ogg Vorbis decoder: Only mono/stereo audio currently "
                       "supported.";
         return -1;
     }
 
-    if (encoder->set_stream_params(ov_pcm_total(&vf, -1),
-                                   static_cast<int>(vi->rate),
-                                   vi->channels) == -1) {
+    if (encoder->set_stream_params(ov_pcm_total(&vf_, -1),
+                                   static_cast<int>(vi_->rate),
+                                   vi_->channels) == -1) {
         Log(ERROR)
             << "Ogg Vorbis decoder: Failed to set encoder stream parameters.";
         return -1;
     }
 
-    if ((vc = ov_comment(&vf, -1)) == nullptr) {
+    if ((vc = ov_comment(&vf_, -1)) == nullptr) {
         Log(ERROR)
             << "Ogg Vorbis decoder: Failed to retrieve the Ogg Vorbis comment.";
         return -1;
     }
 
-    double gainref = Encoder::invalid_db, album_gain = Encoder::invalid_db,
-           track_gain = Encoder::invalid_db;
+    double gainref = Encoder::kInvalidDb, album_gain = Encoder::kInvalidDb,
+           track_gain = Encoder::kInvalidDb;
 
     for (int i = 0; i < vc->comments; ++i) {
         /*
@@ -142,9 +142,9 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
          * Set the encoder's text tag if it's in the metatag_map, or else,
          * prepare the ReplayGain.
          */
-        auto it = metatag_map.find(tagname);
+        auto it = kMetatagMap.find(tagname);
 
-        if (it != metatag_map.end()) {
+        if (it != kMetatagMap.end()) {
             encoder->set_text_tag(it->second, tagvalue.c_str());
         } else if (tagname == "METADATA_BLOCK_PICTURE") {
             char* data;
@@ -192,13 +192,13 @@ int VorbisDecoder::process_single_fr(Encoder* encoder) {
     std::vector<int16_t> decode_buffer(buffer_size);
 
     int64_t read_bytes = ov_read(
-        &vf, reinterpret_cast<char*>(decode_buffer.data()),
-        static_cast<int>(2 * decode_buffer.size()), 0, 2, 1, &current_section);
+        &vf_, reinterpret_cast<char*>(decode_buffer.data()),
+        static_cast<int>(2 * decode_buffer.size()), 0, 2, 1, &current_section_);
 
     int64_t total_samples = read_bytes / 2;
 
     if (total_samples > 0) {
-        int64_t samples_per_channel = total_samples / vi->channels;
+        int64_t samples_per_channel = total_samples / vi_->channels;
 
         if (samples_per_channel < 1) {
             Log(ERROR) << "Ogg Vorbis decoder: Not enough samples per channel.";
@@ -206,14 +206,14 @@ int VorbisDecoder::process_single_fr(Encoder* encoder) {
         }
 
         std::vector<std::vector<int32_t>> encode_buffer(
-            vi->channels, std::vector<int32_t>(samples_per_channel));
-        int32_t* encode_buffer_ptr[vi->channels];
+            vi_->channels, std::vector<int32_t>(samples_per_channel));
+        int32_t* encode_buffer_ptr[vi_->channels];
 
-        for (int channel = 0; channel < vi->channels; ++channel) {
+        for (int channel = 0; channel < vi_->channels; ++channel) {
             encode_buffer_ptr[channel] = encode_buffer[channel].data();
             for (int64_t i = 0; i < samples_per_channel; ++i) {
                 encode_buffer[channel][i] =
-                    decode_buffer[i * vi->channels + channel];
+                    decode_buffer[i * vi_->channels + channel];
             }
         }
 
@@ -240,7 +240,7 @@ int VorbisDecoder::process_single_fr(Encoder* encoder) {
     return -1;
 }
 
-const VorbisDecoder::meta_map_t VorbisDecoder::metatag_map = {
+const VorbisDecoder::meta_map_t VorbisDecoder::kMetatagMap = {
     {"TITLE", METATAG_TITLE},
     {"ARTIST", METATAG_ARTIST},
     {"ALBUM", METATAG_ALBUM},

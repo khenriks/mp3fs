@@ -23,7 +23,7 @@
 #define MP3FS_MP3FS_H_
 
 /* Global program parameters */
-struct mp3fs_params {
+struct Mp3fsParams {
     const char* basepath;
     int bitrate;
     int debug;
@@ -40,6 +40,6 @@ struct mp3fs_params {
     int vbr;
 };
 
-extern mp3fs_params params;
+extern Mp3fsParams params;
 
 #endif  // MP3FS_MP3FS_H_

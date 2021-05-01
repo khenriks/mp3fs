@@ -52,12 +52,12 @@ class FlacDecoder : public Decoder, private FLAC::Decoder::File {
     void error_callback(FLAC__StreamDecoderErrorStatus status) override;
 
  private:
-    Encoder* encoder_c = nullptr;
+    Encoder* encoder_c_ = nullptr;
     time_t mtime_ = 0;
-    FLAC::Metadata::StreamInfo info;
-    bool has_streaminfo = false;
+    FLAC::Metadata::StreamInfo info_;
+    bool has_streaminfo_ = false;
     using meta_map_t = std::map<std::string, int>;
-    static const meta_map_t metatag_map;
+    static const meta_map_t kMetatagMap;
 };
 
 #endif  // MP3FS_CODECS_FLAC_DECODER_H_

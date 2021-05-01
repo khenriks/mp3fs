@@ -34,13 +34,13 @@ class Picture {
 
     bool decode();
 
-    int get_type() const { return static_cast<int>(type); }
-    const char* get_mime_type() const { return mime_type.c_str(); }
-    const char* get_description() const { return description.c_str(); }
+    int get_type() const { return static_cast<int>(type_); }
+    const char* get_mime_type() const { return mime_type_.c_str(); }
+    const char* get_description() const { return description_.c_str(); }
     int get_data_length() const {
-        return static_cast<int>(picture_data.size());
+        return static_cast<int>(picture_data_.size());
     }
-    const uint8_t* get_data() const { return picture_data.data(); }
+    const uint8_t* get_data() const { return picture_data_.data(); }
 
  private:
     bool consume_decode_uint32(uint32_t* out);
@@ -54,9 +54,9 @@ class Picture {
     std::vector<char> data_;
     size_t data_off_;
 
-    uint32_t type = 0;
-    std::string mime_type, description;
-    std::vector<uint8_t> picture_data;
+    uint32_t type_ = 0;
+    std::string mime_type_, description_;
+    std::vector<uint8_t> picture_data_;
 };
 
 #endif  // MP3FS_CODECS_PICTURE_H_

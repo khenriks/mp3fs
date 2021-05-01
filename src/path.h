@@ -36,7 +36,7 @@ class Path {
      * This returns the path in the source directory assuming no change in
      * extension.
      */
-    std::string NormalSource() const;
+    std::string normal_source() const;
 
     /**
      * Return source path for transcoded files.
@@ -46,7 +46,7 @@ class Path {
      * decoder extensions. If none of those exist, the same value as
      * NormalSource will be returned.
      */
-    std::string TranscodeSource() const;
+    std::string transcode_source() const;
 
     friend std::ostream& operator<<(std::ostream&, const Path&);
 

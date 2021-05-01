@@ -10,14 +10,16 @@ if [[ "$(uname -s)" = Darwin* ]] ; then
 fi
 
 check_tidy_single () {
+    # Disable naming check on Travis due to old clang-tidy version.
+    [ "$TRAVIS" = true ] && DISABLE_NAMING=--checks=-readability-identifier-naming
     file=$1
     if [[ "$file" = *.c ]] ; then
         lang_flags=(--language=c -std=c11)
     else
         lang_flags=(--language=c++ -std=c++11)
     fi
-    clang-tidy --quiet "$file" -- "${CXXFLAGS[@]}" "${lang_flags[@]}" \
-        -Wno-unknown-warning-option
+    clang-tidy --quiet "$file" $DISABLE_NAMING -- \
+        "${CXXFLAGS[@]}" "${lang_flags[@]}" -Wno-unknown-warning-option
 }
 
 if in_main ; then

@@ -36,8 +36,8 @@ namespace {
 Logging* logging;
 constexpr size_t kTimeBufferSize = 30;
 
-std::string MultiSubstitute(std::string src,
-                            std::unordered_map<std::string, std::string> subs) {
+std::string multi_substitute(
+    std::string src, std::unordered_map<std::string, std::string> subs) {
     std::string result;
     for (auto it = src.cbegin(); it != src.cend();) {
         bool matched = false;
@@ -58,7 +58,7 @@ std::string MultiSubstitute(std::string src,
 }
 }  // namespace
 
-Logging::Logging(std::string logfile, level max_level, std::string log_format,
+Logging::Logging(std::string logfile, Level max_level, std::string log_format,
                  bool to_stderr, bool to_syslog)
     : max_level_(max_level),
       log_format_(std::move(log_format)),
@@ -87,14 +87,14 @@ Logging::Logger::~Logger() {
     std::ostringstream tid_stream;
     tid_stream << std::this_thread::get_id();
 
-    std::string msg = MultiSubstitute(logging_->log_format_,
-                                      {{"%T", time_string},
-                                       {"%I", tid_stream.str()},
-                                       {"%L", level_name_map_.at(loglevel_)},
-                                       {"%M", str()}});
+    std::string msg = multi_substitute(logging_->log_format_,
+                                       {{"%T", time_string},
+                                        {"%I", tid_stream.str()},
+                                        {"%L", kLevelNameMap.at(loglevel_)},
+                                        {"%M", str()}});
 
     if (logging_->to_syslog_) {
-        syslog(syslog_level_map_.at(loglevel_), "%s", msg.c_str());
+        syslog(kSyslogLevelMap.at(loglevel_), "%s", msg.c_str());
     }
     if (logging_->logfile_.is_open()) {
         logging_->logfile_ << msg << std::endl;
@@ -104,48 +104,48 @@ Logging::Logger::~Logger() {
     }
 }
 
-const std::map<Logging::level, int> Logging::Logger::syslog_level_map_ = {
+const std::map<Logging::Level, int> Logging::Logger::kSyslogLevelMap = {
     {ERROR, LOG_ERR},
     {INFO, LOG_INFO},
     {DEBUG, LOG_DEBUG},
 };
 
-const std::map<Logging::level, std::string> Logging::Logger::level_name_map_ = {
+const std::map<Logging::Level, std::string> Logging::Logger::kLevelNameMap = {
     {ERROR, "ERROR"},
     {INFO, "INFO"},
     {DEBUG, "DEBUG"},
 };
 
-Logging::Logger Log(Logging::level lev) {
+Logging::Logger Log(Logging::Level lev) {
     return {lev, logging};
 }
 
-Logging::level StringToLevel(std::string level) {
-    static const std::map<std::string, Logging::level> level_map = {
+Logging::Level string_to_level(std::string level) {
+    static const std::map<std::string, Logging::Level> kLevelMap = {
         {"DEBUG", DEBUG},
         {"INFO", INFO},
         {"ERROR", ERROR},
     };
-    auto it = level_map.find(level);
+    auto it = kLevelMap.find(level);
 
-    if (it == level_map.end()) {
+    if (it == kLevelMap.end()) {
         std::cerr << "Invalid logging level string: " << level << std::endl;
-        return Logging::level::INVALID;
+        return Logging::Level::INVALID;
     }
 
     return it->second;
 }
 
-bool InitLogging(std::string logfile, Logging::level max_level,
-                 std::string log_format, bool to_stderr, bool to_syslog) {
-    if (max_level == Logging::level::INVALID) {
+bool init_logging(std::string logfile, Logging::Level max_level,
+                  std::string log_format, bool to_stderr, bool to_syslog) {
+    if (max_level == Logging::Level::INVALID) {
         return false;
     }
     logging = new Logging(logfile, max_level, log_format, to_stderr, to_syslog);
-    return !logging->GetFail();
+    return !logging->get_fail();
 }
 
-void log_with_level(Logging::level level, const char* prefix,
+void log_with_level(Logging::Level level, const char* prefix,
                     const char* format, va_list ap) {
     // This copy is because we call vsnprintf twice, and ap is undefined after
     // the first call.

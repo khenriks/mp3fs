@@ -40,11 +40,11 @@ class VorbisDecoder : public Decoder {
 
  private:
     time_t mtime_;
-    OggVorbis_File vf;
-    vorbis_info* vi;
-    int current_section;
+    OggVorbis_File vf_;
+    vorbis_info* vi_;
+    int current_section_;
     using meta_map_t = std::map<std::string, int>;
-    static const meta_map_t metatag_map;
+    static const meta_map_t kMetatagMap;
 };
 
 #endif  // MP3FS_CODECS_VORBIS_DECODER_H_

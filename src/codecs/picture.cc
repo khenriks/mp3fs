@@ -34,16 +34,16 @@ constexpr int kUnusedMetadataBytes = 16;
 bool Picture::decode() {
     std::string picture_data_str;
 
-    if (!consume_decode_uint32(&type) || !consume_decode_string(&mime_type) ||
-        !consume_decode_string(&description) ||
+    if (!consume_decode_uint32(&type_) || !consume_decode_string(&mime_type_) ||
+        !consume_decode_string(&description_) ||
         !consume_no_decode(kUnusedMetadataBytes) ||
         !consume_decode_string(&picture_data_str)) {
         Log(ERROR) << "Couldn't decode picture data as valid data.";
         return false;
     }
 
-    picture_data.assign(picture_data_str.c_str(),
-                        picture_data_str.c_str() + picture_data_str.size());
+    picture_data_.assign(picture_data_str.c_str(),
+                         picture_data_str.c_str() + picture_data_str.size());
 
     return true;
 }

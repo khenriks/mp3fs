@@ -29,12 +29,12 @@
 #include "codecs/coders.h"
 #include "mp3fs.h"
 
-std::string Path::NormalSource() const {
+std::string Path::normal_source() const {
     return std::string(params.basepath) + relative_path_;
 }
 
-std::string Path::TranscodeSource() const {
-    const std::string source = NormalSource();
+std::string Path::transcode_source() const {
+    const std::string source = normal_source();
     const size_t dot_idx = source.rfind('.');
     const size_t slash_idx = source.rfind('/');
     const std::string source_dir = source.substr(0, slash_idx);

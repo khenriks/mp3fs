@@ -86,7 +86,7 @@ class Encoder {
     static std::unique_ptr<Encoder> CreateEncoder(const std::string& file_type,
                                                   Buffer* buffer);
 
-    constexpr static double invalid_db = 1000.0;
+    constexpr static double kInvalidDb = 1000.0;
 };
 
 /* Decoder class interface */

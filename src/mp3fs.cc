@@ -56,7 +56,7 @@ constexpr int kQualityMax = 9;
 enum { KEY_HELP, KEY_VERSION, KEY_KEEP_OPT };
 
 #define MP3FS_OPT(t, p, v) \
-    { t, offsetof(mp3fs_params, p), v }
+    { t, offsetof(Mp3fsParams, p), v }
 
 // Redefine FUSE_OPT_KEY to avoid warning.
 #undef FUSE_OPT_KEY
@@ -201,7 +201,7 @@ int mp3fs_opt_proc(void* /*unused*/, const char* arg, int key,
 
 }  // namespace
 
-mp3fs_params params = {
+Mp3fsParams params = {
     .basepath = nullptr,
     .bitrate = kDefaultBitrate,
     .debug = 0,
@@ -239,9 +239,9 @@ int main(int argc, char* argv[]) {
         params.log_maxlevel = "DEBUG";
     }
 
-    if (!InitLogging(params.logfile, StringToLevel(params.log_maxlevel),
-                     params.log_format, params.log_stderr != 0,
-                     params.log_syslog != 0)) {
+    if (!init_logging(params.logfile, string_to_level(params.log_maxlevel),
+                      params.log_format, params.log_stderr != 0,
+                      params.log_syslog != 0)) {
         std::cerr << "Failed to initialize logging module." << std::endl;
         std::cerr << "Maybe log file couldn't be opened for writing?"
                   << std::endl;
