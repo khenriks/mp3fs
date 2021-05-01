@@ -63,8 +63,6 @@ class StatsCache {
 
     using cache_entry_t = std::pair<std::string, FileStat>;
 
-    static bool cmp_by_atime(const cache_entry_t& a1, const cache_entry_t& a2);
-
     void prune();
     void remove_entry(const std::string& file, const FileStat& file_stat);
 

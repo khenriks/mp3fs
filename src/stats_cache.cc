@@ -82,12 +82,6 @@ void StatsCache::put_filesize(const std::string& filename, size_t filesize,
     }
 }
 
-/* Compare two cache entries by the access time of the FileStat objects. */
-bool StatsCache::cmp_by_atime(const StatsCache::cache_entry_t& a1,
-                              const StatsCache::cache_entry_t& a2) {
-    return a1.second.get_atime() < a2.second.get_atime();
-}
-
 /*
  * Prune invalid and old cache entries until the cache is at 90% of capacity.
  */
@@ -103,7 +97,10 @@ void StatsCache::prune() {
                   std::back_inserter(sorted_entries));
     }
     /* Sort the entries by access time, with the oldest first */
-    std::sort(sorted_entries.begin(), sorted_entries.end(), cmp_by_atime);
+    std::sort(sorted_entries.begin(), sorted_entries.end(),
+              [](const cache_entry_t& a, const cache_entry_t& b) {
+                  return a.second.get_atime() < b.second.get_atime();
+              });
 
     /*
      * Remove all invalid cache entries. Don't bother removing invalid
