@@ -18,15 +18,7 @@ If building from git, you'll also need:
 
 The commands to install the prerequisites follow.
 
-### Debian
-
-    aptitude install libfuse-dev libflac++-dev libvorbis-dev libmp3lame-dev libid3tag0-dev
-
-If building from git:
-
-    aptitude install autoconf automake pandoc
-
-### Ubuntu
+### Debian / Ubuntu
 
     apt install libfuse-dev libflac++-dev libvorbis-dev libmp3lame-dev libid3tag0-dev
 
