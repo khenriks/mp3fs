@@ -1,10 +1,18 @@
-dist: bionic
-sudo: required
+dist: focal
 language: cpp
 compiler:
   - clang
   - gcc
-before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install -qq --no-install-recommends libfuse-dev libflac++-dev libvorbis-dev libmp3lame-dev libid3tag0-dev pandoc libsox-dev libchromaprint-dev python3-mutagen
+addons:
+  apt:
+    packages:
+      - libchromaprint-dev
+      - libflac++-dev
+      - libfuse-dev
+      - libid3tag0-dev
+      - libmp3lame-dev
+      - libsox-dev
+      - libvorbis-dev
+      - pandoc
+      - python3-mutagen
 script: ./autogen.sh && ./configure && make && make check && make staticcheck
