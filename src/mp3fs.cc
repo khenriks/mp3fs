@@ -144,9 +144,9 @@ Encoding options:
                            5 is the default
     --statcachesize=SIZE, -ostatcachesize=SIZE
                            Set the number of entries for the file stats
-                           cache.  Necessary for decent performance when
-                           VBR is enabled.  Each entry takes 100-200 bytes.
-    --vbr, -ovbr           Use variable bit rate encoding.  When set, the
+                           cache. Necessary for decent performance when
+                           VBR is enabled. Each entry takes 100-200 bytes.
+    --vbr, -ovbr           Use variable bit rate encoding. When set, the
                            bit rate set with '-b' sets the maximum bit rate.
                            Performance will be terrible unless the
                            statcachesize is enabled.
