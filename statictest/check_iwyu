@@ -15,7 +15,7 @@ check_iwyu_single () {
         lang_flags=(--language=c++ -std=c++11)
     fi
     include-what-you-use -Xiwyu --mapping_file="$COMMONDIR/iwyu.imp" \
-        "${CXXFLAGS[@]}" "${lang_flags[@]}" $file || [ $? -eq 2 ]
+        "${CXXFLAGS[@]}" "${lang_flags[@]}" "$file" || [ $? -eq 2 ]
 }
 
 if in_main ; then

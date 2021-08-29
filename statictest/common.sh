@@ -37,7 +37,7 @@ driver () {
 }
 
 multidriver () {
-    if [ -t 1 -a "$TRAVIS" != true ] ; then
+    if [ -t 1 ] && [ "$TRAVIS" != true ] ; then
         tabular_multidriver "$@"
     else
         verbose_multidriver "$@"
@@ -50,7 +50,7 @@ tabular_multidriver () {
 
     longest_src=0
     for src in "${SOURCES[@]}" ; do
-        if [ ${#src} -gt $longest_src ]; then
+        if (( ${#src} > longest_src )); then
             longest_src=${#src}
         fi
     done
@@ -78,13 +78,13 @@ tabular_multidriver () {
                 everygood=n
             fi
         done
-        if [ $allgood = y ] ; then
+        if [ "$allgood" = y ] ; then
             echo -e "\r${GREEN}GOOD${NC}"
         else
             echo -e "\r${RED}BAD${NC}"
         fi
     done
-    if [ $everygood != y ] ; then
+    if [ "$everygood" != y ] ; then
         echo
         echo "Run individual statictest/check_* scripts for steps to fix."
         return 1

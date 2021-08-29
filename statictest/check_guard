@@ -8,7 +8,7 @@ set -e
 fix_guard () {
     file="$1"
     short_file="${file#$ROOT/src/}"
-    want_guard=MP3FS_$(tr '[:lower:]/.' '[:upper:]_' <<< $short_file)_
+    want_guard=MP3FS_$(tr '[:lower:]/.' '[:upper:]_' <<< "$short_file")_
     sed -e "0,/#ifndef / s/#ifndef .*/#ifndef $want_guard/" \
         -e "0,/#define / s/#define .*/#define $want_guard/" \
         -e "/#endif/,$ s,#endif.*,#endif  // $want_guard," \
