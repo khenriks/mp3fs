@@ -1,5 +1,7 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 # check_guard verifies that include guards are specified correctly.
+
+set -e
 
 . "${BASH_SOURCE%/*}/common.sh"
 

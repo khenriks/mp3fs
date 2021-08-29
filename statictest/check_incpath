@@ -1,7 +1,9 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 # check_incpath verifies that files are included with the correct path,
 # specifically not relying on the behavior of searching the source directory
 # first.
+
+set -e
 
 . "${BASH_SOURCE%/*}/common.sh"
 

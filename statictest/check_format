@@ -1,5 +1,7 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 # check_format verifies that files are formatted correctly using clang-format.
+
+set -e
 
 . "${BASH_SOURCE%/*}/common.sh"
 

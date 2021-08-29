@@ -1,6 +1,8 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 # check_iwyu verifies that necessary includes are included directly, by using
 # include-what-you-use and the iwyu.imp configuration file.
+
+set -e
 
 . "${BASH_SOURCE%/*}/common.sh"
 
