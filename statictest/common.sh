@@ -63,7 +63,7 @@ tabular_multidriver () {
         cols+=($(( ${#name} + 2 )))
     done
     echo
-    
+
     everygood=y
     for src in "${SOURCES[@]}" ; do
         printf "%-${firstcol}s" "    : $src"
