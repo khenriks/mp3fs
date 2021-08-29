@@ -1,5 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 . "${BASH_SOURCE%/*}/funcs.sh"
 
-cat $DIRNAME/random.mp3 || :
+cat "$DIRNAME/random.mp3" || :

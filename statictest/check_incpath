@@ -1,7 +1,9 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 # check_incpath verifies that files are included with the correct path,
 # specifically not relying on the behavior of searching the source directory
 # first.
+
+set -e
 
 . "${BASH_SOURCE%/*}/common.sh"
 
@@ -12,7 +14,7 @@ fix_incpath () {
     quote_includes=($(grep -Po '(?<=#include ").*(?=")' "$file"))
     sed_args=()
     for inc in "${quote_includes[@]}" ; do
-        if [ -f "$srcpath/$inc" -a ! -f "$ROOT/src/$inc" ] ; then
+        if [ -f "$srcpath/$inc" ] && [ ! -f "$ROOT/src/$inc" ] ; then
             sed_args+=('-e')
             sed_args+=("/#include \"$inc\"/ s,$inc,$basesrcpath/$inc,")
         fi

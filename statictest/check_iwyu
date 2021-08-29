@@ -1,6 +1,8 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 # check_iwyu verifies that necessary includes are included directly, by using
 # include-what-you-use and the iwyu.imp configuration file.
+
+set -e
 
 . "${BASH_SOURCE%/*}/common.sh"
 
@@ -13,7 +15,7 @@ check_iwyu_single () {
         lang_flags=(--language=c++ -std=c++11)
     fi
     include-what-you-use -Xiwyu --mapping_file="$COMMONDIR/iwyu.imp" \
-        "${CXXFLAGS[@]}" "${lang_flags[@]}" $file || [ $? -eq 2 ]
+        "${CXXFLAGS[@]}" "${lang_flags[@]}" "$file" || [ $? -eq 2 ]
 }
 
 if in_main ; then

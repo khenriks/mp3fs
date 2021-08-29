@@ -187,7 +187,7 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
  * result going into the given Buffer.
  */
 int VorbisDecoder::process_single_fr(Encoder* encoder) {
-    // Vorbis docs recomment a 4096-byte buffer, which is 2048 int16_t.
+    // Vorbis docs recommend a 4096-byte buffer, which is 2048 int16_t.
     const size_t buffer_size = 2048;
     std::vector<int16_t> decode_buffer(buffer_size);
 
