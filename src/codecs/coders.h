@@ -81,7 +81,7 @@ class Encoder {
     virtual bool no_partial_encode() { return true; }
 
     // Create and return an Encoder for the specified file type. buffer will
-    // not be owned by the class, and dervied classes *must* construct
+    // not be owned by the class, and derived classes *must* construct
     // successfully when buffer is nullptr.
     static std::unique_ptr<Encoder> CreateEncoder(const std::string& file_type,
                                                   Buffer* buffer);
