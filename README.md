@@ -36,7 +36,8 @@ up as `/mnt/mp3/**.mp3`.
 been mounted yet, try adding the `x-systemd.requires-mounts-for=/mnt/music`
 mount option, where `/mnt/music` would be the location of the underlying mount.
 This will wait for the filesystem to be mounted. You might also have to add 
-`nofail` to prevent a missing mount from stopping the boot process.
+`nofail` to prevent a missing mount from stopping the boot process. To be able
+to use this option you might need to install `fuse3`.
 
 ## How it Works
 
