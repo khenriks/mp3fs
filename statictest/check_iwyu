@@ -4,8 +4,14 @@
 
 . "${BASH_SOURCE%/*}/common.sh"
 
+if ! tail -n +2 "$COMMONDIR/iwyu.imp" | sort -C ; then
+	printf "${RED}Error:${NC} IWYU mapping not sorted.\n\n"
+	IWYU_NOTSORT=1
+fi
+
 check_iwyu_single () {
     [ "$TRAVIS" = true ] && return
+		[ -n "$IWYU_NOTSORT" ] && return 1
     file=$1
     if [[ "$file" = *.c ]] ; then
         lang_flags=(--language=c -std=c11)
