@@ -28,9 +28,6 @@
 #include <fuse.h>
 #include <fuse_common.h>
 #include <fuse_opt.h>
-#ifdef __APPLE__
-#include <fuse_darwin.h>
-#endif
 
 #include <cstddef>
 #include <cstdlib>
@@ -166,9 +163,6 @@ void print_versions(std::ostream&& out) {
     print_codec_versions(out);
     out << "FUSE library version: " << FUSE_MAJOR_VERSION << "."
         << FUSE_MINOR_VERSION << std::endl;
-#ifdef __APPLE__
-    out << "OS X FUSE version: " << osxfuse_version() << std::endl;
-#endif
 }
 
 int mp3fs_opt_proc(void* /*unused*/, const char* arg, int key,
