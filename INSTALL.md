@@ -4,17 +4,17 @@
 
 mp3fs requires the following libraries:
 
--   fuse (>= 2.6.0)
--   flac++ (>= 1.1.4)
--   libvorbis (>= 1.3.0)
--   lame
--   libid3tag
+- fuse (\>= 2.6.0)
+- flac++ (\>= 1.1.4)
+- libvorbis (\>= 1.3.0)
+- lame
+- libid3tag
 
 If building from git, you'll also need:
 
--   autoconf
--   automake
--   pandoc
+- autoconf
+- automake
+- pandoc
 
 The commands to install the prerequisites follow.
 

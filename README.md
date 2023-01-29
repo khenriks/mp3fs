@@ -1,7 +1,7 @@
 # mp3fs
 
 [![Build
-Status](https://travis-ci.com/khenriks/mp3fs.svg?branch=master)](https://travis-ci.com/khenriks/mp3fs)
+Status](https://app.travis-ci.com/khenriks/mp3fs.svg?branch=master)](https://app.travis-ci.com/khenriks/mp3fs)
 
 Web site: <http://khenriks.github.io/mp3fs/>
 
@@ -69,11 +69,11 @@ mp3fs uses Git for revision control. You can obtain the full repository with:
 
 mp3fs is written in a mixture of C and C++ and uses the following libraries:
 
--   [FUSE](http://fuse.sourceforge.net/)
--   [FLAC](http://flac.sourceforge.net/)
--   [libvorbis](http://www.xiph.org/vorbis/)
--   [LAME](http://lame.sourceforge.net/)
--   [libid3tag](http://www.underbit.com/products/mad/)
+- [FUSE](http://fuse.sourceforge.net/)
+- [FLAC](http://flac.sourceforge.net/)
+- [libvorbis](http://www.xiph.org/vorbis/)
+- [LAME](http://lame.sourceforge.net/)
+- [libid3tag](http://www.underbit.com/products/mad/)
 
 ## Authors
 
