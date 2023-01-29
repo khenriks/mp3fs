@@ -58,7 +58,7 @@ void Buffer::copy_into(uint8_t* out_data, std::ptrdiff_t offset,
     } else if (offset >= end_offset_) {
         std::copy_n(end_data_.begin() + offset - end_offset_, size, out_data);
     } else {
-        size_t start_size = main_data_.size() - offset;
+        const size_t start_size = main_data_.size() - offset;
         uint8_t* next =
             std::copy_n(main_data_.begin() + offset, start_size, out_data);
         std::copy_n(end_data_.begin(), size - start_size, next);
@@ -66,7 +66,7 @@ void Buffer::copy_into(uint8_t* out_data, std::ptrdiff_t offset,
 }
 
 bool Buffer::valid_bytes(std::ptrdiff_t offset, size_t size) const {
-    size_t end = offset + size;
+    const size_t end = offset + size;
     return offset >= 0 && end <= this->size() &&
            (end <= main_data_.size() || offset >= end_offset_ ||
             main_data_.size() == static_cast<size_t>(end_offset_));

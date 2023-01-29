@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     std::vector<std::thread> threads;
-    int count = 4;
+    const int count = 4;
     const int interval = 30000;
     for (int off = 0; off < count * interval; off += interval) {
         threads.emplace_back(read_from_offset, off);

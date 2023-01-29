@@ -24,7 +24,6 @@
 
 #include <sys/types.h>
 
-#include <cstddef>
 #include <memory>
 #include <mutex>
 #include <ostream>

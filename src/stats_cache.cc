@@ -38,7 +38,7 @@
  */
 bool StatsCache::get_filesize(const std::string& filename, time_t mtime,
                               size_t* filesize) {
-    std::lock_guard<std::mutex> l(mutex_);
+    const std::lock_guard<std::mutex> l(mutex_);
     auto it = cache_.find(filename);
     if (it != cache_.end()) {
         FileStat& file_stat = it->second;
@@ -92,7 +92,7 @@ void StatsCache::prune() {
     /* Copy all the entries to a vector to be sorted. */
     std::vector<cache_entry_t> sorted_entries;
     {
-        std::lock_guard<std::mutex> l(mutex_);
+        const std::lock_guard<std::mutex> l(mutex_);
         std::copy(cache_.begin(), cache_.end(),
                   std::back_inserter(sorted_entries));
     }
@@ -120,13 +120,13 @@ void StatsCache::prune() {
             Log(DEBUG) << "Removed out of date file '" << decoded_file
                        << "' from stats cache";
             errno = 0;
-            std::lock_guard<std::mutex> l(mutex_);
+            const std::lock_guard<std::mutex> l(mutex_);
             remove_entry(decoded_file, file_stat);
         }
     }
 
     /* Remove the oldest entries until the cache size meets the target. */
-    std::lock_guard<std::mutex> l(mutex_);
+    const std::lock_guard<std::mutex> l(mutex_);
     for (const auto& e : sorted_entries) {
         if (cache_.size() <= target_size) {
             break;

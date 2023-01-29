@@ -32,7 +32,6 @@
 #include <unistd.h>
 
 #include <cerrno>
-#include <cstddef>
 #include <cstdint>
 #include <memory>
 #include <ostream>
@@ -53,7 +52,7 @@ constexpr int kBytesPerBlock = 512;
  * Convert file extension from source to destination name.
  */
 std::string convert_extension(const std::string& path) {
-    size_t ext_pos = path.rfind('.');
+    const size_t ext_pos = path.rfind('.');
 
     if (ext_pos != std::string::npos &&
         Decoder::CreateDecoder(path.substr(ext_pos + 1)) != nullptr) {
@@ -64,17 +63,18 @@ std::string convert_extension(const std::string& path) {
 }
 
 int mp3fs_readlink(const char* p, char* buf, size_t size) {
-    Path path = Path::FromMp3fsRelative(p);
+    const Path path = Path::FromMp3fsRelative(p);
     Log(INFO) << "readlink " << path;
 
-    ssize_t len = readlink(path.transcode_source().c_str(), buf, size - 2);
+    const ssize_t len =
+        readlink(path.transcode_source().c_str(), buf, size - 2);
     if (len == -1) {
         return -errno;
     }
 
     buf[len] = '\0';
 
-    size_t outlen = convert_extension(buf).copy(buf, size - 1);
+    const size_t outlen = convert_extension(buf).copy(buf, size - 1);
     buf[outlen] = '\0';
 
     return 0;
@@ -82,14 +82,14 @@ int mp3fs_readlink(const char* p, char* buf, size_t size) {
 
 int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
                   off_t /*unused*/, struct fuse_file_info* /*unused*/) {
-    Path path = Path::FromMp3fsRelative(p);
+    const Path path = Path::FromMp3fsRelative(p);
     Log(INFO) << "readdir " << path;
 
     // Using a unique_ptr with a custom deleter ensures closedir gets called
     // before function exit.
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wignored-attributes"
-    std::unique_ptr<DIR, decltype(&closedir)> dp(
+    const std::unique_ptr<DIR, decltype(&closedir)> dp(
         opendir(path.normal_source().c_str()), closedir);
 #pragma GCC diagnostic pop
     if (!dp) {
@@ -105,8 +105,8 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
         }
 
         if (S_ISREG(st.st_mode) || S_ISLNK(st.st_mode)) {
-            size_t len = convert_extension(de->d_name)
-                             .copy(de->d_name, sizeof(de->d_name) - 1);
+            const size_t len = convert_extension(de->d_name)
+                                   .copy(de->d_name, sizeof(de->d_name) - 1);
             de->d_name[len] = '\0';
         }
 
@@ -119,7 +119,7 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
 }
 
 int mp3fs_getattr(const char* p, struct stat* stbuf) {
-    Path path = Path::FromMp3fsRelative(p);
+    const Path path = Path::FromMp3fsRelative(p);
     Log(INFO) << "getattr " << path;
 
     /* pass-through for regular files */
@@ -149,10 +149,10 @@ int mp3fs_getattr(const char* p, struct stat* stbuf) {
 }
 
 int mp3fs_open(const char* p, struct fuse_file_info* fi) {
-    Path path = Path::FromMp3fsRelative(p);
+    const Path path = Path::FromMp3fsRelative(p);
     Log(INFO) << "open " << path;
 
-    int fd = open(path.normal_source().c_str(), fi->flags);
+    const int fd = open(path.normal_source().c_str(), fi->flags);
 
     if (fd != -1) {  // File exists and was successfully opened.
         fi->fh = reinterpret_cast<uint64_t>(new FileReader(fd));
@@ -185,7 +185,7 @@ int mp3fs_read(const char* path, char* buf, size_t size, off_t offset,
         return -EBADF;
     }
 
-    ssize_t read = reader->read(buf, offset, size);
+    const ssize_t read = reader->read(buf, offset, size);
 
     if (read >= 0) {
         return static_cast<int>(read);
@@ -195,7 +195,7 @@ int mp3fs_read(const char* path, char* buf, size_t size, off_t offset,
 }
 
 int mp3fs_statfs(const char* p, struct statvfs* stbuf) {
-    Path path = Path::FromMp3fsRelative(p);
+    const Path path = Path::FromMp3fsRelative(p);
     Log(INFO) << "statfs " << path;
 
     /* pass-through for regular files */

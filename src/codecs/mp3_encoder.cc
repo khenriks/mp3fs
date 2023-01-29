@@ -35,11 +35,11 @@
 #include "logging.h"
 #include "mp3fs.h"
 
-/* Copied from lame */
-#define MAX_VBR_FRAME_SIZE 2880
-
 /* Keep these items in static scope. */
 namespace {
+
+/* Value from LAME */
+constexpr int kMaxVbrFrameSize = 2880;
 
 constexpr int kMillisPerSec = 1000;
 
@@ -294,7 +294,7 @@ int Mp3Encoder::render_tag(size_t file_size) {
 size_t Mp3Encoder::calculate_size() const {
     const int conversion_factor = 144000;
     if (params.vbr != 0) {
-        return id3size_ + kId3v1TagLength + MAX_VBR_FRAME_SIZE +
+        return id3size_ + kId3v1TagLength + kMaxVbrFrameSize +
                static_cast<uint64_t>(lame_get_totalframes(lame_encoder_)) *
                    conversion_factor * params.bitrate /
                    lame_get_in_samplerate(lame_encoder_);
@@ -339,8 +339,8 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[],
     // Buffer size formula recommended by LAME docs: 1.25 * samples + 7200
     std::vector<uint8_t> vbuffer(5 * numsamples / 4 + kBufferSlop);  // NOLINT
 
-    int len = lame_encode_buffer_int(
-        lame_encoder_, &lbuf[0], &rbuf[0], static_cast<int>(numsamples),
+    const int len = lame_encode_buffer_int(
+        lame_encoder_, lbuf.data(), rbuf.data(), static_cast<int>(numsamples),
         vbuffer.data(), static_cast<int>(vbuffer.size()));
     if (len < 0) {
         return -1;
@@ -360,8 +360,8 @@ int Mp3Encoder::encode_pcm_data(const int32_t* const data[],
 int Mp3Encoder::encode_finish() {
     std::vector<uint8_t> vbuffer(kBufferSlop);
 
-    int len = lame_encode_flush(lame_encoder_, vbuffer.data(),
-                                static_cast<int>(vbuffer.size()));
+    const int len = lame_encode_flush(lame_encoder_, vbuffer.data(),
+                                      static_cast<int>(vbuffer.size()));
     if (len < 0) {
         return -1;
     }
@@ -379,10 +379,10 @@ int Mp3Encoder::encode_finish() {
      * already put dummy bytes here when lame_init_params() was called.
      */
     if (params.vbr != 0) {
-        std::vector<uint8_t> tail(MAX_VBR_FRAME_SIZE);
-        size_t vbr_tag_size = lame_get_lametag_frame(lame_encoder_, tail.data(),
-                                                     MAX_VBR_FRAME_SIZE);
-        if (vbr_tag_size > MAX_VBR_FRAME_SIZE) {
+        std::vector<uint8_t> tail(kMaxVbrFrameSize);
+        const size_t vbr_tag_size = lame_get_lametag_frame(
+            lame_encoder_, tail.data(), kMaxVbrFrameSize);
+        if (vbr_tag_size > kMaxVbrFrameSize) {
             return -1;
         }
         buffer_->write_to(tail, static_cast<std::ptrdiff_t>(id3size_));

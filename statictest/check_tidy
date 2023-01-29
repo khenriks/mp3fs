@@ -6,7 +6,7 @@
 
 # Add LLVM location for clang-tidy to PATH on Mac.
 if [[ "$(uname -s)" = Darwin* ]] ; then
-    PATH="/usr/local/opt/llvm/bin:$PATH"
+    PATH="/opt/homebrew/opt/llvm/bin:$PATH"
 fi
 
 check_tidy_single () {

@@ -78,8 +78,9 @@ Logging::Logger::~Logger() {
     }
 
     // Construct string containing time
-    std::time_t now = std::time(nullptr);
+    const std::time_t now = std::time(nullptr);
     std::string time_string(kTimeBufferSize, '\0');
+    // NOLINTNEXTLINE(readability-container-data-pointer)
     time_string.resize(std::strftime(&time_string[0], time_string.size(),
                                      "%F %T", std::localtime(&now)));
 
@@ -87,11 +88,11 @@ Logging::Logger::~Logger() {
     std::ostringstream tid_stream;
     tid_stream << std::this_thread::get_id();
 
-    std::string msg = multi_substitute(logging_->log_format_,
-                                       {{"%T", time_string},
-                                        {"%I", tid_stream.str()},
-                                        {"%L", kLevelNameMap.at(loglevel_)},
-                                        {"%M", str()}});
+    const std::string msg = multi_substitute(
+        logging_->log_format_, {{"%T", time_string},
+                                {"%I", tid_stream.str()},
+                                {"%L", kLevelNameMap.at(loglevel_)},
+                                {"%M", str()}});
 
     if (logging_->to_syslog_) {
         syslog(kSyslogLevelMap.at(loglevel_), "%s", msg.c_str());
@@ -154,9 +155,12 @@ void log_with_level(Logging::Level level, const char* prefix,
 
     int size = vsnprintf(nullptr, 0, format, ap);
     std::string buffer(size, '\0');
-    vsnprintf(&buffer[0], buffer.size() + 1, format, ap2);
+    // NOLINTNEXTLINE(readability-container-data-pointer)
+    size = vsnprintf(&buffer[0], buffer.size() + 1, format, ap2);
 
     va_end(ap2);
 
-    Log(level) << prefix << buffer;
+    if (size >= 0) {
+        Log(level) << prefix << buffer;
+    }
 }

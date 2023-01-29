@@ -1,9 +1,9 @@
 ---
 Checks: >-
-  bugprone-*,misc-*,portability-*,
+  bugprone-*,misc-*,portability-*,-bugprone-easily-swappable-parameters,-bugprone-exception-escape,
   cert-*,-cert-err58-cpp,
   google-*,-google-readability-todo,
-  readability-*,-readability-isolate-declaration,
+  readability-*,-readability-isolate-declaration,-readability-identifier-length,
   modernize-*,-modernize-use-trailing-return-type,-modernize-avoid-c-arrays,
   hicpp-member-init,hicpp-multiway-paths-covered
 WarningsAsErrors: '*'

@@ -20,7 +20,6 @@
 
 #include "codecs/flac_decoder.h"
 
-#include <FLAC++/decoder.h>
 #include <FLAC++/metadata.h>
 #include <FLAC/format.h>
 #include <FLAC/ordinals.h>
@@ -29,8 +28,10 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <ostream>
 #include <utility>
 
@@ -60,7 +61,9 @@ int FlacDecoder::open_file(const char* filename) {
     struct stat s = {};
     if (fstat(fileno(file), &s) < 0) {
         Log(ERROR) << "FLAC stat failed.";
-        fclose(file);
+        if (fclose(file) != 0) {
+            Log(ERROR) << "Couldn't close FLAC file: " << strerror(errno);
+        }
         return -1;
     }
     mtime_ = s.st_mtime;
@@ -68,7 +71,9 @@ int FlacDecoder::open_file(const char* filename) {
     /* Initialise decoder */
     if (init(file) != FLAC__STREAM_DECODER_INIT_STATUS_OK) {
         Log(ERROR) << "FLAC init failed.";
-        fclose(file);
+        if (fclose(file) != 0) {
+            Log(ERROR) << "Couldn't close FLAC file: " << strerror(errno);
+        }
         return -1;
     }
 

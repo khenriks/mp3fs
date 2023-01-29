@@ -29,8 +29,7 @@
 
 class Picture {
  public:
-    explicit Picture(std::vector<char> data)
-        : data_(std::move(data)), data_off_(0) {}
+    explicit Picture(std::vector<char> data) : data_(std::move(data)) {}
 
     bool decode();
 
@@ -52,7 +51,7 @@ class Picture {
     }
 
     std::vector<char> data_;
-    size_t data_off_;
+    size_t data_off_ = 0;
 
     uint32_t type_ = 0;
     std::string mime_type_, description_;

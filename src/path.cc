@@ -43,10 +43,10 @@ std::string Path::transcode_source() const {
         source.substr(dot_idx + 1) == params.desttype) {
         const std::string source_base =
             source.substr(slash_idx + 1, dot_idx - slash_idx);
-        std::unique_ptr<DIR, decltype(&closedir)> dp(
+        const std::unique_ptr<DIR, decltype(&closedir)> dp(
             opendir(source_dir.c_str()), closedir);
         while (struct dirent* de = readdir(dp.get())) {
-            std::string de_name = de->d_name;
+            const std::string de_name = de->d_name;
             if (de_name.find(source_base) == 0) {
                 const std::string de_ext =
                     de_name.substr(de_name.rfind('.') + 1);

@@ -40,7 +40,7 @@ StatsCache stats_cache;
 
 bool Transcoder::open() {
     /* Create Encoder and Decoder objects. */
-    size_t dot_idx = filename_.rfind('.');
+    const size_t dot_idx = filename_.rfind('.');
     if (dot_idx != std::string::npos) {
         decoder_ = Decoder::CreateDecoder(filename_.substr(dot_idx + 1));
     }
@@ -91,7 +91,7 @@ bool Transcoder::open() {
 }
 
 ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
-    std::lock_guard<std::mutex> l(mutex_);
+    const std::lock_guard<std::mutex> l(mutex_);
     Log(DEBUG) << "Reading " << len << " bytes from offset " << offset << ".";
     if (static_cast<size_t>(offset) > get_size()) {
         return 0;
@@ -108,7 +108,7 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
            buffer_.tell() < (encoder_->no_partial_encode()
                                  ? std::numeric_limits<size_t>::max()
                                  : offset + len)) {
-        int stat = decoder_->process_single_fr(encoder_.get());
+        const int stat = decoder_->process_single_fr(encoder_.get());
         if (stat == -1 || (stat == 1 && !finish())) {
             errno = EIO;
             return -1;
@@ -116,7 +116,7 @@ ssize_t Transcoder::read(char* buff, off_t offset, size_t len) {
     }
 
     // truncate if we can't get len
-    size_t max_len = buffer_.max_valid_bytes(offset);
+    const size_t max_len = buffer_.max_valid_bytes(offset);
     if (len > max_len) {
         len = max_len;
     }

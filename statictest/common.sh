@@ -10,7 +10,7 @@ SOURCES=($(find "$ROOT" -path '*/src/lib' -prune -o \( -name '*.cc' -o \
 COMMONDIR="${BASH_SOURCE%/*}"
 
 CXXFLAGS=($(pkg-config --cflags fuse id3tag) -I"$COMMONDIR/../src" \
-          -I/usr/local/include -DPACKAGE_VERSION=1 -DPACKAGE_NAME=\"mp3fs\" \
+          -I/opt/homebrew/include -DPACKAGE_VERSION=1 -DPACKAGE_NAME=\"mp3fs\" \
           -DHAVE_FLAC -DHAVE_MP3 -DHAVE_VORBIS)
 
 in_main () {

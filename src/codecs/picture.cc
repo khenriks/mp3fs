@@ -54,7 +54,8 @@ bool Picture::consume_decode_uint32(uint32_t* out) {
         return false;
     }
 
-    uint32_t value = *reinterpret_cast<uint32_t*>(data_.data() + data_off_);
+    const uint32_t value =
+        *reinterpret_cast<uint32_t*>(data_.data() + data_off_);
     *out = ntohl(value);
 
     data_off_ += 4;

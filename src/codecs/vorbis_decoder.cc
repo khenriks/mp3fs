@@ -26,9 +26,11 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cerrno>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <ostream>
 #include <utility>
 #include <vector>
@@ -61,7 +63,9 @@ int VorbisDecoder::open_file(const char* filename) {
     struct stat s = {};
     if (fstat(fileno(file), &s) < 0) {
         Log(ERROR) << "Ogg Vorbis decoder: fstat failed.";
-        fclose(file);
+        if (fclose(file) != 0) {
+            Log(ERROR) << "Couldn't close OGG file: " << strerror(errno);
+        }
         return -1;
     }
     mtime_ = s.st_mtime;
@@ -69,7 +73,9 @@ int VorbisDecoder::open_file(const char* filename) {
     /* Initialise decoder */
     if (ov_open(file, &vf_, nullptr, 0) < 0) {
         Log(ERROR) << "Ogg Vorbis decoder: Initialization failed.";
-        fclose(file);
+        if (fclose(file) != 0) {
+            Log(ERROR) << "Couldn't close OGG file: " << strerror(errno);
+        }
         return -1;
     }
 
@@ -88,9 +94,8 @@ time_t VorbisDecoder::mtime() {
  * read the actual PCM stream parameters.
  */
 int VorbisDecoder::process_metadata(Encoder* encoder) {
-    vorbis_comment* vc = nullptr;
-
-    if ((vi_ = ov_info(&vf_, -1)) == nullptr) {
+    vi_ = ov_info(&vf_, -1);
+    if (vi_ == nullptr) {
         Log(ERROR) << "Ogg Vorbis decoder: Failed to retrieve the file info.";
         return -1;
     }
@@ -109,7 +114,8 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         return -1;
     }
 
-    if ((vc = ov_comment(&vf_, -1)) == nullptr) {
+    vorbis_comment* vc = ov_comment(&vf_, -1);
+    if (vc == nullptr) {
         Log(ERROR)
             << "Ogg Vorbis decoder: Failed to retrieve the Ogg Vorbis comment.";
         return -1;
@@ -122,15 +128,15 @@ int VorbisDecoder::process_metadata(Encoder* encoder) {
         /*
          * Get the tagname - tagvalue pairs
          */
-        std::string comment(vc->user_comments[i], vc->comment_lengths[i]);
-        size_t delimiter_pos = comment.find_first_of('=');
+        const std::string comment(vc->user_comments[i], vc->comment_lengths[i]);
+        const size_t delimiter_pos = comment.find_first_of('=');
 
         if (delimiter_pos == 0 || delimiter_pos == std::string::npos) {
             continue;
         }
 
         std::string tagname = comment.substr(0, delimiter_pos);
-        std::string tagvalue = comment.substr(delimiter_pos + 1);
+        const std::string tagvalue = comment.substr(delimiter_pos + 1);
 
         /*
          * Normalize tag name to uppercase.
@@ -191,14 +197,14 @@ int VorbisDecoder::process_single_fr(Encoder* encoder) {
     const size_t buffer_size = 2048;
     std::vector<int16_t> decode_buffer(buffer_size);
 
-    int64_t read_bytes = ov_read(
+    const int64_t read_bytes = ov_read(
         &vf_, reinterpret_cast<char*>(decode_buffer.data()),
         static_cast<int>(2 * decode_buffer.size()), 0, 2, 1, &current_section_);
 
-    int64_t total_samples = read_bytes / 2;
+    const int64_t total_samples = read_bytes / 2;
 
     if (total_samples > 0) {
-        int64_t samples_per_channel = total_samples / vi_->channels;
+        const int64_t samples_per_channel = total_samples / vi_->channels;
 
         if (samples_per_channel < 1) {
             Log(ERROR) << "Ogg Vorbis decoder: Not enough samples per channel.";
