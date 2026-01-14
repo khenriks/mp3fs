@@ -1,6 +1,8 @@
-#!/bin/bash -e
+#!/usr/bin/env bash
 # check_tidy verifies that files follow various style guidelines and best
 # practices, by using clang-tidy.
+
+set -e
 
 . "${BASH_SOURCE%/*}/common.sh"
 
