@@ -23,11 +23,11 @@
 
 #include <sys/stat.h>
 
-#define FUSE_USE_VERSION 26
+#define FUSE_USE_VERSION 31
 
-#include <fuse.h>
-#include <fuse_common.h>
-#include <fuse_opt.h>
+#include <fuse3/fuse.h>
+#include <fuse3/fuse_common.h>
+#include <fuse3/fuse_opt.h>
 
 #include <cstddef>
 #include <cstdlib>
@@ -176,11 +176,12 @@ int mp3fs_opt_proc(void* /*unused*/, const char* arg, int key,
             }
             break;
 
-        case KEY_HELP:
-            usage(outargs->argv[0]);
-            fuse_opt_add_arg(outargs, "-ho");
-            fuse_main(outargs->argc, outargs->argv, &mp3fs_ops, nullptr);
+        case KEY_HELP: {
+            const char *argv[] = { argv[0], "-ho", NULL };
+            int argc = 2;
+            fuse_main(argc, const_cast<char**>(argv), &mp3fs_ops, NULL);
             exit(1);
+        }
 
         case KEY_VERSION:
             print_versions(std::move(std::cout));
@@ -220,8 +221,8 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<fuse_args, decltype(&fuse_opt_free_args)> args_ptr(
         &args, fuse_opt_free_args);
 
-    if (fuse_opt_parse(args_ptr.get(), &params, mp3fs_opts, mp3fs_opt_proc) !=
-        0) {
+    if (fuse_opt_parse(args_ptr.get(), &params, mp3fs_opts, mp3fs_opt_proc) ==
+        -1) {
         std::cerr << "Error parsing options.\n" << std::endl;
         usage(argv[0]);
         return 1;

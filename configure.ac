@@ -63,7 +63,7 @@ AS_IF([test "$with_flac" = no -a "$with_vorbis" = no],
     AC_MSG_ERROR([No decoders enabled. Ensure --with-flac or --with-vorbis is given.]))
 
 # Checks for packages which use pkg-config.
-PKG_CHECK_MODULES([fuse], [fuse >= 2.6.0])
+PKG_CHECK_MODULES([fuse3], [fuse3 >= 3.16.0])
 
 # Check for GNU date.
 AM_CONDITIONAL([HAVE_GNUDATE], [test "$(date -u -d @1262304000 +%F 2>/dev/null)" = 2010-01-01])

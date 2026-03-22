@@ -21,12 +21,12 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#define FUSE_USE_VERSION 26
+#define FUSE_USE_VERSION 31
 
 #include <dirent.h>
 #include <fcntl.h>
-#include <fuse.h>
-#include <fuse_common.h>
+#include <fuse3/fuse.h>
+#include <fuse3/fuse_common.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <unistd.h>
@@ -81,7 +81,7 @@ int mp3fs_readlink(const char* p, char* buf, size_t size) {
 }
 
 int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
-                  off_t /*unused*/, struct fuse_file_info* /*unused*/) {
+                  off_t /*unused*/, struct fuse_file_info* /*unused*/, enum fuse_readdir_flags /*unused*/) {
     const Path path = Path::FromMp3fsRelative(p);
     Log(INFO) << "readdir " << path;
 
@@ -110,7 +110,7 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
             de->d_name[len] = '\0';
         }
 
-        if (filler(buf, de->d_name, &st, 0) != 0) {
+        if (filler(buf, de->d_name, &st, 0, FUSE_FILL_DIR_DEFAULTS) != 0) {
             break;
         }
     }
@@ -118,7 +118,7 @@ int mp3fs_readdir(const char* p, void* buf, fuse_fill_dir_t filler,
     return 0;
 }
 
-int mp3fs_getattr(const char* p, struct stat* stbuf) {
+int mp3fs_getattr(const char* p, struct stat* stbuf, struct fuse_file_info *) {
     const Path path = Path::FromMp3fsRelative(p);
     Log(INFO) << "getattr " << path;
 
