@@ -3,8 +3,8 @@ WARNINGS := -Wall -Wextra -Wconversion -Wno-sign-conversion
 GIT_VERSION := $(shell test -d .git && git describe)
 GIT_VERSION_DEFINE := $(if $(GIT_VERSION),-DGIT_VERSION=\"$(GIT_VERSION)\",)
 
-export AM_CFLAGS = -std=c11 $(INCLUDES) $(WARNINGS) $(GIT_VERSION_DEFINE)
-export AM_CXXFLAGS = -std=c++11 $(INCLUDES) $(WARNINGS) $(GIT_VERSION_DEFINE)
+export AM_CFLAGS = -std=c11 $(AM_CPPFLAGS) $(WARNINGS) $(GIT_VERSION_DEFINE)
+export AM_CXXFLAGS = -std=c++11 $(AM_CPPFLAGS) $(WARNINGS) $(GIT_VERSION_DEFINE)
 
 SUBDIRS = src test
 
