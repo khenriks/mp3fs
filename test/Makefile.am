@@ -4,6 +4,7 @@ TESTS = test_audio \
 	test_filenames \
 	test_filesize \
 	test_passthrough \
+	test_playlist \
 	test_picture \
 	test_readlink \
 	test_tags

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+. "${BASH_SOURCE%/*}/funcs.sh"
+
+check_equal "$(cat "$DIRNAME/playlist.m3u")" \
+"#EXTM3U
+#EXTINF:6,Barack Obama - The Internet [excerpt]
+obama.mp3
+ra[ven].mp3
+/music/random.mp3
+some.txt"

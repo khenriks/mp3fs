@@ -2,5 +2,7 @@
 
 . "${BASH_SOURCE%/*}/funcs.sh"
 
+# TODO: ls -m is width sensitive. We should probably use ls -1 and compare without commas.
 check_equal "$(ls -m "$DIRNAME")" \
-    "dir.flac, obama.mp3, obama2.mp3, ra[ven].mp3, random.mp3, some.txt"
+    "dir.flac, obama.mp3, obama2.mp3, playlist.m3u, ra[ven].mp3, random.mp3,
+some.txt"

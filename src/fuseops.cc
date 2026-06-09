@@ -41,6 +41,7 @@
 #include "logging.h"
 #include "mp3fs.h"
 #include "path.h"
+#include "playlist.h"
 #include "reader.h"
 #include "transcode.h"
 
@@ -124,6 +125,12 @@ int mp3fs_getattr(const char* p, struct stat* stbuf) {
 
     /* pass-through for regular files */
     if (lstat(path.normal_source().c_str(), stbuf) == 0) {
+        if (S_ISREG(stbuf->st_mode) && is_playlist(path.normal_source())) {
+            const PlaylistReader reader(path.normal_source());
+            stbuf->st_size = static_cast<off_t>(reader.size());
+            stbuf->st_blocks =
+                (stbuf->st_size + kBytesPerBlock - 1) / kBytesPerBlock;
+        }
         return 0;
     }
 
@@ -155,7 +162,13 @@ int mp3fs_open(const char* p, struct fuse_file_info* fi) {
     const int fd = open(path.normal_source().c_str(), fi->flags);
 
     if (fd != -1) {  // File exists and was successfully opened.
-        fi->fh = reinterpret_cast<uint64_t>(new FileReader(fd));
+        if (is_playlist(path.normal_source())) {
+            close(fd);
+            fi->fh = reinterpret_cast<uint64_t>(
+                new PlaylistReader(path.normal_source()));
+        } else {
+            fi->fh = reinterpret_cast<uint64_t>(new FileReader(fd));
+        }
         return 0;
     }
     if (errno != ENOENT) {  // File exists but can't be opened.
